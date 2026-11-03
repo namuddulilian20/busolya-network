@@ -25,6 +25,7 @@
       <div class="flex items-center gap-2">
         <button onclick="shareFarmAid('wa')" class="rounded-full border border-[#e6d5c8] px-3 py-1.5 text-[.7rem] font-semibold text-maroon2 hover:bg-white/30 transition" title="Share on WhatsApp">WhatsApp</button>
         <button onclick="shareFarmAid('tg')" class="rounded-full border border-[#e6d5c8] px-3 py-1.5 text-[.7rem] font-semibold text-maroon2 hover:bg-white/30 transition" title="Share on Telegram">Telegram</button>
+        <button onclick="shareFarmAid('fb')" class="rounded-full border border-[#e6d5c8] px-3 py-1.5 text-[.7rem] font-semibold text-maroon2 hover:bg-white/30 transition" title="Share on Facebook">Facebook</button>
       </div>
       <button onclick="window.BusolyaAuth&&window.BusolyaAuth.logout()" class="rounded-full border border-maroon px-4 py-2 text-sm font-bold text-maroon hover:bg-maroon hover:text-white transition">Sign out</button>
     </div>
@@ -155,8 +156,10 @@
     var text = name + '\nFarm-Aid Field Report · Abataka Mutindo SACCO\n' + pageUrl;
     if (platform === 'wa') {
       window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
-    } else {
+    } else if (platform === 'tg') {
       window.open('https://t.me/share/url?url=' + encodeURIComponent(pageUrl) + '&text=' + encodeURIComponent(text), '_blank');
+    } else if (platform === 'fb') {
+      window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(pageUrl), '_blank');
     }
   }
   loadRoles();

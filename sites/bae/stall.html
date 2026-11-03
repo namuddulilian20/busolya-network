@@ -31,14 +31,62 @@
       <div class="flex items-center gap-2">
         <button onclick="shareStall('wa')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on WhatsApp">WhatsApp</button>
         <button onclick="shareStall('tg')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on Telegram">Telegram</button>
+        <button onclick="shareStall('fb')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on Facebook">Facebook</button>
       </div>
     </div>
   </div>
+
+  <section class="mb-7 rounded-2xl border-2 border-gold bg-[#fdf3e0] p-5">
+    <div class="flex items-start gap-3">
+      <span class="text-gold font-bold text-xl mt-0.5">🆓</span>
+      <div>
+        <h3 class="font-display text-xl font-bold text-bark mb-1">Online exhibitor stall — FREE during the exhibition</h3>
+        <p class="text-sm text-ink/70">Your stall page is live for the full 4–8 November 2026 expo at no cost. Share it with customers on WhatsApp, Telegram or Facebook.</p>
+      </div>
+    </div>
+  </section>
+
   <section class="mb-8">
     <h2 class="font-display text-2xl font-bold text-bark mb-4">Products &amp; services at this stall</h2>
     <div id="productList" class="space-y-3"></div>
     <p id="noProducts" class="hidden text-sm text-ink/50">No products or services listed yet. Ask the exhibitor at their stand for a catalogue.</p>
   </section>
+
+  <section class="mb-8">
+    <h2 class="font-display text-2xl font-bold text-bark mb-4">Book a stall — expo prices</h2>
+    <p class="text-sm text-ink/60 mb-4">Physical stall options at Lwattamu Gardens, Bulange, Mengo, Kampala. Online stall listing is free for the exhibition period.</p>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <article class="rounded-xl border border-[#e2d6c2] bg-paper p-4 text-center">
+        <div class="mb-2 text-2xl font-bold text-seal">100 Seater</div>
+        <div class="mb-2 text-xl font-bold text-bark">UGX 2,000,000/=</div>
+        <p class="text-xs text-ink/50">Large tent with seating for 100</p>
+      </article>
+      <article class="rounded-xl border border-[#e2d6c2] bg-paper p-4 text-center">
+        <div class="mb-2 text-2xl font-bold text-seal">5 × 5</div>
+        <div class="mb-2 text-xl font-bold text-bark">UGX 1,000,000/=</div>
+        <p class="text-xs text-ink/50">5m × 5m tent space</p>
+      </article>
+      <article class="rounded-xl border border-[#e2d6c2] bg-paper p-4 text-center">
+        <div class="mb-2 text-2xl font-bold text-seal">3 × 3</div>
+        <div class="mb-2 text-xl font-bold text-bark">UGX 500,000/=</div>
+        <p class="text-xs text-ink/50">3m × 3m tent space</p>
+      </article>
+      <article class="rounded-xl border border-[#e2d6c2] bg-paper p-4 text-center">
+        <div class="mb-2 text-2xl font-bold text-seal">Table</div>
+        <div class="mb-2 text-xl font-bold text-bark">UGX 250,000 – 200,000/=</div>
+        <p class="text-xs text-ink/50">Table-only option</p>
+      </article>
+    </div>
+    <div class="mt-4 flex items-start gap-2">
+      <span class="text-gold font-bold text-xl mt-0.5">📍</span>
+      <p class="text-sm text-ink/70">Lwattamu Gardens, Plot 1, Kabakanjagala Rd, Bulange, Mengo, Kampala · 4th–8th Nov 2026</p>
+    </div>
+    <div class="mt-3 flex items-start gap-2">
+      <span class="text-gold font-bold text-xl mt-0.5">📞</span>
+      <p class="text-sm text-ink/70">Enquiries &amp; bookings: 0765950368 · 0732146780 · 0200911567</p>
+    </div>
+  </section>
+
   <section class="rounded-2xl border border-[#e2d6c2] bg-paper p-7">
     <h2 class="font-display text-xl font-bold text-bark mb-4">Log demand for this stall</h2>
     <p class="mt-1 text-sm text-ink/60 mb-4">Tell this supplier what you need. Your entry lands in their demand log and the platform demand log.</p>
@@ -139,7 +187,7 @@
     })
     .catch(function () { showDemandMsg('Server error. Try again.', 'err'); });
   });
-  /* ── WhatsApp / Telegram sharing ─────────────────────────── */
+  /* ── WhatsApp / Telegram / Facebook sharing ─────────────────────────── */
   function shareWhatsApp(text) {
     var url = 'https://wa.me/?text=' + encodeURIComponent(text);
     window.open(url, '_blank');
@@ -148,22 +196,28 @@
     var url = 'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text);
     window.open(url, '_blank');
   }
+  function shareFacebook(text, link) {
+    var url = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(link);
+    window.open(url, '_blank');
+  }
   function shareStall(platform) {
     var name = document.getElementById('stallName').textContent;
     var ex = document.getElementById('stallExhibitor').textContent;
     var pageUrl = location.origin + location.pathname + location.search;
-    var text = (ex ? ex + '\n' : '') + name + '\n' + pageUrl;
+    var text = (ex ? ex + '\n' : '') + name + '\n' + pageUrl + '\n\nBataka Agro Expo 2026 · 4–8 November · Book your stall now';
     if (platform === 'wa') shareWhatsApp(text);
-    else shareTelegram(text, pageUrl);
+    else if (platform === 'tg') shareTelegram(text, pageUrl);
+    else if (platform === 'fb') shareFacebook(text, pageUrl);
   }
   function shareProduct(pid, platform) {
     var card = document.querySelector('[data-pid="' + pid + '"]');
     if (!card) return;
     var title = card.querySelector('h3') ? card.querySelector('h3').textContent : 'Product';
     var pageUrl = location.origin + location.pathname + location.search + '#product-' + pid;
-    var text = title + '\n' + (stallBiz || '') + '\n' + pageUrl;
+    var text = title + '\n' + (stallBiz || '') + '\n' + pageUrl + '\n\nBataka Agro Expo 2026 · 4–8 November';
     if (platform === 'wa') shareWhatsApp(text);
-    else shareTelegram(text, pageUrl);
+    else if (platform === 'tg') shareTelegram(text, pageUrl);
+    else if (platform === 'fb') shareFacebook(text, pageUrl);
   }
 
   function showDemandMsg(text, type) {

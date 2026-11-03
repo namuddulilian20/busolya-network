@@ -36,6 +36,7 @@ tailwind.config = {
       <div class="flex items-center gap-2">
         <button onclick="shareStore('wa')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on WhatsApp">WhatsApp</button>
         <button onclick="shareStore('tg')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on Telegram">Telegram</button>
+        <button onclick="shareStore('fb')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on Facebook">Facebook</button>
       </div>
       <button onclick="window.BusolyaAuth&&window.BusolyaAuth.logout()"
         class="rounded-full border border-bark px-4 py-2 text-sm font-bold text-bark hover:bg-bark hover:text-white transition">
@@ -331,28 +332,33 @@ tailwind.config = {
     .catch(function () { showAddMsg('Server error. Try again.', 'err'); });
   });
 
-  /* ── WhatsApp / Telegram sharing ─────────────────────────── */
+  /* ── WhatsApp / Telegram / Facebook sharing ─────────────────────────── */
   function shareWhatsApp(text) {
     window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
   }
   function shareTelegram(text, link) {
     window.open('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text), '_blank');
   }
+  function shareFacebook(text, link) {
+    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(link), '_blank');
+  }
   function shareStore(platform) {
     var name = document.getElementById('supplierName').textContent || 'Supplier Store';
     var pageUrl = location.origin + location.pathname + (me ? '?supplier=' + me.id : '');
-    var text = name + '\nMy stall · ' + pageUrl;
+    var text = name + '\nMy stall · ' + pageUrl + '\n\nBataka Agro Expo 2026 · 4–8 November';
     if (platform === 'wa') shareWhatsApp(text);
-    else shareTelegram(text, pageUrl);
+    else if (platform === 'tg') shareTelegram(text, pageUrl);
+    else if (platform === 'fb') shareFacebook(text, pageUrl);
   }
   function shareProduct(pid, platform) {
     var card = document.querySelector('[data-pid="' + pid + '"]');
     if (!card) return;
     var title = card.querySelector('.font-semibold') ? card.querySelector('.font-semibold').textContent : 'Product';
     var pageUrl = location.origin + location.pathname + '#product-' + pid;
-    var text = title + '\n' + pageUrl;
+    var text = title + '\n' + pageUrl + '\n\nBataka Agro Expo 2026 · 4–8 November';
     if (platform === 'wa') shareWhatsApp(text);
-    else shareTelegram(text, pageUrl);
+    else if (platform === 'tg') shareTelegram(text, pageUrl);
+    else if (platform === 'fb') shareFacebook(text, pageUrl);
   }
 
 
