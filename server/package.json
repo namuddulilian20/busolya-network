@@ -1,0 +1,17 @@
+{
+  "name": "busolya-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Busolya network backend: demand log, supplier log, linkages, directory, education, governance and networks.",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
+  }
+}

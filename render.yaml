@@ -1,8 +1,41 @@
-# Busolya network — static sites on Render
-# Three static services, one repo. Every push to the connected branch redeploys
-# the changed service. There is no build step: the HTML, CSS and JS are final.
+# Busolya network — static sites + API + database on Render.
+# One repo, one blueprint. A push to the connected branch redeploys the
+# services whose files changed.
+
+databases:
+  - name: busolya-db
+    databaseName: busolya
+    user: busolya
+    plan: free
+    region: frankfurt
 
 services:
+  # ---- backend: demand log, supply log, linkages, directory, education ----
+  - type: web
+    name: busolya-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: busolya-db
+          property: connectionString
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+
+  # ---- public sites ----
   - type: web
     name: busolya-agro-farmers
     runtime: static
