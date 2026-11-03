@@ -1148,19 +1148,32 @@ app.post('/api/education/shares', requireSupplier, rateLimit, async (req, res, n
 
 app.get('/api/demand/stock', async (req, res, next) => {
   try {
-    const r = await db.query(`
+    const productId = Number(req.query.product_id) || null;
+    const supplierId = Number(req.query.supplier_id) || null;
+    let sql = `
       select ds.*, sp.title as product_title, sp.category, sp.district,
-             sub.name as demand_name, sub.phone as demand_phone
+             sub.name as demand_name, sub.phone as demand_phone, sub.ref as demand_ref
       from demand_stock ds
       left join supplier_products sp on sp.id = ds.product_id
       left join submissions sub on sub.id = ds.submission_id
-      order by ds.created_at desc limit 500`);
+    `;
+    const params = [];
+    const conditions = [];
+    if (productId) {
+      conditions.push('ds.product_id = ${params.length + 1}');
+      params.push(productId);
+    }
+    if (supplierId) {
+      conditions.push('sp.supplier_id = ${params.length + 1}');
+      params.push(supplierId);
+    }
+    if (conditions.length) sql += ' where ' + conditions.join(' and ');
+    sql += ' order by ds.created_at desc limit 500';
+    const r = await db.query(sql, params);
     return res.json({ ok: true, stock: r.rows });
   } catch (err) { next(err); }
-});
-
-// POST /api/demand/stock — link a supplier product to a demand submission
-app.post('/api/demand/stock', requireAdminOrEmployee, rateLimit, async (req, res, next) => {
+}); — link a supplier product to a demand submission
+app.post('/api/demand/stock', requireSupplier, rateLimit, async (req, res, next) => {
   try {
     const b = req.body || {};
     const product_id = Number(b.product_id) || null;
