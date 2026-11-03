@@ -424,13 +424,13 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
     }
     let row = null;
     let kind = 'participant';
-    if (role === 'supplier' || !role) {
+    // Participants table holds every registered actor (supplier, member, customer, employee)
+    const p = await db.query('select id, name, phone, password_hash, role, org from participants where phone = $1', [phone]);
+    if (p.rows.length) { row = p.rows[0]; kind = 'participant'; }
+    // Fall back to legacy supplier rows (created via supply submissions) that may not have a participant record
+    if (!row) {
       const s = await db.query('select id, business as name, phone, password_hash, org from suppliers where phone = $1', [phone]);
       if (s.rows.length) { row = s.rows[0]; kind = 'supplier'; }
-    }
-    if (!row && (!role || role !== 'supplier')) {
-      const p = await db.query('select id, name, phone, password_hash, role, org from participants where phone = $1', [phone]);
-      if (p.rows.length) { row = p.rows[0]; kind = 'participant'; }
     }
     if (!row || !row.password_hash || row.password_hash !== hashPwd(password)) {
       return res.status(401).json({ ok: false, error: 'invalid phone or password' });
