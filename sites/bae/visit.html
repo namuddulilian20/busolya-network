@@ -475,7 +475,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   </div>
 </footer>
 
-<script src="assets/api.js"></script>
+<script src="assets/busolya.js"></script>
 <script src="assets/network.js"></script>
 <script>
 (function () {
@@ -516,9 +516,13 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   /* The desk always keeps a local copy first, so a dead network never loses an
      entry. When the API answers, the network reference replaces the sheet one. */
   function sync(body, msg, localRef) {
-    if (!window.BUSOLYA || !window.BUSOLYA.post) return;
-    window.BUSOLYA.post('/api/submissions', body).then(function (res) {
-      say(msg, 'Saved to the network as ' + res.ref + ' (desk sheet ' + localRef + ').', true);
+    if (!window.BUSOLYA || !window.BUSOLYA.submit) return;
+    window.BUSOLYA.submit(body.kind, body).then(function (res) {
+      if (res.source === 'api') {
+        say(msg, 'Saved to the network as ' + res.ref + ' (desk sheet ' + localRef + ').', true);
+      } else {
+        say(msg, 'Saved on this device as ' + res.ref + '. Network copy pending â€” export the desk CSV at close of day.', false);
+      }
     }).catch(function () {
       say(msg, 'Saved on this device as ' + localRef + '. Network copy pending â€” export the desk CSV at close of day.', false);
     });

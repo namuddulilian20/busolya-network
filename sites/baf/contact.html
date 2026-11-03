@@ -171,7 +171,8 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   </div>
 </footer>
 
-<script src="assets/network.js"></script>
+<script src="../assets/busolya.js"></script>
+<script src="../assets/network.js"></script>
 <script>
 (function () {
   var form = document.getElementById('reg');
@@ -198,17 +199,31 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
       return;
     }
     var entry = collect();
-    try {
-      var key = 'baf-registrations';
-      var all = JSON.parse(localStorage.getItem(key) || '[]');
-      all.push(entry);
-      localStorage.setItem(key, JSON.stringify(all));
-      msg.textContent = 'Saved on this device (' + all.length + ' registration' + (all.length === 1 ? '' : 's') + ' on record). Print it and hand it in at the desk.';
-      msg.className = 'mt-4 rounded-lg border-l-4 border-leaf bg-[#eef6ea] px-4 py-3 text-sm text-leafdark';
-    } catch (err) {
-      msg.textContent = 'This browser blocked local storage. Use Print / save as PDF instead.';
+    var body = {
+      name: entry.name, phone: entry.phone, email: '', org: '',
+      message: entry.reason + ' — ' + entry.detail
+    };
+    window.BUSOLYA.contact(body).then(function (res) {
+      if (res.source === 'api') {
+        msg.textContent = 'Sent to the network desk. We will call you on ' + entry.phone + '.';
+        msg.className = 'mt-4 rounded-lg border-l-4 border-leaf bg-[#eef6ea] px-4 py-3 text-sm text-leafdark';
+      } else {
+        try {
+          var key = 'baf-registrations';
+          var all = JSON.parse(localStorage.getItem(key) || '[]');
+          all.push(entry);
+          localStorage.setItem(key, JSON.stringify(all));
+          msg.textContent = 'Saved on this device (' + all.length + ' on record). Print it and hand it in at the desk.';
+          msg.className = 'mt-4 rounded-lg border-l-4 border-leaf bg-[#eef6ea] px-4 py-3 text-sm text-leafdark';
+        } catch (err) {
+          msg.textContent = 'This browser blocked local storage. Use Print / save as PDF instead.';
+          msg.className = 'mt-4 rounded-lg border-l-4 border-seal bg-[#fbeae6] px-4 py-3 text-sm text-[#8a2716]';
+        }
+      }
+    }).catch(function () {
+      msg.textContent = 'Could not reach the network right now. Print this page and hand it in at the desk.';
       msg.className = 'mt-4 rounded-lg border-l-4 border-seal bg-[#fbeae6] px-4 py-3 text-sm text-[#8a2716]';
-    }
+    });
     form.reset();
   });
 
