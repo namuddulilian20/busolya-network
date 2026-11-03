@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log a lead / register — Bataka Agro Expo 2026</title>
+<meta name="description" content="The Bataka Agro Expo questionnaire: visitors log demand, exhibitors register supply, and creditors or guarantors attach to a lead. Includes printable desk forms and the marshal desk export.">
+<link rel="icon" href="assets/mark.svg">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a', cream:'#fbf6ec', paper:'#fffdf8', leaf:'#2f7d32', leafdark:'#1f5523', seal:'#a8321e', gold:'#c68a2e', ink:'#2a1a10' }, fontFamily: { display:['Georgia','Times New Roman','serif'], body:['Segoe UI','system-ui','sans-serif'] } } } }
+</script>
+<style type="text/tailwindcss">
+  @media print {
+    .no-print { display: none !important; }
+    body { background: #fff; }
+    .print-sheet { break-after: page; border: 1px solid #999; }
+    .print-only { display: block !important; }
+  }
+  @media screen { .print-only { display: none; } }
+</style>
+</head>
+<body class="bg-cream font-body text-ink antialiased">
+
+<div class="bg-leafdark text-[#eaf3e4] no-print">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-2 text-xs tracking-wide">
+    <p><span class="text-gold">●</span> Bataka Agro Expo · 4 to 8 November 2026</p>
+    <p class="hidden sm:block">Registry desk — demand log, suppliers log, credit desk</p>
+  </div>
+</div>
+
+<header class="sticky top-0 z-40 border-b border-[#e2d6c2] bg-cream/90 backdrop-blur no-print">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-5 py-2.5">
+    <a href="index.html" class="flex shrink-0 items-center gap-3">
+      <img src="assets/mark.svg" alt="Bataka Agro Expo mark" class="h-12 w-12">
+      <span class="leading-tight">
+        <span class="block font-display text-[1.05rem] font-bold text-bark">Bataka Agro Expo</span>
+        <span class="block text-[.66rem] uppercase tracking-[.18em] text-ink/55">Registry desk</span>
+      </span>
+    </a>
+    <nav class="ml-auto w-full md:w-auto">
+      <ul class="flex flex-wrap items-center gap-1 text-sm font-semibold">
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="index.html">Home</a></li>
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="programme.html">Programme</a></li>
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="exhibitors.html">Exhibitors</a></li>
+        <li><a class="rounded-full bg-bark px-3 py-2 text-white" href="visit.html">Log a lead</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="bg-bark px-5 py-10 text-[#f6ecdd] no-print">
+  <div class="mx-auto max-w-6xl">
+    <p class="text-[.72rem] font-bold uppercase tracking-[.18em] text-gold">Three routes, one record</p>
+    <h1 class="mt-2 font-display text-3xl font-bold text-white sm:text-4xl">The expo questionnaire</h1>
+    <p class="mt-3 max-w-2xl text-[#e8d9c4]">Scan, print, or log at the stand. Every answer lands in the demand log; every exhibitor lands in the suppliers log; credit sits on a named creditor or guarantor.</p>
+  </div>
+</section>
+
+<section class="px-5 py-8 no-print">
+  <div class="mx-auto max-w-6xl">
+
+    <div class="flex flex-wrap gap-2" role="tablist">
+      <button type="button" data-tab="demand" class="tab rounded-full bg-bark px-5 py-2.5 text-sm font-bold text-white">I am a visitor</button>
+      <button type="button" data-tab="supply" class="tab rounded-full border-2 border-bark px-5 py-2.5 text-sm font-bold text-bark">I am an exhibitor / supplier</button>
+      <button type="button" data-tab="desk" class="tab rounded-full border-2 border-bark px-5 py-2.5 text-sm font-bold text-bark">Marshal desk</button>
+      <button type="button" data-tab="print" class="tab rounded-full border-2 border-bark px-5 py-2.5 text-sm font-bold text-bark">Printed forms &amp; QR</button>
+    </div>
+
+    <!-- ================= DEMAND LOG ================= -->
+    <div data-panel="demand" class="panel mt-6 hidden"><div class="grid gap-6 md:grid-cols-[1.2fr_.8fr]">
+      <form id="demandForm" class="rounded-2xl border border-[#e2d6c2] bg-paper p-7">
+        <h2 class="font-display text-2xl font-bold text-bark">Demand log entry</h2>
+        <p class="mt-1 text-sm text-ink/60">Two minutes. Name and phone are the only things you must write.</p>
+
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-semibold text-bark" for="d-name">Name *</label>
+            <input id="d-name" required class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="d-phone">Phone (WhatsApp) *</label>
+            <input id="d-phone" required inputmode="tel" placeholder="07xx xxx xxx" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="d-district">District *</label>
+            <input id="d-district" required class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="d-role">I am a *</label>
+            <select id="d-role" required class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+              <option value="">Choose one</option>
+              <option>Farmer</option>
+              <option>Farmer group / cooperative</option>
+              <option>Trader / buyer</option>
+              <option>Processor</option>
+              <option>Institution / school / health facility</option>
+              <option>Land holder</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="d-cat">What did you come for? *</label>
+            <select id="d-cat" required class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+              <option value="">Choose one</option>
+              <option>Seed, cuttings &amp; planting material</option>
+              <option>Fertiliser &amp; agro-chemicals</option>
+              <option>Animal feed &amp; veterinary services</option>
+              <option>Livestock &amp; poultry</option>
+              <option>Tools, machinery &amp; fabrication</option>
+              <option>Transport &amp; logistics</option>
+              <option>Storage, processing &amp; packaging</option>
+              <option>Credit, savings &amp; insurance</option>
+              <option>Training &amp; skilling</option>
+              <option>Land for farming</option>
+              <option>Market for my produce</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="d-qty">Quantity needed</label>
+            <input id="d-qty" placeholder="e.g. 200 kg, 5 bags, 2 cows" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="d-budget">Budget</label>
+            <select id="d-budget" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+              <option value="">Not sure</option>
+              <option>Under UGX 100,000</option>
+              <option>UGX 100,000 – 500,000</option>
+              <option>UGX 500,000 – 2,000,000</option>
+              <option>UGX 2,000,000 – 10,000,000</option>
+              <option>Above UGX 10,000,000</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="d-when">When needed</label>
+            <select id="d-when" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+              <option value="">Not sure</option>
+              <option>Now, at the expo</option>
+              <option>Within this month</option>
+              <option>Before the next season</option>
+              <option>Planning ahead</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="d-credit">Do you need credit?</label>
+            <select id="d-credit" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+              <option>No</option>
+              <option>Yes</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="d-source">How did you get here?</label>
+            <select id="d-source" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+              <option>QR code</option>
+              <option>Information desk (printed form)</option>
+              <option>Exhibitor marshal</option>
+              <option>Outreach programme</option>
+              <option>Radio / announcement</option>
+              <option>Friend or family</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-semibold text-bark" for="d-note">Anything else</label>
+            <textarea id="d-note" rows="2" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20"></textarea>
+          </div>
+        </div>
+
+        <fieldset id="d-creditBox" class="mt-5 hidden rounded-xl border border-[#e2d6c2] bg-cream p-4">
+          <legend class="px-2 text-sm font-bold text-bark">Credit &amp; guarantor</legend>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="block text-sm font-semibold text-bark" for="d-amount">Amount needed (UGX)</label>
+              <input id="d-amount" inputmode="numeric" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-bark" for="d-gname">Guarantor name</label>
+              <input id="d-gname" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-bark" for="d-gphone">Guarantor phone</label>
+              <input id="d-gphone" inputmode="tel" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-bark" for="d-grel">Relationship</label>
+              <select id="d-grel" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+                <option>Family</option>
+                <option>Clan / layer</option>
+                <option>SACCO member</option>
+                <option>Employer</option>
+                <option>Business partner</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <label class="mt-4 flex items-start gap-3 text-sm">
+          <input type="checkbox" id="d-consent" class="mt-1 h-4 w-4 rounded border-[#e2d6c2]">
+          <span>I agree that these details may be kept in the Busolya demand log and shared with a matching supplier, creditor or SACCO. *</span>
+        </label>
+
+        <p id="demandMsg" class="mt-4 hidden rounded-lg border-l-4 px-4 py-3 text-sm"></p>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button type="submit" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Submit entry</button>
+          <button type="reset" class="rounded-full border-2 border-bark px-6 py-3 text-sm font-bold text-bark hover:bg-bark hover:text-white">Clear</button>
+        </div>
+      </form>
+
+      <aside class="space-y-5">
+        <div class="rounded-2xl bg-bark p-6 text-[#f2e6d5]">
+          <h3 class="font-display text-lg font-bold text-white">What happens to this</h3>
+          <ol class="mt-3 space-y-2 text-sm text-[#d9c8b4]">
+            <li>1. It becomes a numbered demand entry.</li>
+            <li>2. It is matched to a suppliers-log entry by category, quantity and district.</li>
+            <li>3. Credit, if needed, is attached to a named guarantor, not to a handshake.</li>
+            <li>4. The match is followed up through the outreach programme.</li>
+          </ol>
+        </div>
+        <div class="rounded-2xl border border-[#e2d6c2] bg-paper p-6">
+          <h3 class="font-display text-lg font-bold text-bark">Privacy</h3>
+          <p class="mt-2 text-sm text-ink/70">Name, phone and need are used to match you with a supplier and to follow up. They are not sold. Ask the desk to remove your entry at any time.</p>
+        </div>
+      </aside>
+    </div></div>
+
+    <!-- ================= SUPPLIERS LOG ================= -->
+    <div data-panel="supply" class="panel mt-6 hidden"><div class="grid gap-6 md:grid-cols-[1.2fr_.8fr]">
+      <form id="supplyForm" class="rounded-2xl border border-[#e2d6c2] bg-paper p-7">
+        <h2 class="font-display text-2xl font-bold text-bark">Suppliers log entry</h2>
+        <p class="mt-1 text-sm text-ink/60">For exhibitors, service providers and anyone who supplies the network all year.</p>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-semibold text-bark" for="s-biz">Business / company name *</label>
+            <input id="s-biz" required class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="s-person">Contact person *</label>
+            <input id="s-person" required class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="s-phone">Phone *</label>
+            <input id="s-phone" required inputmode="tel" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="s-district">District</label>
+            <input id="s-district" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="s-cat">Sector *</label>
+            <select id="s-cat" required class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+              <option value="">Choose one</option>
+              <option>Agro inputs</option>
+              <option>Farm / production</option>
+              <option>Distribution &amp; trade</option>
+              <option>Food, catering &amp; processing</option>
+              <option>Crafts &amp; cultural products</option>
+              <option>Health &amp; wellness</option>
+              <option>Community &amp; institutions</option>
+              <option>Services (transport, fabrication, training)</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-semibold text-bark" for="s-offer">What you supply *</label>
+            <textarea id="s-offer" rows="3" required placeholder="Products, capacity per month, price band, and how far you deliver." class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="s-listing">Directory listing</label>
+            <select id="s-listing" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+              <option>Basic listing (included)</option>
+              <option>Verified listing (ask for terms)</option>
+              <option>Featured category (ask for rates)</option>
+              <option>Not now</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-bark" for="s-credit">Can you supply on credit terms?</label>
+            <select id="s-credit" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+              <option>No</option>
+              <option>Yes, with a guarantor</option>
+              <option>Yes, for repeat buyers</option>
+            </select>
+          </div>
+        </div>
+        <label class="mt-4 flex items-start gap-3 text-sm">
+          <input type="checkbox" id="s-consent" class="mt-1 h-4 w-4 rounded border-[#e2d6c2]">
+          <span>I agree that these details may be published in the Busolya directory and used to match me with demand. *</span>
+        </label>
+        <p id="supplyMsg" class="mt-4 hidden rounded-lg border-l-4 px-4 py-3 text-sm"></p>
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button type="submit" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Submit to suppliers log</button>
+        </div>
+      </form>
+      <aside class="space-y-5">
+        <div class="rounded-2xl border border-[#e2d6c2] bg-paper p-6">
+          <h3 class="font-display text-lg font-bold text-bark">What a listing buys you</h3>
+          <ul class="mt-3 space-y-2 text-sm">
+            <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> A record that survives the expo</li>
+            <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> Matching against every demand-log entry in your category</li>
+            <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> A credit history once your orders clear</li>
+            <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> Print and online directory placement</li>
+          </ul>
+        </div>
+        <div class="rounded-2xl bg-leafdark p-6 text-[#eaf3e4]">
+          <h3 class="font-display text-lg font-bold text-white">Stand credit</h3>
+          <p class="mt-2 text-sm text-[#cfe0c8]">Exhibitors who need help with stand costs can ask Abataka Mutindo SACCO — credit is assessed against a member record, not a promise.</p>
+          <a href="#" data-net="sacco" class="mt-3 inline-block rounded-full bg-white px-4 py-2 text-sm font-bold text-leafdark">Open the SACCO site</a>
+        </div>
+      </aside>
+    </div></div>
+
+    <!-- ================= MARSHAL DESK ================= -->
+    <div data-panel="desk" class="panel mt-6 hidden">
+      <div class="rounded-2xl border border-[#e2d6c2] bg-paper p-7">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="font-display text-2xl font-bold text-bark">Marshal desk</h2>
+            <p class="text-sm text-ink/60">Entries captured in this browser. Export at the end of each shift and hand the file to the registrar.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="exportBtn" type="button" class="rounded-full bg-leaf px-5 py-2.5 text-sm font-bold text-white hover:bg-leafdark">Export CSV</button>
+            <button id="clearBtn" type="button" class="rounded-full border-2 border-seal px-5 py-2.5 text-sm font-bold text-seal hover:bg-seal hover:text-white">Clear this browser</button>
+          </div>
+        </div>
+        <p id="deskCount" class="mt-4 text-sm font-semibold text-bark"></p>
+        <div class="mt-4 overflow-x-auto rounded-xl border border-[#e2d6c2]">
+          <table class="w-full min-w-[760px] border-collapse text-[.88rem]">
+            <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.08em] text-[#f6ecdd]">
+              <tr><th class="px-3 py-2">Ref</th><th class="px-3 py-2">Type</th><th class="px-3 py-2">Name</th><th class="px-3 py-2">Phone</th><th class="px-3 py-2">District</th><th class="px-3 py-2">Need / offer</th><th class="px-3 py-2">Credit</th></tr>
+            </thead>
+            <tbody id="deskRows" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+          </table>
+        </div>
+        <p class="mt-3 text-xs text-ink/55">Live capture here is per-device until the shared backend is connected. The CSV is the handover format the registrar imports.</p>
+      </div>
+    </div>
+
+    <!-- ================= PRINT & QR ================= -->
+    <div data-panel="print" class="panel mt-6 hidden">
+      <div class="grid gap-6 md:grid-cols-[.8fr_1.2fr]">
+        <div class="rounded-2xl border border-[#e2d6c2] bg-paper p-7 text-center">
+          <h2 class="font-display text-2xl font-bold text-bark">Desk QR</h2>
+          <p class="mt-2 text-sm text-ink/70">Print this on the information-desk cards and the stand boards. It opens this questionnaire.</p>
+          <div id="qrSlot" class="mx-auto mt-5 flex h-52 w-52 items-center justify-center rounded-xl border-2 border-dashed border-[#c9b6a0] bg-white text-center text-xs text-ink/50">
+            QR image is generated for the live address
+          </div>
+          <p id="qrUrl" class="mt-3 break-all text-xs text-ink/60"></p>
+          <button id="printBtn" type="button" class="mt-5 rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark">Print the desk forms</button>
+        </div>
+
+        <div class="rounded-2xl border border-[#e2d6c2] bg-paper p-7">
+          <h2 class="font-display text-2xl font-bold text-bark">Printed objective form</h2>
+          <p class="mt-2 text-sm text-ink/70">Tick-box only — no writing beyond a name and a number. Filled at the desk, entered the same day.</p>
+          <div class="mt-4 rounded-lg border border-dashed border-[#c9b6a0] bg-cream p-4 text-[.9rem]">
+            <p class="font-bold text-bark">Why this form exists</p>
+            <p class="mt-1 text-ink/75">A visitor who cannot fill a web form still has an order. The tick sheet keeps that order in the log and keeps the queue moving.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= PRINTABLE SHEET ================= -->
+<section id="print" class="print-only px-5 py-6">
+  <div class="print-sheet mx-auto max-w-3xl p-6">
+    <div class="flex items-start justify-between gap-4 border-b-2 border-bark pb-3">
+      <div>
+        <p class="font-display text-lg font-bold text-bark">BATAKA AGRO EXPO — VISITOR FORM</p>
+        <p class="text-xs">4–8 November 2026 · Information desk · Demand log</p>
+      </div>
+      <div class="text-right text-xs">
+        <p>Form No. ____________</p>
+        <p>Marshal ______________</p>
+      </div>
+    </div>
+
+    <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+      <p>Name: ______________________________________</p>
+      <p>Phone: _____________________________________</p>
+      <p>District: ___________________________________</p>
+      <p>Village / parish: _____________________________</p>
+    </div>
+
+    <p class="mt-5 text-sm font-bold">1. I am a</p>
+    <div class="mt-1 grid grid-cols-3 gap-1 text-sm">
+      <p>☐ Farmer</p><p>☐ Farmer group</p><p>☐ Trader / buyer</p>
+      <p>☐ Processor</p><p>☐ Institution</p><p>☐ Land holder</p>
+    </div>
+
+    <p class="mt-5 text-sm font-bold">2. I came for (tick one)</p>
+    <div class="mt-1 grid grid-cols-2 gap-1 text-sm">
+      <p>☐ Seed &amp; planting material</p><p>☐ Fertiliser / agro-chemicals</p>
+      <p>☐ Feed &amp; veterinary</p><p>☐ Livestock &amp; poultry</p>
+      <p>☐ Tools &amp; machinery</p><p>☐ Transport</p>
+      <p>☐ Storage / processing</p><p>☐ Credit &amp; insurance</p>
+      <p>☐ Training &amp; skilling</p><p>☐ Land for farming</p>
+      <p>☐ Market for my produce</p><p>☐ Other: ________________</p>
+    </div>
+
+    <p class="mt-5 text-sm font-bold">3. Quantity needed</p>
+    <p class="mt-1 text-sm">______________________________________________________</p>
+
+    <p class="mt-5 text-sm font-bold">4. Budget</p>
+    <div class="mt-1 grid grid-cols-2 gap-1 text-sm">
+      <p>☐ Under 100,000</p><p>☐ 100,000 – 500,000</p>
+      <p>☐ 500,000 – 2,000,000</p><p>☐ 2,000,000 – 10,000,000</p>
+      <p>☐ Above 10,000,000</p><p>☐ Not sure</p>
+    </div>
+
+    <p class="mt-5 text-sm font-bold">5. When needed</p>
+    <div class="mt-1 grid grid-cols-4 gap-1 text-sm">
+      <p>☐ Now</p><p>☐ This month</p><p>☐ Next season</p><p>☐ Planning</p>
+    </div>
+
+    <p class="mt-5 text-sm font-bold">6. Credit needed?</p>
+    <div class="mt-1 grid grid-cols-2 gap-1 text-sm">
+      <p>☐ No</p><p>☐ Yes — amount: ____________________</p>
+      <p>Guarantor name: ______________________________</p>
+      <p>Guarantor phone: _____________________________</p>
+      <p>Relationship: ☐ Family ☐ Clan ☐ SACCO ☐ Employer</p>
+    </div>
+
+    <p class="mt-5 text-sm font-bold">7. Consent</p>
+    <p class="mt-1 text-xs">☐ The visitor agrees that these details may be kept in the Busolya demand log and shared with a matching supplier, creditor or SACCO.</p>
+    <div class="mt-6 grid grid-cols-2 gap-6 text-xs">
+      <p>Visitor signature: ____________________________</p>
+      <p>Marshal signature: ___________________________</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="bg-[#2f1a0e] text-[#cdb9a5] no-print">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 py-12 md:grid-cols-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <img src="assets/mark.svg" alt="" class="h-11 w-11">
+        <span class="font-display text-base font-bold text-white">Bataka Agro Expo</span>
+      </div>
+      <p class="mt-3 text-sm">The annual fixture of the Busolya Agro Farmers network, 4–8 November.</p>
+    </div>
+    <div>
+      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Expo</h4>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li><a class="hover:text-gold" href="programme.html">Programme</a></li>
+        <li><a class="hover:text-gold" href="exhibitors.html">Exhibitors</a></li>
+        <li><a class="hover:text-gold" href="visit.html">Log a lead</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Network</h4>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li><a class="hover:text-gold" href="#" data-net="baf">Busolya Agro Farmers</a></li>
+        <li><a class="hover:text-gold" href="#" data-net="sacco">Abataka Mutindo SACCO</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Information desk</h4>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li>Open 4–8 November 2026</li>
+        <li>Printed forms, QR help, directory stand</li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-white/10">
+    <div class="mx-auto flex max-w-6xl flex-wrap justify-between gap-3 px-5 py-5 text-xs">
+      <p>© 2026 Bataka Agro Expo · Busolya Agro Farmers Ltd</p>
+      <p>Registry desk</p>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/network.js"></script>
+<script>
+(function () {
+  var KEYS = { demand: 'bae-demand', supply: 'bae-supply' };
+
+  /* ---------- tabs ---------- */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var panels = Array.prototype.slice.call(document.querySelectorAll('.panel'));
+  function show(name) {
+    panels.forEach(function (p) { p.classList.toggle('hidden', p.dataset.panel !== name); });
+    tabs.forEach(function (t) {
+      var on = t.dataset.tab === name;
+      t.className = 'tab rounded-full px-5 py-2.5 text-sm font-bold ' +
+        (on ? 'bg-bark text-white' : 'border-2 border-bark text-bark');
+    });
+    document.querySelectorAll('[data-panel="' + name + '"]').forEach(function (p) { p.classList.remove('hidden'); });
+    if (name === 'desk') renderDesk();
+    if (name === 'print') setQr();
+  }
+  tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.tab); }); });
+  show('demand');
+
+  /* ---------- storage helpers ---------- */
+  function read(key) {
+    try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { return []; }
+  }
+  function write(key, arr) {
+    try { localStorage.setItem(key, JSON.stringify(arr)); return true; } catch (e) { return false; }
+  }
+  function ref(prefix, n) { return prefix + '-' + String(n).padStart(4, '0'); }
+  function say(el, text, ok) {
+    el.textContent = text;
+    el.className = 'mt-4 rounded-lg border-l-4 px-4 py-3 text-sm ' +
+      (ok ? 'border-leaf bg-[#eef6ea] text-leafdark' : 'border-seal bg-[#fbeae6] text-[#8a2716]');
+  }
+
+  /* ---------- credit box ---------- */
+  var creditSel = document.getElementById('d-credit');
+  var creditBox = document.getElementById('d-creditBox');
+  creditSel.addEventListener('change', function () {
+    creditBox.classList.toggle('hidden', creditSel.value !== 'Yes');
+  });
+
+  /* ---------- demand submit ---------- */
+  var demandForm = document.getElementById('demandForm');
+  demandForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var msg = document.getElementById('demandMsg');
+    var need = ['d-name', 'd-phone', 'd-district', 'd-role', 'd-cat'];
+    var missing = need.filter(function (id) { return !document.getElementById(id).value.trim(); });
+    if (missing.length) { say(msg, 'Please fill the required fields (name, phone, district, who you are, what you came for).', false); return; }
+    if (!document.getElementById('d-consent').checked) { say(msg, 'The consent box must be ticked before the entry can be logged.', false); return; }
+
+    var arr = read(KEYS.demand);
+    var rec = {
+      ref: ref('BAE-D', arr.length + 1),
+      type: 'Demand',
+      name: document.getElementById('d-name').value.trim(),
+      phone: document.getElementById('d-phone').value.trim(),
+      district: document.getElementById('d-district').value.trim(),
+      role: document.getElementById('d-role').value,
+      category: document.getElementById('d-cat').value,
+      qty: document.getElementById('d-qty').value.trim(),
+      budget: document.getElementById('d-budget').value,
+      when: document.getElementById('d-when').value,
+      credit: creditSel.value,
+      amount: document.getElementById('d-amount').value.trim(),
+      guarantor: document.getElementById('d-gname').value.trim(),
+      guarantorPhone: document.getElementById('d-gphone').value.trim(),
+      relationship: document.getElementById('d-grel').value,
+      source: document.getElementById('d-source').value,
+      note: document.getElementById('d-note').value.trim(),
+      at: new Date().toISOString()
+    };
+    arr.push(rec);
+    if (!write(KEYS.demand, arr)) { say(msg, 'This browser blocked local storage. Use the printed form at the desk instead.', false); return; }
+    say(msg, 'Logged as ' + rec.ref + '. Keep that reference — the desk uses it to follow up.', true);
+    demandForm.reset();
+    creditBox.classList.add('hidden');
+  });
+
+  /* ---------- supply submit ---------- */
+  var supplyForm = document.getElementById('supplyForm');
+  supplyForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var msg = document.getElementById('supplyMsg');
+    var need = ['s-biz', 's-person', 's-phone', 's-cat', 's-offer'];
+    var missing = need.filter(function (id) { return !document.getElementById(id).value.trim(); });
+    if (missing.length) { say(msg, 'Business name, contact person, phone, sector and what you supply are all required.', false); return; }
+    if (!document.getElementById('s-consent').checked) { say(msg, 'Tick the consent box so the business can be listed and matched.', false); return; }
+
+    var arr = read(KEYS.supply);
+    var rec = {
+      ref: ref('BAE-S', arr.length + 1),
+      type: 'Supply',
+      name: document.getElementById('s-biz').value.trim(),
+      person: document.getElementById('s-person').value.trim(),
+      phone: document.getElementById('s-phone').value.trim(),
+      district: document.getElementById('s-district').value.trim(),
+      category: document.getElementById('s-cat').value,
+      offer: document.getElementById('s-offer').value.trim(),
+      listing: document.getElementById('s-listing').value,
+      creditTerms: document.getElementById('s-credit').value,
+      at: new Date().toISOString()
+    };
+    arr.push(rec);
+    if (!write(KEYS.supply, arr)) { say(msg, 'This browser blocked local storage. Use the printed form at the desk instead.', false); return; }
+    say(msg, 'Registered as ' + rec.ref + '. The directory desk will confirm the listing details.', true);
+    supplyForm.reset();
+  });
+
+  /* ---------- desk ---------- */
+  function renderDesk() {
+    var rows = document.getElementById('deskRows');
+    var all = read(KEYS.demand).concat(read(KEYS.supply));
+    rows.innerHTML = '';
+    all.forEach(function (r) {
+      var tr = document.createElement('tr');
+      var cells = [
+        r.ref, r.type, r.name, r.phone, r.district || '—',
+        r.type === 'Demand' ? (r.category + (r.qty ? ' · ' + r.qty : '')) : r.category,
+        r.type === 'Demand' ? (r.credit === 'Yes' ? 'Yes' + (r.amount ? ' · UGX ' + r.amount : '') : 'No') : r.creditTerms
+      ];
+      cells.forEach(function (c) {
+        var td = document.createElement('td');
+        td.className = 'px-3 py-2';
+        td.textContent = c;
+        tr.appendChild(td);
+      });
+      rows.appendChild(tr);
+    });
+    document.getElementById('deskCount').textContent =
+      read(KEYS.demand).length + ' demand entries · ' + read(KEYS.supply).length + ' supplier entries in this browser';
+  }
+
+  function csvCell(v) {
+    var s = String(v == null ? '' : v).replace(/"/g, '""');
+    return '"' + s + '"';
+  }
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    var rows = read(KEYS.demand).concat(read(KEYS.supply));
+    if (!rows.length) { alert('No entries in this browser yet.'); return; }
+    var cols = ['ref', 'type', 'name', 'person', 'phone', 'district', 'role', 'category', 'qty', 'budget', 'when', 'credit', 'amount', 'guarantor', 'guarantorPhone', 'relationship', 'source', 'offer', 'listing', 'creditTerms', 'note', 'at'];
+    var out = [cols.join(',')];
+    rows.forEach(function (r) { out.push(cols.map(function (c) { return csvCell(r[c]); }).join(',')); });
+    var blob = new Blob([out.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bataka-expo-register-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', function () {
+    if (!confirm('Clear all demand and supplier entries saved in this browser? Export first if you still need them.')) return;
+    localStorage.removeItem(KEYS.demand);
+    localStorage.removeItem(KEYS.supply);
+    renderDesk();
+  });
+
+  /* ---------- qr + print ---------- */
+  function setQr() {
+    var url = location.href.split('#')[0];
+    document.getElementById('qrUrl').textContent = url;
+  }
+  document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
+})();
+</script>
+</body>
+</html>

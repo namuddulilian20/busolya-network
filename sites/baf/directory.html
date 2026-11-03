@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Business directory — Busolya Agro Farmers Ltd</title>
+<meta name="description" content="The Busolya print and online business directory: exhibitors, service providers and agribusinesses in the Busolya Agro Farmers network.">
+<link rel="icon" href="assets/logo.jpg">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a', cream:'#fbf6ec', paper:'#fffdf8', leaf:'#2f7d32', leafdark:'#1f5523', seal:'#a8321e', gold:'#c68a2e', ink:'#2a1a10' }, fontFamily: { display:['Georgia','Times New Roman','serif'], body:['Segoe UI','system-ui','sans-serif'] } } } }
+</script>
+</head>
+<body class="bg-cream font-body text-ink antialiased">
+
+<div class="bg-bark text-[#f4e8d6]">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-2 text-xs tracking-wide">
+    <p><span class="text-gold">●</span> Bataka Agro Expo — 4 to 8 November 2026</p>
+    <p class="hidden sm:block">Buganda, Uganda</p>
+  </div>
+</div>
+
+<header class="sticky top-0 z-40 border-b border-[#e2d6c2] bg-cream/90 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-5 py-2.5">
+    <a href="index.html" class="flex shrink-0 items-center gap-3">
+      <img src="assets/logo.jpg" alt="Busolya Agro Farmers Ltd seal" class="h-12 w-12 rounded-full ring-2 ring-bark ring-offset-2 ring-offset-cream">
+      <span class="leading-tight">
+        <span class="block font-display text-[1.05rem] font-bold text-bark">Busolya Agro Farmers</span>
+        <span class="block text-[.66rem] uppercase tracking-[.18em] text-ink/55">Ltd · Buganda, Uganda</span>
+      </span>
+    </a>
+    <nav class="ml-auto w-full md:w-auto">
+      <ul class="flex flex-wrap items-center gap-1 text-sm font-semibold">
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="index.html">Home</a></li>
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="about.html">Abasolya &amp; Bataka</a></li>
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="programs.html">Programs</a></li>
+        <li><a class="rounded-full bg-bark px-3 py-2 text-white" href="directory.html">Directory</a></li>
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="blog.html">Blog</a></li>
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="bg-bark px-5 py-14 text-[#f6ecdd]">
+  <div class="mx-auto max-w-6xl">
+    <p class="text-[.72rem] font-bold uppercase tracking-[.18em] text-gold">Yellow pages</p>
+    <h1 class="mt-2 font-display text-4xl font-bold text-white">Busolya business directory</h1>
+    <p class="mt-3 max-w-2xl text-[#e8d9c4]">Exhibitors, distributors, farms, processors and service providers in the network. The printed edition travels to parish meetings and the expo gate; this online edition is the same register, kept current.</p>
+  </div>
+</section>
+
+<section class="px-5 py-12">
+  <div class="mx-auto max-w-6xl">
+    <div class="flex flex-wrap items-end gap-4 rounded-2xl border border-[#e2d6c2] bg-paper p-5">
+      <div class="min-w-[240px] flex-1">
+        <label for="q" class="block text-sm font-semibold text-bark">Search the directory</label>
+        <input id="q" type="search" placeholder="Business name or contact" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+      </div>
+      <div>
+        <label for="sector" class="block text-sm font-semibold text-bark">Sector</label>
+        <select id="sector" class="mt-1 rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+          <option value="">All sectors</option>
+          <option>Agro inputs</option>
+          <option>Farm / production</option>
+          <option>Distribution &amp; trade</option>
+          <option>Food, catering &amp; processing</option>
+          <option>Crafts &amp; cultural products</option>
+          <option>Health &amp; wellness</option>
+          <option>Community &amp; institutions</option>
+        </select>
+      </div>
+      <p id="count" class="ml-auto text-sm text-ink/60"></p>
+    </div>
+
+    <div class="mt-6 overflow-x-auto rounded-xl border border-[#e2d6c2]">
+      <table class="w-full min-w-[680px] border-collapse text-[.93rem]">
+        <thead class="bg-bark text-left text-[.72rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+          <tr>
+            <th class="px-4 py-3">Business / company</th>
+            <th class="px-4 py-3">Exhibitor contact</th>
+            <th class="px-4 py-3">Sector <span class="normal-case opacity-70">(provisional)</span></th>
+          </tr>
+        </thead>
+        <tbody id="rows" class="divide-y divide-[#e2d6c2] bg-paper">
+          <tr data-sector="Distribution &amp; trade"><td class="px-4 py-3 font-semibold text-bark">Kkabra Gold INRL</td><td class="px-4 py-3">Ssemirembe J. RON</td><td class="px-4 py-3"><span class="rounded-full bg-[#f7ecd6] px-2.5 py-1 text-xs font-semibold text-[#8a5a12]">Distribution &amp; trade</span></td></tr>
+          <tr data-sector="Agro inputs"><td class="px-4 py-3 font-semibold text-bark">Happy Dur / Tasma-Organic</td><td class="px-4 py-3">Okwad stell</td><td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">Agro inputs</span></td></tr>
+          <tr data-sector="Food, catering &amp; processing"><td class="px-4 py-3 font-semibold text-bark">Zukula catering services</td><td class="px-4 py-3">Namuddu Zikula</td><td class="px-4 py-3"><span class="rounded-full bg-[#f7e2dd] px-2.5 py-1 text-xs font-semibold text-[#8a2716]">Food &amp; catering</span></td></tr>
+          <tr data-sector="Distribution &amp; trade"><td class="px-4 py-3 font-semibold text-bark">Crocs Distributors</td><td class="px-4 py-3">Nehal Zubam</td><td class="px-4 py-3"><span class="rounded-full bg-[#f7ecd6] px-2.5 py-1 text-xs font-semibold text-[#8a5a12]">Distribution &amp; trade</span></td></tr>
+          <tr data-sector="Farm / production"><td class="px-4 py-3 font-semibold text-bark">Mukyunyu Umbrella Farm</td><td class="px-4 py-3">Mukyunyu</td><td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">Farm / production</span></td></tr>
+          <tr data-sector="Health &amp; wellness"><td class="px-4 py-3 font-semibold text-bark">Sky Dental Care and Dental Services</td><td class="px-4 py-3">Mbabazi Maliza</td><td class="px-4 py-3"><span class="rounded-full bg-[#e8eef5] px-2.5 py-1 text-xs font-semibold text-[#2b4a6b]">Health</span></td></tr>
+          <tr data-sector="Agro inputs"><td class="px-4 py-3 font-semibold text-bark">Kkata Agro Agri Chemicals and Supplies</td><td class="px-4 py-3">Kimbowa James</td><td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">Agro inputs</span></td></tr>
+          <tr data-sector="Health &amp; wellness"><td class="px-4 py-3 font-semibold text-bark">Global Fitness International</td><td class="px-4 py-3">Ali Rehan</td><td class="px-4 py-3"><span class="rounded-full bg-[#e8eef5] px-2.5 py-1 text-xs font-semibold text-[#2b4a6b]">Wellness</span></td></tr>
+          <tr data-sector="Farm / production"><td class="px-4 py-3 font-semibold text-bark">Muyinzi Tasubwa</td><td class="px-4 py-3">Muyizi Tasubwa</td><td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">Farm / production</span></td></tr>
+          <tr data-sector="Crafts &amp; cultural products"><td class="px-4 py-3 font-semibold text-bark">Jeus Loves You Art and Crafts</td><td class="px-4 py-3">Liz Bakyayita</td><td class="px-4 py-3"><span class="rounded-full bg-[#f3e9f7] px-2.5 py-1 text-xs font-semibold text-[#5b2d6b]">Crafts</span></td></tr>
+          <tr data-sector="Health &amp; wellness"><td class="px-4 py-3 font-semibold text-bark">Indian Neelambari (Herbal)</td><td class="px-4 py-3">Krishna Kumri</td><td class="px-4 py-3"><span class="rounded-full bg-[#e8eef5] px-2.5 py-1 text-xs font-semibold text-[#2b4a6b]">Herbal</span></td></tr>
+          <tr data-sector="Distribution &amp; trade"><td class="px-4 py-3 font-semibold text-bark">Abida Naisargi</td><td class="px-4 py-3">Abida</td><td class="px-4 py-3"><span class="rounded-full bg-[#f7ecd6] px-2.5 py-1 text-xs font-semibold text-[#8a5a12]">Trade</span></td></tr>
+          <tr data-sector="Distribution &amp; trade"><td class="px-4 py-3 font-semibold text-bark">Anika Overseas India</td><td class="px-4 py-3">Kabir Ahmad</td><td class="px-4 py-3"><span class="rounded-full bg-[#f7ecd6] px-2.5 py-1 text-xs font-semibold text-[#8a5a12]">Import / export</span></td></tr>
+          <tr data-sector="Food, catering &amp; processing"><td class="px-4 py-3 font-semibold text-bark">Jojo Catering and Ice Cream</td><td class="px-4 py-3">Nankunda Dhoreen</td><td class="px-4 py-3"><span class="rounded-full bg-[#f7e2dd] px-2.5 py-1 text-xs font-semibold text-[#8a2716]">Food &amp; catering</span></td></tr>
+          <tr data-sector="Community &amp; institutions"><td class="px-4 py-3 font-semibold text-bark">God's Favour</td><td class="px-4 py-3">Kabugo Rosemary</td><td class="px-4 py-3"><span class="rounded-full bg-[#eef0e6] px-2.5 py-1 text-xs font-semibold text-[#4a5a2b]">Community</span></td></tr>
+          <tr data-sector="Farm / production"><td class="px-4 py-3 font-semibold text-bark">Samuel Mbogo</td><td class="px-4 py-3">Samuel Mbogo</td><td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">Farm / production</span></td></tr>
+          <tr data-sector="Community &amp; institutions"><td class="px-4 py-3 font-semibold text-bark">Good Samaritan Hoima</td><td class="px-4 py-3">Kabugo Davis</td><td class="px-4 py-3"><span class="rounded-full bg-[#eef0e6] px-2.5 py-1 text-xs font-semibold text-[#4a5a2b]">Community</span></td></tr>
+          <tr data-sector="Farm / production"><td class="px-4 py-3 font-semibold text-bark">Gava Organic</td><td class="px-4 py-3">Gava Philip</td><td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">Organic</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="mt-4 text-sm text-ink/60">Entries are transcribed from the exhibitor register as submitted. Sector tags are provisional and are corrected when each business confirms its listing. Phone, email and location are added to a listing after the exhibitor verifies them.</p>
+
+    <div class="mt-10 grid gap-5 md:grid-cols-3">
+      <div class="rounded-2xl border border-[#e2d6c2] bg-paper p-6">
+        <h3 class="font-display text-lg font-bold text-bark">Basic listing</h3>
+        <p class="mt-2 text-sm text-ink/75">Name, contact, sector and district in the online directory and the print edition. Free for registered exhibitors.</p>
+      </div>
+      <div class="rounded-2xl border-2 border-leaf bg-paper p-6">
+        <span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-[.68rem] font-bold uppercase tracking-[.08em] text-leafdark">Most useful</span>
+        <h3 class="mt-2 font-display text-lg font-bold text-bark">Verified listing</h3>
+        <p class="mt-2 text-sm text-ink/75">Phone, email, location and opening hours verified; a link in the suppliers log; priority in matching for demand-log leads.</p>
+      </div>
+      <div class="rounded-2xl border border-[#e2d6c2] bg-paper p-6">
+        <h3 class="font-display text-lg font-bold text-bark">Featured category</h3>
+        <p class="mt-2 text-sm text-ink/75">Category placement in print, a feature slot online, and a banner on the expo site through the season. Rates on request.</p>
+      </div>
+    </div>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a href="contact.html" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Add or claim your business</a>
+      <a href="contact.html" class="rounded-full border-2 border-bark px-6 py-3 text-sm font-bold text-bark hover:bg-bark hover:text-white">Ask for print rates</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="bg-[#2f1a0e] text-[#cdb9a5]">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 py-12 md:grid-cols-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <img src="assets/logo.jpg" alt="" class="h-11 w-11 rounded-full">
+        <span class="font-display text-base font-bold text-white">Busolya Agro Farmers Ltd</span>
+      </div>
+      <p class="mt-3 text-sm">Obulimi n'Obulunzi Obwomulembe — farming and livestock excellence, organised.</p>
+    </div>
+    <div>
+      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Explore</h4>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li><a class="hover:text-gold" href="about.html">Abasolya &amp; Bataka</a></li>
+        <li><a class="hover:text-gold" href="programs.html">Programs</a></li>
+        <li><a class="hover:text-gold" href="directory.html">Directory</a></li>
+        <li><a class="hover:text-gold" href="blog.html">Blog</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Network</h4>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li><a class="hover:text-gold" href="#" data-net="bae">Bataka Agro Expo</a></li>
+        <li><a class="hover:text-gold" href="#" data-net="sacco">Abataka Mutindo SACCO</a></li>
+        <li><a class="hover:text-gold" href="programs.html#farmaid">Farm Aid</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Contact</h4>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li>Information desk, Bataka Agro Expo</li>
+        <li>4–8 November 2026</li>
+        <li><a class="hover:text-gold" href="contact.html">Send an enquiry</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-white/10">
+    <div class="mx-auto flex max-w-6xl flex-wrap justify-between gap-3 px-5 py-5 text-xs">
+      <p>© 2026 Busolya Agro Farmers Ltd</p>
+      <p>Bataka Agro Expo · 4–8 November</p>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/network.js"></script>
+<script>
+(function () {
+  var q = document.getElementById('q');
+  var sector = document.getElementById('sector');
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#rows tr'));
+  var count = document.getElementById('count');
+
+  function apply() {
+    var term = q.value.trim().toLowerCase();
+    var want = sector.value;
+    var shown = 0;
+    rows.forEach(function (row) {
+      var text = row.textContent.toLowerCase();
+      var ok = (!term || text.indexOf(term) > -1) && (!want || row.dataset.sector === want);
+      row.style.display = ok ? '' : 'none';
+      if (ok) shown++;
+    });
+    count.textContent = shown + ' of ' + rows.length + ' listings';
+  }
+
+  q.addEventListener('input', apply);
+  sector.addEventListener('change', apply);
+  apply();
+})();
+</script>
+</body>
+</html>

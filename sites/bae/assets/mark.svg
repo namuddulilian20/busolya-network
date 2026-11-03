@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Bataka Agro Expo mark">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4a2311"/>
+      <stop offset="1" stop-color="#1f5523"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="24" fill="url(#g)"/>
+  <path d="M60 20c14 8 22 20 22 34 0 18-10 32-22 46-12-14-22-28-22-46 0-14 8-26 22-34Z" fill="none" stroke="#c68a2e" stroke-width="3"/>
+  <path d="M60 34v50" stroke="#c68a2e" stroke-width="2" opacity=".7"/>
+  <path d="M38 46c8 2 14 6 18 12M82 46c-8 2-14 6-18 12" stroke="#fbf6ec" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="60" cy="60" r="5" fill="#c68a2e"/>
+  <path d="M30 96h60" stroke="#fbf6ec" stroke-width="2" opacity=".35"/>
+</svg>

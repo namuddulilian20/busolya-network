@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact &amp; registration — Busolya Agro Farmers Ltd</title>
+<meta name="description" content="Register as a supplier, offer land to Farm Aid, ask for a listing in the directory, or send a general enquiry to Busolya Agro Farmers Ltd.">
+<link rel="icon" href="assets/logo.jpg">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a', cream:'#fbf6ec', paper:'#fffdf8', leaf:'#2f7d32', leafdark:'#1f5523', seal:'#a8321e', gold:'#c68a2e', ink:'#2a1a10' }, fontFamily: { display:['Georgia','Times New Roman','serif'], body:['Segoe UI','system-ui','sans-serif'] } } } }
+</script>
+</head>
+<body class="bg-cream font-body text-ink antialiased">
+
+<div class="bg-bark text-[#f4e8d6]">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-2 text-xs tracking-wide">
+    <p><span class="text-gold">●</span> Bataka Agro Expo — 4 to 8 November 2026</p>
+    <p class="hidden sm:block">Buganda, Uganda</p>
+  </div>
+</div>
+
+<header class="sticky top-0 z-40 border-b border-[#e2d6c2] bg-cream/90 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-5 py-2.5">
+    <a href="index.html" class="flex shrink-0 items-center gap-3">
+      <img src="assets/logo.jpg" alt="Busolya Agro Farmers Ltd seal" class="h-12 w-12 rounded-full ring-2 ring-bark ring-offset-2 ring-offset-cream">
+      <span class="leading-tight">
+        <span class="block font-display text-[1.05rem] font-bold text-bark">Busolya Agro Farmers</span>
+        <span class="block text-[.66rem] uppercase tracking-[.18em] text-ink/55">Ltd · Buganda, Uganda</span>
+      </span>
+    </a>
+    <nav class="ml-auto w-full md:w-auto">
+      <ul class="flex flex-wrap items-center gap-1 text-sm font-semibold">
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="index.html">Home</a></li>
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="about.html">Abasolya &amp; Bataka</a></li>
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="programs.html">Programs</a></li>
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="directory.html">Directory</a></li>
+        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="blog.html">Blog</a></li>
+        <li><a class="rounded-full bg-bark px-3 py-2 text-white" href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="bg-bark px-5 py-14 text-[#f6ecdd]">
+  <div class="mx-auto max-w-6xl">
+    <p class="text-[.72rem] font-bold uppercase tracking-[.18em] text-gold">Get into the log</p>
+    <h1 class="mt-2 font-display text-4xl font-bold text-white">Register, list, or offer land</h1>
+    <p class="mt-3 max-w-2xl text-[#e8d9c4]">One form, four jobs: a supplier or service provider joining the suppliers log, a business claiming a directory listing, a land holder offering dormant land to Farm Aid, or a general enquiry.</p>
+  </div>
+</section>
+
+<section class="px-5 py-12">
+  <div class="mx-auto grid max-w-6xl gap-8 md:grid-cols-[1.15fr_.85fr]">
+
+    <form id="reg" class="rounded-2xl border border-[#e2d6c2] bg-paper p-7" novalidate>
+      <h2 class="font-display text-2xl font-bold text-bark">Registration &amp; enquiry</h2>
+      <p class="mt-1 text-sm text-ink/60">Fields marked * are required.</p>
+
+      <div class="mt-5 grid gap-4 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-semibold text-bark" for="name">Full name *</label>
+          <input id="name" name="name" required class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-bark" for="phone">Phone (WhatsApp) *</label>
+          <input id="phone" name="phone" inputmode="tel" placeholder="07xx xxx xxx" required class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-bark" for="district">District / town</label>
+          <input id="district" name="district" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-semibold text-bark" for="reason">I am writing as *</label>
+          <select id="reason" name="reason" required class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
+            <option value="">Choose one</option>
+            <option>A supplier or service provider joining the suppliers log</option>
+            <option>An exhibitor claiming a directory listing</option>
+            <option>A business applying for a featured listing</option>
+            <option>A land holder offering dormant land to Farm Aid</option>
+            <option>A farmer who wants to manage a farm</option>
+            <option>A buyer with an order to place</option>
+            <option>A guarantor or creditor</option>
+            <option>Media, partnership or general enquiry</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-semibold text-bark" for="detail">Details *</label>
+          <textarea id="detail" name="detail" rows="5" required placeholder="What you supply, how much, where, and when. For land: location, approximate size and current use." class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20"></textarea>
+        </div>
+      </div>
+
+      <label class="mt-4 flex items-start gap-3 text-sm">
+        <input type="checkbox" id="consent" required class="mt-1 h-4 w-4 rounded border-[#e2d6c2]">
+        <span>I agree that these details may be kept in the Busolya suppliers log or demand log and used to match me with buyers, suppliers or credit.</span>
+      </label>
+
+      <p id="msg" class="mt-4 hidden rounded-lg border-l-4 border-leaf bg-[#eef6ea] px-4 py-3 text-sm text-leafdark"></p>
+
+      <div class="mt-5 flex flex-wrap gap-3">
+        <button type="submit" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Save registration</button>
+        <button type="button" id="printBtn" class="rounded-full border-2 border-bark px-6 py-3 text-sm font-bold text-bark hover:bg-bark hover:text-white">Print / save as PDF</button>
+      </div>
+      <p class="mt-3 text-xs text-ink/55">This page stores the entry in this browser and prints a signed record. Submitting it to the register happens when the backend is connected; the printed copy is accepted at the expo information desk.</p>
+    </form>
+
+    <aside class="space-y-5">
+      <div class="rounded-2xl bg-bark p-6 text-[#f2e6d5]">
+        <h3 class="font-display text-lg font-bold text-white">At the expo</h3>
+        <p class="mt-2 text-sm text-[#d9c8b4]">Information desk, Bataka Agro Expo, 4–8 November 2026. Printed objective forms are filled at the desk; exhibitor marshals log leads at the stand.</p>
+      </div>
+      <div class="rounded-2xl border border-[#e2d6c2] bg-paper p-6">
+        <h3 class="font-display text-lg font-bold text-bark">Direct lines</h3>
+        <p class="mt-2 text-sm text-ink/70">Official telephone, email and office address are being confirmed with the company and will be listed on this page. Until they are, use this form or the desk.</p>
+        <p class="mt-3 text-sm"><strong>Directory listings:</strong> bring your business name, contact person, phone, district and what you supply.</p>
+      </div>
+      <div class="rounded-2xl border border-[#e2d6c2] bg-paper p-6">
+        <h3 class="font-display text-lg font-bold text-bark">Elsewhere in the network</h3>
+        <ul class="mt-2 space-y-2 text-sm">
+          <li><a class="font-semibold text-leafdark underline" href="#" data-net="bae">Bataka Agro Expo — programme &amp; exhibitors</a></li>
+          <li><a class="font-semibold text-leafdark underline" href="#" data-net="sacco">Abataka Mutindo SACCO — savings &amp; credit</a></li>
+        </ul>
+      </div>
+    </aside>
+
+  </div>
+</section>
+</main>
+
+<footer class="bg-[#2f1a0e] text-[#cdb9a5]">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 py-12 md:grid-cols-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <img src="assets/logo.jpg" alt="" class="h-11 w-11 rounded-full">
+        <span class="font-display text-base font-bold text-white">Busolya Agro Farmers Ltd</span>
+      </div>
+      <p class="mt-3 text-sm">Obulimi n'Obulunzi Obwomulembe — farming and livestock excellence, organised.</p>
+    </div>
+    <div>
+      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Explore</h4>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li><a class="hover:text-gold" href="about.html">Abasolya &amp; Bataka</a></li>
+        <li><a class="hover:text-gold" href="programs.html">Programs</a></li>
+        <li><a class="hover:text-gold" href="directory.html">Directory</a></li>
+        <li><a class="hover:text-gold" href="blog.html">Blog</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Network</h4>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li><a class="hover:text-gold" href="#" data-net="bae">Bataka Agro Expo</a></li>
+        <li><a class="hover:text-gold" href="#" data-net="sacco">Abataka Mutindo SACCO</a></li>
+        <li><a class="hover:text-gold" href="programs.html#farmaid">Farm Aid</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Contact</h4>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li>Information desk, Bataka Agro Expo</li>
+        <li>4–8 November 2026</li>
+        <li><a class="hover:text-gold" href="contact.html">Send an enquiry</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-white/10">
+    <div class="mx-auto flex max-w-6xl flex-wrap justify-between gap-3 px-5 py-5 text-xs">
+      <p>© 2026 Busolya Agro Farmers Ltd</p>
+      <p>Bataka Agro Expo · 4–8 November</p>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/network.js"></script>
+<script>
+(function () {
+  var form = document.getElementById('reg');
+  var msg = document.getElementById('msg');
+
+  function collect() {
+    return {
+      name: document.getElementById('name').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      district: document.getElementById('district').value.trim(),
+      reason: document.getElementById('reason').value,
+      detail: document.getElementById('detail').value.trim(),
+      savedAt: new Date().toISOString()
+    };
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var required = ['name', 'phone', 'reason', 'detail'];
+    var missing = required.filter(function (id) { return !document.getElementById(id).value.trim(); });
+    if (missing.length || !document.getElementById('consent').checked) {
+      msg.textContent = 'Please complete the required fields and tick the consent box.';
+      msg.className = 'mt-4 rounded-lg border-l-4 border-seal bg-[#fbeae6] px-4 py-3 text-sm text-[#8a2716]';
+      return;
+    }
+    var entry = collect();
+    try {
+      var key = 'baf-registrations';
+      var all = JSON.parse(localStorage.getItem(key) || '[]');
+      all.push(entry);
+      localStorage.setItem(key, JSON.stringify(all));
+      msg.textContent = 'Saved on this device (' + all.length + ' registration' + (all.length === 1 ? '' : 's') + ' on record). Print it and hand it in at the desk.';
+      msg.className = 'mt-4 rounded-lg border-l-4 border-leaf bg-[#eef6ea] px-4 py-3 text-sm text-leafdark';
+    } catch (err) {
+      msg.textContent = 'This browser blocked local storage. Use Print / save as PDF instead.';
+      msg.className = 'mt-4 rounded-lg border-l-4 border-seal bg-[#fbeae6] px-4 py-3 text-sm text-[#8a2716]';
+    }
+    form.reset();
+  });
+
+  document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# Busolya network — static sites on Render
+# Three static services, one repo. Every push to the connected branch redeploys
+# the changed service. There is no build step: the HTML, CSS and JS are final.
+
+services:
+  - type: web
+    name: busolya-agro-farmers
+    runtime: static
+    staticPublishPath: ./sites/baf
+    autoDeploy: true
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=86400
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+
+  - type: web
+    name: bataka-agro-expo
+    runtime: static
+    staticPublishPath: ./sites/bae
+    autoDeploy: true
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=86400
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+
+  - type: web
+    name: abataka-mutindo-sacco
+    runtime: static
+    staticPublishPath: ./sites/mutindo
+    autoDeploy: true
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=86400
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
