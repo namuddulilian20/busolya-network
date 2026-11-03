@@ -1160,11 +1160,11 @@ app.get('/api/demand/stock', async (req, res, next) => {
     const params = [];
     const conditions = [];
     if (productId) {
-      conditions.push('ds.product_id = ${params.length + 1}');
+      conditions.push('ds.product_id = ' + (params.length + 1) + '');
       params.push(productId);
     }
     if (supplierId) {
-      conditions.push('sp.supplier_id = ${params.length + 1}');
+      conditions.push('sp.supplier_id = ' + (params.length + 1) + '');
       params.push(supplierId);
     }
     if (conditions.length) sql += ' where ' + conditions.join(' and ');
@@ -1172,7 +1172,7 @@ app.get('/api/demand/stock', async (req, res, next) => {
     const r = await db.query(sql, params);
     return res.json({ ok: true, stock: r.rows });
   } catch (err) { next(err); }
-}); — link a supplier product to a demand submission
+}); // — link a supplier product to a demand submission
 app.post('/api/demand/stock', requireSupplier, rateLimit, async (req, res, next) => {
   try {
     const b = req.body || {};
