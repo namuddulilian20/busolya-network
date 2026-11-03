@@ -1282,6 +1282,30 @@ app.post('/api/sacco/members', requireAdminOrEmployee, rateLimit, async (req, re
   } catch (err) { next(err); }
 });
 
+// ---------- SACCO guarantors ----------
+
+app.get('/api/sacco/guarantors', requireSupplier, async (req, res, next) => {
+  try {
+    const guarantorId = req.query.guarantor_id;
+    let sql = `
+      select sg.*, sm.member_no, p.name as member_name, p.phone as member_phone,
+             g.name as guarantor_name, g.phone as guarantor_phone
+      from sacco_guarantors sg
+      join sacco_members sm on sm.id = sg.member_id
+      join participants p on p.id = sm.user_id
+      join participants g on g.id = sg.guarantor_id
+    `;
+    const params = [];
+    if (guarantorId) {
+      sql += ' where sg.guarantor_id = $' + (params.length + 1);
+      params.push(guarantorId);
+    }
+    sql += ' order by sg.created_at desc limit 500';
+    const r = await db.query(sql, params);
+    return res.json({ ok: true, guarantors: r.rows });
+  } catch (err) { next(err); }
+});
+
 // ---------- SACCO transactions ----------
 
 app.get('/api/sacco/transactions', requireAdminOrEmployee, async (req, res, next) => {

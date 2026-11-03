@@ -237,7 +237,8 @@ tailwind.config = {
   }
 
   function loadProducts() {
-    fetch(API + '/api/suppliers/products', { credentials: 'include' })
+    var url = API + '/api/suppliers/products' + (me ? '?supplier_id=' + me.id : '');
+    fetch(url, { credentials: 'include' })
       .then(function (r) { return r.json(); })
       .then(function (d) { renderProducts(d.products || []); })
       .catch(function () {});
@@ -330,8 +331,8 @@ tailwind.config = {
   }
   function shareStore(platform) {
     var name = document.getElementById('supplierName').textContent || 'Supplier Store';
-    var pageUrl = location.origin + location.pathname;
-    var text = name + '\n' + pageUrl;
+    var pageUrl = location.origin + location.pathname + (me ? '?supplier=' + me.id : '');
+    var text = name + '\nMy stall · ' + pageUrl;
     if (platform === 'wa') shareWhatsApp(text);
     else shareTelegram(text, pageUrl);
   }
