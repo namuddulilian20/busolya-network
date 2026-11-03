@@ -225,6 +225,22 @@
         '<ul class="flex flex-wrap items-center gap-1" id="hdr-nav-list">' + navItems + '</ul>' +
       '</nav>' +
 
+      /* Cross-site network links in mobile nav */
+      '<div class="md:hidden border-t border-[#e2d6c2]/40 mt-3 pt-3 space-y-1 text-xs">' +
+        '<span class="font-bold uppercase tracking-[.14em] text-ink/40 pl-1 block mb-1">Network</span>' +
+        '<a href="https://busolya-agro-farmers.onrender.com" data-net="baf" class="block hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Busolya Farmers</a>' +
+        '<a href="https://bataka-agro-expo.onrender.com" data-net="bae" class="block hover:bg-[#fae8e5] px-2 py-1 rounded transition-colors">Bataka Expo</a>' +
+        '<a href="https://abataka-mutindo-sacco.onrender.com" data-net="sacco" class="block hover:bg-[#fbe9e7] px-2 py-1 rounded transition-colors">Mutindo SACCO</a>' +
+      '</div>' +
+
+      /* Cross-site network links — always visible */
+      '<div class="hidden md:flex items-center gap-3 text-xs border-l border-[#e2d6c2]/40 pl-3" id="hdr-network">' +
+        '<span class="font-bold uppercase tracking-[.14em] text-ink/40">Network</span>' +
+        '<a href="https://busolya-agro-farmers.onrender.com" data-net="baf" class="hover:text-leaf transition-colors">Busolya Farmers</a>' +
+        '<a href="https://bataka-agro-expo.onrender.com" data-net="bae" class="hover:text-seal transition-colors">Bataka Expo</a>' +
+        '<a href="https://abataka-mutindo-sacco.onrender.com" data-net="sacco" class="hover:text-maroon transition-colors">Mutindo SACCO</a>' +
+      '</div>' +
+
       /* Auth cluster */
       '<div class="hidden md:flex items-center gap-2 shrink-0" id="hdr-auth">' +
 
