@@ -160,3 +160,34 @@ create table if not exists settings (
   value      jsonb not null,
   updated_at timestamptz not null default now()
 );
+
+-- ---------- supplier & participant authentication (idempotent) ----------
+-- Add auth columns to suppliers if they don't exist yet.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'suppliers' AND column_name = 'password_hash'
+  ) THEN
+    ALTER TABLE suppliers ADD COLUMN password_hash text;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'suppliers' AND column_name = 'email'
+  ) THEN
+    ALTER TABLE suppliers ADD COLUMN email text;
+  END IF;
+END $$;
+
+create table if not exists participants (
+  id          bigserial primary key,
+  phone       text unique not null,
+  name        text,
+  role        text not null default 'customer'
+              check (role in ('supplier','member','customer','employee')),
+  district    text,
+  org         text,
+  password_hash text,
+  created_at  timestamptz not null default now()
+);
+create index if not exists participants_phone_idx on participants (phone);

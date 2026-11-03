@@ -332,6 +332,176 @@ app.post('/api/contact', rateLimit, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ---------- supplier & participant auth ----------
+
+const SUPPLIER_COOKIE = 'bsl_supplier';
+
+function hashPwd(password) {
+  return crypto.createHash('sha256').update(String(password)).digest('hex');
+}
+
+function signSupplier(payload) {
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const mac = crypto.createHmac('sha256', SESSION_SECRET).update(body).digest('base64url');
+  return `${body}.${mac}`;
+}
+
+function verifySupplier(token) {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return null;
+  const [body, mac] = token.split('.');
+  const expected = crypto.createHmac('sha256', SESSION_SECRET).update(body).digest('base64url');
+  const a = Buffer.from(mac || '');
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!payload || typeof payload.exp !== 'number' || payload.exp < Date.now()) return null;
+    return payload;
+  } catch (err) { return null; }
+}
+
+function readSupplierCookie(req) {
+  const header = req.headers.cookie || '';
+  const out = {};
+  header.split(';').forEach((part) => {
+    const i = part.indexOf('=');
+    if (i > 0) out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
+  });
+  return out[SUPPLIER_COOKIE];
+}
+
+function requireSupplier(req, res, next) {
+  const payload = verifySupplier(readSupplierCookie(req));
+  if (!payload) {
+    if (req.path.startsWith('/api/')) return res.status(401).json({ ok: false, error: 'supplier login required' });
+    return res.redirect('/supplier/login');
+  }
+  req.supplier = payload;
+  return next();
+}
+
+// POST /api/auth/register — idempotent by phone (supplier, member, customer, employee)
+app.post('/api/auth/register', rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const phone = clean(b.phone, 40);
+    const name = clean(b.name, 120);
+    const role = b.role && ['supplier','member','customer','employee'].includes(b.role) ? b.role : 'customer';
+    const district = clean(b.district, 80);
+    const org = clean(b.org, 160);
+    const password = String(b.password || '');
+    if (!phoneOk(phone)) return res.status(400).json({ ok: false, error: 'a valid phone number is required' });
+    if (!password) return res.status(400).json({ ok: false, error: 'password is required' });
+    const existing = await db.query('select id, role from participants where phone = $1', [phone]);
+    if (existing.rows.length) {
+      await db.query(
+        `update participants set name = coalesce($2, name), role = coalesce($3, role),
+          district = coalesce($4, district), org = coalesce($5, org)
+         where phone = $1`,
+        [phone, name || undefined, role, district || undefined, org || undefined]
+      );
+      const row = existing.rows[0];
+      return res.json({ ok: true, id: row.id, phone, role: row.role, created: false });
+    }
+    const insert = await db.query(
+      `insert into participants (phone, name, role, district, org, password_hash)
+       values ($1,$2,$3,$4,$5,$6) returning id, phone, role, created_at`,
+      [phone, name, role, district, org, hashPwd(password)]
+    );
+    return res.status(201).json({ ok: true, ...insert.rows[0], created: true });
+  } catch (err) { next(err); }
+});
+
+// POST /api/auth/login — phone + password; sets supplier session cookie
+app.post('/api/auth/login', rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const phone = clean(b.phone, 40);
+    const password = String(b.password || '');
+    const role = b.role && ['supplier','member','customer','employee'].includes(b.role) ? b.role : null;
+    if (!phoneOk(phone) || !password) {
+      return res.status(400).json({ ok: false, error: 'phone and password are required' });
+    }
+    let row = null;
+    let kind = 'participant';
+    if (role === 'supplier' || !role) {
+      const s = await db.query('select id, business as name, phone, password_hash, org from suppliers where phone = $1', [phone]);
+      if (s.rows.length) { row = s.rows[0]; kind = 'supplier'; }
+    }
+    if (!row && (!role || role !== 'supplier')) {
+      const p = await db.query('select id, name, phone, password_hash, role, org from participants where phone = $1', [phone]);
+      if (p.rows.length) { row = p.rows[0]; kind = 'participant'; }
+    }
+    if (!row || !row.password_hash || row.password_hash !== hashPwd(password)) {
+      return res.status(401).json({ ok: false, error: 'invalid phone or password' });
+    }
+    const payload = { u: kind === 'supplier' ? 's' : 'p', id: row.id, phone, role: kind === 'supplier' ? 'supplier' : (row.role || 'customer'), exp: Date.now() + SESSION_HOURS * 3600 * 1000 };
+    res.cookie(SUPPLIER_COOKIE, signSupplier(payload), {
+      httpOnly: true, sameSite: 'lax', secure: req.secure, maxAge: SESSION_HOURS * 3600 * 1000
+    });
+    return res.json({ ok: true, id: row.id, phone, role: payload.role, kind });
+  } catch (err) { next(err); }
+});
+
+// POST /api/auth/logout
+app.post('/api/auth/logout', async (req, res) => {
+  res.clearCookie(SUPPLIER_COOKIE);
+  return res.json({ ok: true });
+});
+
+// GET /api/auth/me
+app.get('/api/auth/me', async (req, res) => {
+  const payload = verifySupplier(readSupplierCookie(req));
+  if (!payload) return res.status(401).json({ ok: false, error: 'not logged in' });
+  return res.json({ ok: true, ...payload });
+});
+
+// POST /api/supplier/product — logged-in supplier adds a product/service (becomes a supply lead)
+app.post('/api/supplier/product', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const name = clean(b.name, 160);
+    const category = clean(b.category, 80);
+    const offer = clean(b.offer || b.description, 1200);
+    const capacity = clean(b.capacity, 200);
+    const price_band = clean(b.price_band, 120);
+    const district = clean(b.district, 80);
+    const phone = clean(b.phone || req.supplier.phone, 40);
+    if (!name || !offer) return res.status(400).json({ ok: false, error: 'product/service name and offer are required' });
+
+    await db.query(
+      `insert into suppliers (business, contact, phone, district, category, offer, capacity, price_band, listing_optin, credit_terms, status)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,true,'', 'new')
+       on conflict (phone) do update set
+         business = coalesce(excluded.business, suppliers.business),
+         contact = coalesce(excluded.contact, suppliers.contact),
+         district = coalesce(excluded.district, suppliers.district),
+         category = coalesce(excluded.category, suppliers.category),
+         offer = coalesce(excluded.offer, suppliers.offer),
+         capacity = coalesce(excluded.capacity, suppliers.capacity),
+         price_band = coalesce(excluded.price_band, suppliers.price_band)`,
+      [name, name, phone, district, category, offer, capacity, price_band]
+    );
+
+    const refRow = await db.query("select count(*)::int as n from submissions where kind = 'supply'");
+    const ref = 'BAE-S-' + String(Number(refRow.rows[0].n) + 1).padStart(4, '0');
+    await db.query(
+      `insert into submissions (ref, kind, event, name, phone, email, district, org, role, category, payload, answers, consent, status, source, created_at)
+       values ($1,'supply','bae-2026',$2,$3,$4,$5,$6,'supplier',$7,$8,$9,true,'new','supplier-portal',now())`,
+      [ref, name, phone, clean(b.email, 160), district, name, category,
+       JSON.stringify({ offer, capacity, price_band, creditTerms: b.creditTerms || '' }),
+       JSON.stringify({ category, capacity, price_band })
+    ]);
+    await db.query(
+      `insert into visitors (name, phone, district, role, org)
+       values ($1,$2,$3,'supplier',$4)
+       on conflict (phone) do update set last_seen = now(), visits = visitors.visits + 1`,
+      [name, phone, district, name]
+    );
+    return res.status(201).json({ ok: true, ref });
+  } catch (err) { next(err); }
+});
+
 // ---------- admin ----------
 
 app.get('/admin/login', (req, res) => {
