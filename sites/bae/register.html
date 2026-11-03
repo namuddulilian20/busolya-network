@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-site="bae">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Register — Busolya Agro Farmers Ltd</title>
+<meta name="description" content="Register as a supplier, SACCO member, employee or customer. One account across the network.">
+<link rel="icon" href="assets/logo.jpg">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: { colors: {
+    bark:'#4a2311', cream:'#fbf6ec', paper:'#fffdf8',
+    leaf:'#2f7d32', leafdark:'#1f5523', seal:'#a8321e', ink:'#2a1a10'
+  }, fontFamily: { display:['Georgia','Times New Roman','serif'], body:['Segoe UI','system-ui','sans-serif'] } } }
+}
+</script>
+<style type="text/tailwindcss">
+  @layer base { body { @apply bg-cream text-ink font-body antialiased; } }
+</style>
+</head>
+<body>
+<div id="header-placeholder"></div>
+
+<main class="mx-auto max-w-lg px-5 py-10">
+  <div class="rounded-2xl border border-[#e2d6c2] bg-paper p-8 shadow-lg">
+    <div class="mb-7 text-center">
+      <img src="assets/mark.svg" alt="" class="mx-auto mb-4 h-16 w-16 rounded-full ring-2 ring-bark">
+      <h1 class="font-display text-2xl font-bold text-bark">Create your account</h1>
+      <p class="mt-1 text-sm text-ink/60">Register once — your record follows you across the network.</p>
+    </div>
+
+    <form id="regForm" novalidate class="space-y-4">
+      <div>
+        <label class="mb-1 block text-sm font-semibold text-bark">Full name <span class="text-seal">*</span></label>
+        <input id="regName" type="text" required autocomplete="name"
+          class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+          placeholder="e.g. Namatovu Sarah">
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-bark">Phone <span class="text-seal">*</span></label>
+          <input id="regPhone" type="tel" required autocomplete="tel"
+            class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+            placeholder="+256 700 000 000">
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-bark">Email</label>
+          <input id="regEmail" type="email" autocomplete="email"
+            class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+            placeholder="optional">
+        </div>
+      </div>
+      <div>
+        <label class="mb-1 block text-sm font-semibold text-bark">I am a <span class="text-seal">*</span></label>
+        <select id="regRole"
+          class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+          onchange="toggleSupplierFields()">
+          <option value="customer">Customer — I buy products or services</option>
+          <option value="member">SACCO member — savings, shares, credit</option>
+          <option value="supplier">Supplier — I sell products or services</option>
+          <option value="employee">Employee — I work for Busolya</option>
+        </select>
+      </div>
+
+      <!-- Supplier-specific fields -->
+      <div id="supplierFields" class="hidden space-y-4 rounded-xl border border-[#e2d6c2] bg-cream p-4">
+        <p class="text-xs font-bold uppercase tracking-[.12em] text-bark">Business details (added to the directory)</p>
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-bark">Business name <span class="text-seal">*</span></label>
+          <input id="regOrg" type="text"
+            class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+            placeholder="e.g. Nakato Organic Farms">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Sector / category</label>
+            <input id="regSector" type="text"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="e.g. Agro inputs">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">District</label>
+            <input id="regDistrict" type="text"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="e.g. Wakiso">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-semibold text-bark">Password <span class="text-seal">*</span></label>
+        <input id="regPassword" type="password" required minlength="6" autocomplete="new-password"
+          class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+          placeholder="Minimum 6 characters">
+      </div>
+
+      <button type="submit"
+        class="w-full rounded-full bg-leaf px-5 py-3 text-sm font-bold text-white hover:bg-leafdark transition">
+        Create account
+      </button>
+    </form>
+
+    <div id="regMsg" class="mt-3 hidden rounded-lg px-4 py-3 text-sm"></div>
+
+    <p class="mt-5 border-t border-[#e2d6c2] pt-4 text-center text-sm text-ink/55">
+      Already registered? <a href="login.html" class="font-medium text-leafdark hover:underline">Sign in</a>
+    </p>
+  </div>
+</main>
+
+<div id="footer-placeholder"></div>
+<script src="assets/network.js"></script>
+<script src="../shared/components.js"></script>
+<script>
+(function () {
+  'use strict';
+  var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+    ? '' : 'https://busolya-api.onrender.com';
+
+  var form = document.getElementById('regForm');
+  var msg  = document.getElementById('regMsg');
+
+  window.toggleSupplierFields = function () {
+    var role = document.getElementById('regRole').value;
+    document.getElementById('supplierFields').classList.toggle('hidden', role !== 'supplier');
+    document.getElementById('regOrg').required = (role === 'supplier');
+  };
+
+  function showMsg(text, type) {
+    msg.className = 'mt-3 rounded-lg px-4 py-3 text-sm ' +
+      (type === 'ok'  ? 'bg-[#e6efe0] text-leafdark border border-leaf/30' :
+       type === 'err' ? 'bg-[#fbe9e7] text-seal border border-seal/30' : 'hidden');
+    msg.textContent = text;
+    msg.classList.remove('hidden');
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var role     = document.getElementById('regRole').value;
+    var password = document.getElementById('regPassword').value;
+    if (password.length < 6) { showMsg('Password must be at least 6 characters.', 'err'); return; }
+
+    var body = {
+      name:     document.getElementById('regName').value.trim(),
+      phone:    document.getElementById('regPhone').value.trim(),
+      email:    document.getElementById('regEmail').value.trim() || undefined,
+      role:     role,
+      password: password
+    };
+    if (role === 'supplier') {
+      body.org      = document.getElementById('regOrg').value.trim();
+      body.sector   = document.getElementById('regSector').value.trim() || undefined;
+      body.district = document.getElementById('regDistrict').value.trim() || undefined;
+    }
+    if (!body.name || !body.phone) { showMsg('Name and phone are required.', 'err'); return; }
+
+    fetch(API + '/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
+    .then(function (r) {
+      if (!r.ok) { showMsg(r.data.error || 'Registration failed.', 'err'); return; }
+      showMsg(r.data.message || 'Account created. Redirecting to sign in…', 'ok');
+      setTimeout(function () { location.href = 'login.html'; }, 1800);
+    })
+    .catch(function () { showMsg('Could not reach the server.', 'err'); });
+  });
+})();
+</script>
+</body>
+</html>

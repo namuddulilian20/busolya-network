@@ -1,5 +1,6 @@
 'use strict';
 
+require('dotenv').config();
 const crypto = require('crypto');
 const express = require('express');
 const db = require('./db');
@@ -380,66 +381,126 @@ function requireSupplier(req, res, next) {
   return next();
 }
 
-// POST /api/auth/register — idempotent by phone (supplier, member, customer, employee)
+// POST /api/auth/register — idempotent by phone; also accepts email.
+// If the role is 'supplier', auto-creates / updates a directory_entries row
+// so the business yellow-pages data is collected on self-registration.
 app.post('/api/auth/register', rateLimit, async (req, res, next) => {
   try {
     const b = req.body || {};
     const phone = clean(b.phone, 40);
+    const email = clean(b.email, 160);
     const name = clean(b.name, 120);
     const role = b.role && ['supplier','member','customer','employee'].includes(b.role) ? b.role : 'customer';
     const district = clean(b.district, 80);
     const org = clean(b.org, 160);
+    const sector = clean(b.sector, 80);
     const password = String(b.password || '');
-    if (!phoneOk(phone)) return res.status(400).json({ ok: false, error: 'a valid phone number is required' });
-    if (!password) return res.status(400).json({ ok: false, error: 'password is required' });
+
+    if (!phoneOk(phone)) return res.status(400).json({ ok: false, error: 'a valid phone number (9–15 digits) is required' });
+    if (!name) return res.status(400).json({ ok: false, error: 'full name is required' });
+    if (password.length < 6) return res.status(400).json({ ok: false, error: 'password must be at least 6 characters' });
+
+    // Idempotent: upsert by phone
     const existing = await db.query('select id, role from participants where phone = $1', [phone]);
+    let participantId, isNew;
     if (existing.rows.length) {
       await db.query(
-        `update participants set name = coalesce($2, name), role = coalesce($3, role),
-          district = coalesce($4, district), org = coalesce($5, org)
+        `update participants set
+           name = coalesce($2, name),
+           email = coalesce(nullif($3,''), email),
+           role = $4,
+           district = coalesce(nullif($5,''), district),
+           org = coalesce(nullif($6,''), org),
+           password_hash = $7
          where phone = $1`,
-        [phone, name || undefined, role, district || undefined, org || undefined]
+        [phone, name, email || null, role, district || null, org || null, hashPwd(password)]
       );
-      const row = existing.rows[0];
-      return res.json({ ok: true, id: row.id, phone, role: row.role, created: false });
+      participantId = existing.rows[0].id;
+      isNew = false;
+    } else {
+      const ins = await db.query(
+        `insert into participants (phone, email, name, role, district, org, password_hash)
+         values ($1,$2,$3,$4,$5,$6,$7) returning id`,
+        [phone, email || null, name, role, district || null, org || null, hashPwd(password)]
+      );
+      participantId = ins.rows[0].id;
+      isNew = true;
     }
-    const insert = await db.query(
-      `insert into participants (phone, name, role, district, org, password_hash)
-       values ($1,$2,$3,$4,$5,$6) returning id, phone, role, created_at`,
-      [phone, name, role, district, org, hashPwd(password)]
-    );
-    return res.status(201).json({ ok: true, ...insert.rows[0], created: true });
+
+    // For suppliers: auto-populate the business directory (yellow pages)
+    if (role === 'supplier' && org) {
+      const dirExisting = await db.query(
+        'select id from directory_entries where phone = $1 limit 1', [phone]
+      );
+      if (!dirExisting.rows.length) {
+        await db.query(
+          `insert into directory_entries (name, sector, phone, email, district, verified)
+           values ($1,$2,$3,$4,$5,false)`,
+          [org, sector || null, phone, email || null, district || null]
+        );
+      } else {
+        await db.query(
+          `update directory_entries set
+             name = coalesce(nullif($2,''), name),
+             sector = coalesce(nullif($3,''), sector),
+             email = coalesce(nullif($4,''), email),
+             district = coalesce(nullif($5,''), district)
+           where phone = $1`,
+          [phone, org, sector || null, email || null, district || null]
+        );
+      }
+    }
+
+    return res.status(isNew ? 201 : 200).json({
+      ok: true,
+      id: participantId,
+      phone,
+      role,
+      created: isNew,
+      message: isNew ? 'Account created. You can now sign in.' : 'Account updated.'
+    });
   } catch (err) { next(err); }
 });
 
-// POST /api/auth/login — phone + password; sets supplier session cookie
+// POST /api/auth/login — accepts phone OR email as login_id; sets session cookie
 app.post('/api/auth/login', rateLimit, async (req, res, next) => {
   try {
     const b = req.body || {};
-    const phone = clean(b.phone, 40);
+    // Accept login_id (email or phone) sent by the client login forms, or explicit phone/email
+    const loginId = clean(b.login_id || b.phone || b.email, 160);
     const password = String(b.password || '');
-    const role = b.role && ['supplier','member','customer','employee'].includes(b.role) ? b.role : null;
-    if (!phoneOk(phone) || !password) {
-      return res.status(400).json({ ok: false, error: 'phone and password are required' });
+    if (!loginId || !password) {
+      return res.status(400).json({ ok: false, error: 'login identifier and password are required' });
     }
-    let row = null;
-    let kind = 'participant';
-    // Participants table holds every registered actor (supplier, member, customer, employee)
-    const p = await db.query('select id, name, phone, password_hash, role, org from participants where phone = $1', [phone]);
-    if (p.rows.length) { row = p.rows[0]; kind = 'participant'; }
-    // Fall back to legacy supplier rows (created via supply submissions) that may not have a participant record
+    const isEmail = loginId.includes('@');
+    const col = isEmail ? 'email' : 'phone';
+    const p = await db.query(
+      `select id, name, phone, email, password_hash, role, org from participants where ${col} = $1`,
+      [loginId]
+    );
+    let row = p.rows[0] || null;
+    // Fallback: legacy supplier rows created via supply submissions
     if (!row) {
-      const s = await db.query('select id, business as name, phone, password_hash, org from suppliers where phone = $1', [phone]);
-      if (s.rows.length) { row = s.rows[0]; kind = 'supplier'; }
+      const s = await db.query(
+        `select id, business as name, phone, password_hash, 'supplier' as role, business as org from suppliers where phone = $1`,
+        [loginId]
+      );
+      row = s.rows[0] || null;
     }
     if (!row || !row.password_hash || row.password_hash !== hashPwd(password)) {
-      return res.status(401).json({ ok: false, error: 'invalid phone or password' });
+      return res.status(401).json({ ok: false, error: 'invalid credentials' });
     }
-    const payload = { u: kind === 'supplier' ? 's' : 'p', id: row.id, phone, role: kind === 'supplier' ? 'supplier' : (row.role || 'customer'), exp: Date.now() + SESSION_HOURS * 3600 * 1000 };
+    const payload = {
+      id: row.id,
+      phone: row.phone || loginId,
+      name: row.name || '',
+      role: row.role || 'customer',
+      exp: Date.now() + SESSION_HOURS * 3600 * 1000
+    };
     res.cookie(SUPPLIER_COOKIE, signSupplier(payload), {
       httpOnly: true, sameSite: 'lax', secure: req.secure, maxAge: SESSION_HOURS * 3600 * 1000
     });
-    return res.json({ ok: true, id: row.id, phone, role: payload.role, kind });
+    return res.json({ ok: true, id: row.id, phone: row.phone || loginId, name: row.name, role: payload.role });
   } catch (err) { next(err); }
 });
 
@@ -501,6 +562,15 @@ app.post('/api/supplier/product', requireSupplier, rateLimit, async (req, res, n
     return res.status(201).json({ ok: true, ref });
   } catch (err) { next(err); }
 });
+
+// ---------- static sites (local dev — in production Render serves these separately) ----------
+
+const path = require('path');
+app.use('/baf', express.static(path.join(__dirname, '..', 'sites', 'baf')));
+app.use('/bae', express.static(path.join(__dirname, '..', 'sites', 'bae')));
+app.use('/mutindo', express.static(path.join(__dirname, '..', 'sites', 'mutindo')));
+app.use('/shared', express.static(path.join(__dirname, '..', 'sites', 'shared')));
+app.get('/', (req, res) => res.redirect('/baf/index.html'));
 
 // ---------- admin ----------
 
@@ -692,8 +762,16 @@ app.post('/admin/questions/:id', async (req, res, next) => {
 
 app.get('/admin/subjects', async (req, res, next) => {
   try {
-    const r = await db.query('select * from subjects order by code');
-    res.type('html').send(ui.subjectsPage({ subjects: r.rows }));
+    const subjects = await db.query('select * from subjects order by code');
+    const topics = await db.query(`
+      select et.*, s.title as subject_title, s.code as subject_code
+      from education_topics et join subjects s on s.id = et.subject_id
+      order by s.code, et.sort_order`);
+    const notes = await db.query(`
+      select en.*, et.code as topic_code, et.title as topic_title
+      from education_notes en join education_topics et on et.id = en.topic_id
+      order by et.code, en.locale`);
+    res.type('html').send(ui.subjectsPage({ subjects: subjects.rows, topics: topics.rows, notes: notes.rows }));
   } catch (err) { next(err); }
 });
 
@@ -717,6 +795,60 @@ app.post('/admin/subjects/:id/toggle', async (req, res, next) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).send('bad id');
     await db.query('update subjects set active = $1 where id = $2', [bool(req.body.active), id]);
+    return res.redirect('/admin/subjects');
+  } catch (err) { next(err); }
+});
+
+// Add/edit education topic
+app.post('/admin/topics', async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const subject_id = Number(b.subject_id);
+    const code = clean(b.code, 20);
+    const title = clean(b.title, 160);
+    const summary = clean(b.summary, 400);
+    const level = clean(b.level, 30) || 'foundation';
+    const sort_order = Number(b.sort_order) || 0;
+    if (!Number.isInteger(subject_id) || !code || !title) return res.status(400).send('subject, code and title required');
+    await db.query(
+      `insert into education_topics (subject_id, code, title, summary, level, sort_order)
+       values ($1,$2,$3,$4,$5,$6)
+       on conflict (subject_id, code) do update set title=excluded.title, summary=excluded.summary, level=excluded.level, sort_order=excluded.sort_order`,
+      [subject_id, code, title, summary, level, sort_order]
+    );
+    return res.redirect('/admin/subjects');
+  } catch (err) { next(err); }
+});
+
+// Add education note
+app.post('/admin/notes', async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const topic_code = clean(b.topic_code, 40);
+    const title = clean(b.title, 160);
+    const content = clean(b.content, 10000);
+    const locale = clean(b.locale || 'en', 10);
+    const format = clean(b.format || 'text', 20);
+    const price_ugx = Number(b.price_ugx) || 5000;
+    const presentation = bool(b.presentation);
+    if (!topic_code || !title || !content) return res.status(400).send('topic, title and content required');
+    const t = await db.query('select id from education_topics where code = $1', [topic_code]);
+    if (!t.rows.length) return res.status(400).send('topic code not found');
+    await db.query(
+      `insert into education_notes (topic_id, title, content, locale, format, price_ugx, presentation)
+       values ($1,$2,$3,$4,$5,$6,$7)`,
+      [t.rows[0].id, title, content, locale, format, price_ugx, presentation]
+    );
+    return res.redirect('/admin/subjects');
+  } catch (err) { next(err); }
+});
+
+// Toggle note active/inactive
+app.post('/admin/notes/:id/toggle', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).send('bad id');
+    await db.query('update education_notes set active = $1 where id = $2', [bool(req.body.active), id]);
     return res.redirect('/admin/subjects');
   } catch (err) { next(err); }
 });
@@ -765,7 +897,608 @@ app.post('/admin/networks/:id/members', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ---------- exports ----------
+// ---------- participants (users) ----------
+
+// Auth guard for the users list — only admins / employees
+function requireAdminOrEmployee (req, res, next) {
+  const payload = verifySupplier(readSupplierCookie(req));
+  if (!payload) return res.status(401).json({ ok: false, error: 'sign in required' });
+  if (!['admin','employee'].includes(payload.role)) return res.status(403).json({ ok: false, error: 'forbidden' });
+  req.operator = payload;
+  return next();
+}
+
+app.get('/api/users', requireAdminOrEmployee, async (req, res, next) => {
+  try {
+    const role = clean(req.query.role, 20);
+    const params = [];
+    let sql = 'select id, phone, email, name, role, district, org, created_at from participants';
+    if (role && ['supplier','member','customer','employee'].includes(role)) {
+      params.push(role);
+      sql += ' where role = $1';
+    }
+    sql += ' order by id desc limit 500';
+    const r = await db.query(sql, params);
+    return res.json({ ok: true, users: r.rows });
+  } catch (err) { next(err); }
+});
+
+// POST /api/users — admin creates a participant directly (e.g. quick counter registration)
+app.post('/api/users', requireAdminOrEmployee, rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const phone = clean(b.phone, 40);
+    const name = clean(b.name, 120);
+    const role = b.role && ['supplier','member','customer','employee'].includes(b.role) ? b.role : 'customer';
+    const district = clean(b.district, 80);
+    const org = clean(b.org, 160);
+    const email = clean(b.email, 160);
+    const password = String(b.password || (phone ? phone.slice(-6) : 'changeme'));
+
+    if (!phoneOk(phone)) return res.status(400).json({ ok: false, error: 'valid phone required' });
+    if (!name) return res.status(400).json({ ok: false, error: 'name required' });
+
+    const r = await db.query(
+      `insert into participants (phone, email, name, role, district, org, password_hash)
+       values ($1,$2,$3,$4,$5,$6,$7)
+       on conflict (phone) do update set
+         name = excluded.name,
+         email = coalesce(excluded.email, participants.email),
+         role = excluded.role,
+         district = coalesce(excluded.district, participants.district),
+         org = coalesce(excluded.org, participants.org)
+       returning id, phone, name, role, created_at`,
+      [phone, email || null, name, role, district || null, org || null, hashPwd(password)]
+    );
+    return res.status(201).json({ ok: true, user: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// ---------- supplier products ----------
+
+app.get('/api/suppliers/products', async (req, res, next) => {
+  try {
+    const r = await db.query('select * from supplier_products order by created_at desc limit 500');
+    return res.json({ ok: true, products: r.rows });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/suppliers/products', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const title = clean(b.title || b.name, 160);
+    const category = clean(b.category, 80);
+    const unit = clean(b.unit, 40);
+    const price = Number(b.price || b.price_ugx) || 0;
+    const quantity_stock = Number(b.quantity_stock || b.stock_qty) || 0;
+    const description = clean(b.description, 800);
+    const location = clean(b.location, 160);
+    const district = clean(b.district, 80);
+    if (!title) return res.status(400).json({ ok: false, error: 'product title is required' });
+    const r = await db.query(
+      `insert into supplier_products (supplier_id, title, category, unit, price, quantity_stock, description, location, district)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning *`,
+      [req.supplier.id, title, category, unit, price, quantity_stock, description, location, district]
+    );
+    return res.status(201).json({ ok: true, product: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+app.patch('/api/suppliers/products/:id', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ ok: false, error: 'bad id' });
+    const b = req.body || {};
+    const sets = [];
+    const params = [];
+    let idx = 1;
+    const fields = { title: b.title, category: b.category, unit: b.unit, price: b.price, quantity_stock: b.quantity_stock, description: b.description, location: b.location, district: b.district };
+    for (const [k, v] of Object.entries(fields)) {
+      if (v === undefined) continue;
+      if (k === 'price' || k === 'quantity_stock') params.push(Number(v) || 0);
+      else params.push(clean(String(v), k === 'description' ? 800 : 160));
+      sets.push(`${k} = $${idx}`);
+      idx += 1;
+    }
+    if (!sets.length) return res.status(400).json({ ok: false, error: 'nothing to update' });
+    params.push(id, req.supplier.id);
+    const r = await db.query(
+      `update supplier_products set ${sets.join(', ')}, updated_at = now() where id = $${idx} and supplier_id = $${idx + 1} returning *`,
+      params
+    );
+    if (!r.rows.length) return res.status(404).json({ ok: false, error: 'product not found' });
+    return res.json({ ok: true, product: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+app.delete('/api/suppliers/products/:id', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ ok: false, error: 'bad id' });
+    const r = await db.query('delete from supplier_products where id = $1 and supplier_id = $2 returning *', [id, req.supplier.id]);
+    if (!r.rows.length) return res.status(404).json({ ok: false, error: 'product not found' });
+    return res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// ---------- education topics & notes ----------
+
+app.get('/api/education/topics', async (req, res, next) => {
+  try {
+    const r = await db.query(`select et.id, et.code, et.title, et.summary, et.level, et.sort_order, s.title as subject_title
+      from education_topics et join subjects s on s.id = et.subject_id order by s.code, et.sort_order`);
+    return res.json({ ok: true, topics: r.rows });
+  } catch (err) { next(err); }
+});
+
+app.get('/api/education/notes', async (req, res, next) => {
+  try {
+    const topicId = Number(req.query.topic_id) || null;
+    const locale = clean(req.query.locale, 20) || 'en';
+    const params = [locale];
+    let sql = `select en.id, en.topic_id, et.code as topic_code, et.title as topic_title,
+                en.title, en.content, en.format, en.price_ugx, en.locale, en.presentation, en.active
+      from education_notes en
+      join education_topics et on et.id = en.topic_id
+      where en.locale = $1 and en.active`;
+    if (topicId) { params.push(topicId); sql += ` and en.topic_id = $${params.length}`; }
+    sql += ` order by et.sort_order, en.id`;
+    const r = await db.query(sql, params);
+    return res.json({ ok: true, notes: r.rows });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/education/notes', requireAdminOrEmployee, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const topic_code = clean(b.topic_code, 40);
+    const title = clean(b.title, 160);
+    const content = clean(b.content, 5000);
+    const locale = clean(b.locale || 'en', 10);
+    const format = clean(b.format || 'text', 20);
+    const price_ugx = Number(b.price_ugx) || 5000;
+    if (!topic_code || !title || !content) return res.status(400).json({ ok: false, error: 'topic_code, title and content are required' });
+    const t = await db.query('select id from education_topics where code = $1 limit 1', [topic_code]);
+    if (!t.rows.length) return res.status(400).json({ ok: false, error: 'topic code not found' });
+    const r = await db.query(
+      `insert into education_notes (topic_id, title, content, locale, format, price_ugx)
+       values ($1,$2,$3,$4,$5,$6) returning *`,
+      [t.rows[0].id, title, content, locale, format, price_ugx]
+    );
+    return res.status(201).json({ ok: true, note: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// ---------- presentations ----------
+
+app.post('/api/education/presentations', requireAdminOrEmployee, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const note_id = Number(b.note_id);
+    const title = clean(b.title, 160);
+    const slides = Array.isArray(b.slides) ? b.slides : [];
+    const locale = clean(b.locale || 'lug', 10);
+    const price_ugx = Number(b.price_ugx) || 5000;
+    if (!Number.isInteger(note_id) || !title) return res.status(400).json({ ok: false, error: 'note_id and title are required' });
+    const n = await db.query('select id from education_notes where id = $1', [note_id]);
+    if (!n.rows.length) return res.status(404).json({ ok: false, error: 'note not found' });
+    const r = await db.query(
+      `insert into education_presentations (note_id, title, slides, locale, price_ugx)
+       values ($1,$2,$3::jsonb,$4,$5) returning *`,
+      [note_id, title, JSON.stringify(slides), locale, price_ugx]
+    );
+    return res.status(201).json({ ok: true, presentation: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+app.get('/api/education/presentations', async (req, res, next) => {
+  try {
+    const topicId = Number(req.query.topic_id) || null;
+    const locale = clean(req.query.locale, 20) || 'lug';
+    const params = [locale];
+    let sql = `select ep.id, ep.note_id, ep.title, ep.slides, ep.locale, ep.price_ugx, ep.active,
+                en.topic_id, et.code as topic_code, et.title as topic_title
+      from education_presentations ep
+      join education_notes en on en.id = ep.note_id
+      join education_topics et on et.id = en.topic_id
+      where ep.locale = $1 and ep.active`;
+    if (topicId) { params.push(topicId); sql += ` and en.topic_id = $${params.length}`; }
+    sql += ` order by et.sort_order, ep.id`;
+    const r = await db.query(sql, params);
+    return res.json({ ok: true, presentations: r.rows });
+  } catch (err) { next(err); }
+});
+
+// ---------- shares ----------
+
+app.post('/api/education/shares', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const noteId = Number(b.note_id);
+    const amount_ugx = Number(b.amount_ugx) || 5000;
+    const participantId = req.supplier.id;
+    if (!Number.isInteger(noteId)) return res.status(400).json({ ok: false, error: 'note_id is required' });
+    const n = await db.query('select id, price_ugx from education_notes where id = $1 and active', [noteId]);
+    if (!n.rows.length) return res.status(404).json({ ok: false, error: 'note not found' });
+    // Idempotent: one share record per user per note
+    const existing = await db.query(
+      'select id from education_shares where note_id = $1 and participant_id = $2',
+      [noteId, participantId]
+    );
+    if (existing.rows.length) {
+      return res.json({ ok: true, already_shared: true });
+    }
+    await db.query(
+      `insert into education_shares (note_id, participant_id, amount_ugx) values ($1,$2,$3)`,
+      [noteId, participantId, amount_ugx]
+    );
+    return res.status(201).json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// ---------- demand stock ----------
+
+app.get('/api/demand/stock', async (req, res, next) => {
+  try {
+    const r = await db.query(`
+      select ds.*, sp.title as product_title, sp.category, sp.district,
+             sub.name as demand_name, sub.phone as demand_phone
+      from demand_stock ds
+      left join supplier_products sp on sp.id = ds.product_id
+      left join submissions sub on sub.id = ds.submission_id
+      order by ds.created_at desc limit 500`);
+    return res.json({ ok: true, stock: r.rows });
+  } catch (err) { next(err); }
+});
+
+// POST /api/demand/stock — link a supplier product to a demand submission
+app.post('/api/demand/stock', requireAdminOrEmployee, rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const product_id = Number(b.product_id) || null;
+    const submission_id = Number(b.submission_id) || null;
+    const quantity = Number(b.quantity) || 0;
+    if (!product_id && !submission_id) return res.status(400).json({ ok: false, error: 'product_id or submission_id required' });
+    const r = await db.query(
+      `insert into demand_stock (product_id, submission_id, quantity, status) values ($1,$2,$3,'pending') returning *`,
+      [product_id, submission_id, quantity]
+    );
+    return res.status(201).json({ ok: true, entry: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// ---------- SACCO members ----------
+
+app.get('/api/sacco/members', requireAdminOrEmployee, async (req, res, next) => {
+  try {
+    const r = await db.query(`
+      select sm.*, p.name, p.phone, p.email, p.district
+      from sacco_members sm
+      join participants p on p.id = sm.user_id
+      order by sm.joined_at desc limit 500`);
+    return res.json({ ok: true, members: r.rows });
+  } catch (err) { next(err); }
+});
+
+// Quick SACCO membership processing — creates participant + member in one call
+app.post('/api/sacco/quick-register', rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const phone = clean(b.phone, 40);
+    const name = clean(b.name, 120);
+    const district = clean(b.district, 80);
+    const shares = Number(b.shares) || 0;
+    const savings = Number(b.savings) || 0;
+    const password = String(b.password || (phone ? phone.slice(-6) : ''));
+
+    if (!phoneOk(phone)) return res.status(400).json({ ok: false, error: 'valid phone required' });
+    if (!name) return res.status(400).json({ ok: false, error: 'name required' });
+    if (password.length < 6) return res.status(400).json({ ok: false, error: 'password must be at least 6 characters' });
+
+    // Idempotent participant upsert
+    let participantId;
+    const existing = await db.query('select id from participants where phone = $1', [phone]);
+    if (existing.rows.length) {
+      participantId = existing.rows[0].id;
+      await db.query(
+        `update participants set name = $2, role = 'member', district = coalesce(nullif($3,''), district) where id = $1`,
+        [participantId, name, district || null]
+      );
+    } else {
+      const ins = await db.query(
+        `insert into participants (phone, name, role, district, password_hash)
+         values ($1,$2,'member',$3,$4) returning id`,
+        [phone, name, district || null, hashPwd(password)]
+      );
+      participantId = ins.rows[0].id;
+    }
+
+    // Idempotent SACCO member
+    const memExisting = await db.query('select id, member_no from sacco_members where user_id = $1', [participantId]);
+    if (memExisting.rows.length) {
+      return res.json({ ok: true, member_no: memExisting.rows[0].member_no, created: false });
+    }
+
+    // Generate member number: AMS-YYYY-NNNN
+    const count = await db.query("select count(*)::int as n from sacco_members");
+    const member_no = 'AMS-' + new Date().getFullYear() + '-' + String(Number(count.rows[0].n) + 1).padStart(4, '0');
+
+    const m = await db.query(
+      `insert into sacco_members (user_id, member_no, shares, savings)
+       values ($1,$2,$3,$4) returning member_no, joined_at`,
+      [participantId, member_no, shares, savings]
+    );
+
+    if (shares > 0) {
+      await db.query(
+        `insert into sacco_transactions (member_id, type, amount, balance_after, narr, created_at)
+         select sm.id, 'share_purchase', $2, $2, 'Opening shares', now()
+         from sacco_members sm where sm.user_id = $1`,
+        [participantId, shares]
+      );
+    }
+    if (savings > 0) {
+      await db.query(
+        `insert into sacco_transactions (member_id, type, amount, balance_after, narr, created_at)
+         select sm.id, 'deposit', $2, $2, 'Opening deposit', now()
+         from sacco_members sm where sm.user_id = $1`,
+        [participantId, savings]
+      );
+    }
+
+    return res.status(201).json({ ok: true, member_no: m.rows[0].member_no, joined_at: m.rows[0].joined_at, created: true });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/sacco/members', requireAdminOrEmployee, rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const user_id = Number(b.user_id);
+    const shares = Number(b.shares) || 0;
+    const savings = Number(b.savings) || 0;
+    const status = clean(b.status, 20) || 'active';
+    if (!Number.isInteger(user_id)) return res.status(400).json({ ok: false, error: 'user_id is required' });
+    if (!['active','suspended','closed'].includes(status)) return res.status(400).json({ ok: false, error: 'invalid status' });
+    const memExisting = await db.query('select id, member_no from sacco_members where user_id = $1', [user_id]);
+    if (memExisting.rows.length) {
+      return res.status(409).json({ ok: false, error: 'member already registered', member_no: memExisting.rows[0].member_no });
+    }
+    const count = await db.query("select count(*)::int as n from sacco_members");
+    const member_no = 'AMS-' + new Date().getFullYear() + '-' + String(Number(count.rows[0].n) + 1).padStart(4, '0');
+    const r = await db.query(
+      `insert into sacco_members (user_id, member_no, shares, savings, status)
+       values ($1,$2,$3,$4,$5) returning *`,
+      [user_id, member_no, shares, savings, status]
+    );
+    return res.status(201).json({ ok: true, member: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// ---------- SACCO transactions ----------
+
+app.get('/api/sacco/transactions', requireAdminOrEmployee, async (req, res, next) => {
+  try {
+    const member_id = Number(req.query.member_id) || null;
+    let sql = 'select * from sacco_transactions';
+    const params = [];
+    if (member_id) { params.push(member_id); sql += ` where member_id = $${params.length}`; }
+    sql += ' order by created_at desc limit 500';
+    const r = await db.query(sql, params);
+    return res.json({ ok: true, transactions: r.rows });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/sacco/transactions', requireAdminOrEmployee, rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const member_id = Number(b.member_id);
+    const type = b.type;
+    const amount = Number(b.amount) || 0;
+    const reference = clean(b.reference, 100);
+    const narr = clean(b.narr, 300);
+    const created_by = Number(b.created_by) || null;
+    if (!Number.isInteger(member_id) || !['deposit','withdrawal','payout','credit','repayment','share_purchase'].includes(type)) {
+      return res.status(400).json({ ok: false, error: 'valid member and type required' });
+    }
+    if (!amount || amount <= 0) return res.status(400).json({ ok: false, error: 'amount must be positive' });
+    const m = await db.query('select shares, savings from sacco_members where id = $1', [member_id]);
+    if (!m.rows.length) return res.status(404).json({ ok: false, error: 'member not found' });
+    const cur = Number(m.rows[0].shares) + Number(m.rows[0].savings);
+    let balance_after = cur;
+    if (type === 'deposit' || type === 'share_purchase' || type === 'credit') balance_after = cur + amount;
+    if (type === 'withdrawal' || type === 'payout' || type === 'repayment') balance_after = Math.max(0, cur - amount);
+    await db.query(
+      `update sacco_members set shares = $1, savings = $2 where id = $3`,
+      [type === 'share_purchase' ? balance_after : Number(m.rows[0].shares), type === 'deposit' ? balance_after : Number(m.rows[0].savings), member_id]
+    );
+    const r = await db.query(
+      `insert into sacco_transactions (member_id, type, amount, balance_after, reference, narr, created_by)
+       values ($1,$2,$3,$4,$5,$6,$7) returning *`,
+      [member_id, type, amount, balance_after, reference, narr, created_by]
+    );
+    return res.status(201).json({ ok: true, tx: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// ---------- Farm-Aid roles ----------
+
+app.get('/api/farm-aid/roles', async (req, res, next) => {
+  try {
+    const r = await db.query('select * from farm_aid_roles order by role_code, location_level, location_name');
+    return res.json({ ok: true, roles: r.rows });
+  } catch (err) { next(err); }
+});
+
+// ---------- Farm-Aid reports ----------
+
+app.get('/api/farm-aid/reports', async (req, res, next) => {
+  try {
+    const r = await db.query('select * from farm_aid_reports order by submitted_at desc limit 500');
+    return res.json({ ok: true, reports: r.rows });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/farm-aid/reports', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const reporter_id = Number(b.reporter_id);
+    const report_type = clean(b.report_type, 80);
+    const compartment = b.compartment && ['busolya','butaka'].includes(b.compartment) ? b.compartment : 'busolya';
+    const ssaza = clean(b.ssaza, 80);
+    const ssiga = clean(b.ssiga, 80);
+    const mutuba = clean(b.mutuba, 80);
+    const parish = clean(b.parish, 80);
+    const village = clean(b.village, 80);
+    const clan_name = clean(b.clan_name, 80);
+    const content = clean(b.content, 4000);
+    if (!Number.isInteger(reporter_id) || !report_type || !content) {
+      return res.status(400).json({ ok: false, error: 'reporter_id, report_type and content are required' });
+    }
+    if (!['land_register','transaction','inventory','payment','dispute','verification','quality'].includes(report_type)) {
+      return res.status(400).json({ ok: false, error: 'invalid report_type' });
+    }
+    await db.query(
+      `insert into farm_aid_reports (reporter_id, report_type, compartment, ssaza, ssiga, mutuba, parish, village, clan_name, content)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [reporter_id, report_type, compartment, ssaza, ssiga, mutuba, parish, village, clan_name, JSON.stringify({ content })]
+    );
+    return res.status(201).json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// ---------- server-side SACCO admin ----------
+
+app.get('/admin/sacco', async (req, res, next) => {
+  try {
+    const members = await db.query(`
+      select sm.*, p.name, p.phone, p.email, p.district
+      from sacco_members sm join participants p on p.id = sm.user_id
+      order by sm.joined_at desc limit 500`);
+    const transactions = await db.query(`
+      select st.*, sm.member_no, p.name
+      from sacco_transactions st
+      join sacco_members sm on sm.id = st.member_id
+      join participants p on p.id = sm.user_id
+      order by st.created_at desc limit 300`);
+    const creditors = await db.query('select * from sacco_creditors order by created_at desc limit 200');
+    const guarantors = await db.query('select * from sacco_guarantors order by created_at desc limit 200');
+    res.type('html').send(ui.saccoPage({
+      members: members.rows,
+      transactions: transactions.rows,
+      creditors: creditors.rows,
+      guarantors: guarantors.rows
+    }));
+  } catch (err) { next(err); }
+});
+
+app.post('/admin/sacco/register', async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const phone = clean(b.phone, 40);
+    const name  = clean(b.name, 120);
+    const district = clean(b.district, 80);
+    const shares = Number(b.shares) || 0;
+    const savings = Number(b.savings) || 0;
+    const password = String(b.password || '').trim() || (phone ? phone.slice(-6) : 'changeme');
+    if (!phoneOk(phone) || !name) return res.status(400).send('name and phone required');
+
+    let participantId;
+    const existing = await db.query('select id from participants where phone = $1', [phone]);
+    if (existing.rows.length) {
+      participantId = existing.rows[0].id;
+      await db.query(`update participants set name=$2, role='member', district=coalesce(nullif($3,''),district) where id=$1`,
+        [participantId, name, district || null]);
+    } else {
+      const ins = await db.query(
+        `insert into participants (phone, name, role, district, password_hash) values ($1,$2,'member',$3,$4) returning id`,
+        [phone, name, district || null, hashPwd(password)]
+      );
+      participantId = ins.rows[0].id;
+    }
+    const memExisting = await db.query('select id, member_no from sacco_members where user_id = $1', [participantId]);
+    if (memExisting.rows.length) return res.redirect('/admin/sacco?msg=already_member:' + encodeURIComponent(memExisting.rows[0].member_no));
+
+    const count = await db.query("select count(*)::int as n from sacco_members");
+    const member_no = 'AMS-' + new Date().getFullYear() + '-' + String(Number(count.rows[0].n) + 1).padStart(4, '0');
+    await db.query(`insert into sacco_members (user_id, member_no, shares, savings) values ($1,$2,$3,$4)`,
+      [participantId, member_no, shares, savings]);
+
+    if (shares > 0) await db.query(
+      `insert into sacco_transactions (member_id, type, amount, balance_after, narr)
+       select sm.id, 'share_purchase', $2, $2, 'Opening shares'
+       from sacco_members sm where sm.user_id = $1`,
+      [participantId, shares]);
+    if (savings > 0) await db.query(
+      `insert into sacco_transactions (member_id, type, amount, balance_after, narr)
+       select sm.id, 'deposit', $2, $2, 'Opening deposit'
+       from sacco_members sm where sm.user_id = $1`,
+      [participantId, savings]);
+
+    return res.redirect('/admin/sacco');
+  } catch (err) { next(err); }
+});
+
+app.post('/admin/sacco/transaction', async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const member_no = clean(b.member_no, 40);
+    const type = b.type;
+    const amount = Number(b.amount) || 0;
+    const reference = clean(b.reference, 100);
+    const narr = clean(b.narr, 300);
+    if (!member_no || !type || amount <= 0) return res.status(400).send('member no., type and positive amount required');
+    if (!['deposit','withdrawal','payout','credit','repayment','share_purchase'].includes(type)) return res.status(400).send('invalid type');
+
+    const m = await db.query('select id, shares, savings from sacco_members where member_no = $1', [member_no]);
+    if (!m.rows.length) return res.status(400).send('member not found: ' + member_no);
+    const mem = m.rows[0];
+    const cur = Number(mem.shares) + Number(mem.savings);
+    let balance_after = cur;
+    if (['deposit','credit','share_purchase'].includes(type)) balance_after = cur + amount;
+    if (['withdrawal','payout','repayment'].includes(type)) balance_after = Math.max(0, cur - amount);
+
+    if (type === 'share_purchase') {
+      await db.query('update sacco_members set shares = shares + $1 where id = $2', [amount, mem.id]);
+    } else if (type === 'deposit' || type === 'credit') {
+      await db.query('update sacco_members set savings = savings + $1 where id = $2', [amount, mem.id]);
+    } else {
+      await db.query('update sacco_members set savings = greatest(0, savings - $1) where id = $2', [amount, mem.id]);
+    }
+    await db.query(
+      `insert into sacco_transactions (member_id, type, amount, balance_after, reference, narr)
+       values ($1,$2,$3,$4,$5,$6)`,
+      [mem.id, type, amount, balance_after, reference, narr]
+    );
+    return res.redirect('/admin/sacco');
+  } catch (err) { next(err); }
+});
+
+// ---------- server-side Farm Aid admin ----------
+
+app.get('/admin/farmaid', async (req, res, next) => {
+  try {
+    const roles = await db.query(`
+      select far.*, p.name, p.phone
+      from farm_aid_roles far
+      join participants p on p.id = far.user_id
+      order by far.role_code, far.location_level, far.location_name`);
+    const reports = await db.query(
+      'select * from farm_aid_reports order by submitted_at desc limit 500');
+    res.type('html').send(ui.farmAidPage({ roles: roles.rows, reports: reports.rows }));
+  } catch (err) { next(err); }
+});
+
+app.post('/admin/farmaid/status', async (req, res, next) => {
+  try {
+    const id = Number(req.body.report_id);
+    const status = clean(req.body.status, 20);
+    if (!Number.isInteger(id) || !['pending','reviewed','cleared','disputed'].includes(status)) {
+      return res.status(400).send('valid report id and status required');
+    }
+    await db.query('update farm_aid_reports set status = $1 where id = $2', [status, id]);
+    return res.redirect('/admin/farmaid');
+  } catch (err) { next(err); }
+});
 
 function csvRoute(path, filename, sql, columns) {
   app.get(path, async (req, res, next) => {
@@ -895,3 +1628,6 @@ async function start() {
 if (process.env.NO_BOOT !== '1') start();
 
 module.exports = app;
+
+
+

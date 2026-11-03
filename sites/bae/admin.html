@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en" data-site="bae">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Busolya Agro Farmers Ltd</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/mark.svg">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: { colors: {
+    bark:'#4a2311', bark2:'#63301a', cream:'#fbf6ec', paper:'#fffdf8',
+    leaf:'#2f7d32', leafdark:'#1f5523', seal:'#a8321e', gold:'#c68a2e', ink:'#2a1a10'
+  }, fontFamily: { display:['Georgia','Times New Roman','serif'], body:['Segoe UI','system-ui','sans-serif'] } } }
+}
+</script>
+<style type="text/tailwindcss">
+  @layer base { body { @apply bg-cream text-ink font-body antialiased; } }
+  .tab-on  { @apply border-b-2 border-leaf text-leaf font-bold; }
+  .tab-off { @apply border-b-2 border-transparent text-ink/50 hover:text-leafdark; }
+</style>
+</head>
+<body>
+<div id="header-placeholder"></div>
+
+<main class="mx-auto max-w-6xl px-5 py-8">
+
+  <div class="mb-7 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="font-display text-3xl font-bold text-bark">BAE Admin dashboard</h1>
+      <p class="mt-1 text-sm text-ink/55" id="operatorBadge">Busolya Agro Farmers Ltd · network administration</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="/admin" target="_blank"
+        class="rounded-full border border-bark px-4 py-2 text-xs font-semibold text-bark hover:bg-bark hover:text-white transition">
+        Server admin ↗
+      </a>
+      <button onclick="window.BusolyaAuth&&window.BusolyaAuth.logout()"
+        class="rounded-full bg-bark px-4 py-2 text-xs font-bold text-white hover:bg-bark2 transition">
+        Sign out
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats row -->
+  <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4"><p class="text-xs uppercase tracking-[.12em] text-ink/45">Users</p><p class="mt-1 font-display text-2xl font-bold text-bark" id="sUsers">—</p></div>
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4"><p class="text-xs uppercase tracking-[.12em] text-ink/45">Suppliers</p><p class="mt-1 font-display text-2xl font-bold text-bark" id="sSuppliers">—</p></div>
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4"><p class="text-xs uppercase tracking-[.12em] text-ink/45">Demand</p><p class="mt-1 font-display text-2xl font-bold text-bark" id="sDemand">—</p></div>
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4"><p class="text-xs uppercase tracking-[.12em] text-ink/45">SACCO members</p><p class="mt-1 font-display text-2xl font-bold text-bark" id="sSacco">—</p></div>
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4"><p class="text-xs uppercase tracking-[.12em] text-ink/45">FA reports</p><p class="mt-1 font-display text-2xl font-bold text-bark" id="sFarm">—</p></div>
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4"><p class="text-xs uppercase tracking-[.12em] text-ink/45">Directory</p><p class="mt-1 font-display text-2xl font-bold text-bark" id="sDir">—</p></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="mb-6 flex flex-wrap border-b border-[#e2d6c2]">
+    <button class="tab-on px-4 py-3"  data-tab="users">Users</button>
+    <button class="tab-off px-4 py-3" data-tab="sacco">SACCO</button>
+    <button class="tab-off px-4 py-3" data-tab="farmaid">Farm Aid</button>
+    <button class="tab-off px-4 py-3" data-tab="education">Education</button>
+    <button class="tab-off px-4 py-3" data-tab="products">Supplier listings</button>
+  </div>
+
+  <!-- ── Users tab ─────────────────────────────────────────── -->
+  <div id="tab-users" class="tab-panel">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <h2 class="font-display text-xl font-bold text-bark">Network users</h2>
+      <div class="flex gap-2 flex-wrap">
+        <select id="roleFilter"
+          class="rounded-lg border border-[#e2d6c2] bg-paper px-3 py-2 text-sm text-bark focus:border-leaf">
+          <option value="">All roles</option>
+          <option value="supplier">Supplier</option>
+          <option value="member">Member</option>
+          <option value="employee">Employee</option>
+          <option value="customer">Customer</option>
+        </select>
+        <button id="btnAddUser" class="rounded-full bg-leaf px-4 py-2 text-sm font-bold text-white hover:bg-leafdark">
+          Quick register
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick register form -->
+    <div id="addUserForm" class="mb-5 hidden rounded-xl border border-[#e2d6c2] bg-paper p-5">
+      <h3 class="mb-3 font-display text-lg font-bold text-bark">Quick counter registration</h3>
+      <form id="addUserFormEl" class="grid gap-3 md:grid-cols-3">
+        <div><label class="mb-1 block text-xs font-semibold text-bark">Full name *</label>
+          <input id="quName" type="text" required class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+        <div><label class="mb-1 block text-xs font-semibold text-bark">Phone *</label>
+          <input id="quPhone" type="tel" required class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+        <div><label class="mb-1 block text-xs font-semibold text-bark">Email</label>
+          <input id="quEmail" type="email" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+        <div><label class="mb-1 block text-xs font-semibold text-bark">Role *</label>
+          <select id="quRole" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm">
+            <option value="customer">Customer</option>
+            <option value="member">Member</option>
+            <option value="supplier">Supplier</option>
+            <option value="employee">Employee</option>
+          </select></div>
+        <div><label class="mb-1 block text-xs font-semibold text-bark">District</label>
+          <input id="quDistrict" type="text" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+        <div><label class="mb-1 block text-xs font-semibold text-bark">Organisation</label>
+          <input id="quOrg" type="text" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+        <div class="md:col-span-3 flex gap-2">
+          <button type="submit" class="rounded-full bg-leaf px-5 py-2 text-sm font-bold text-white hover:bg-leafdark">Save</button>
+          <button type="button" onclick="document.getElementById('addUserForm').classList.add('hidden')"
+            class="rounded-full border border-bark px-5 py-2 text-sm font-bold text-bark">Cancel</button>
+        </div>
+      </form>
+      <div id="addUserMsg" class="mt-2 hidden rounded-lg px-3 py-2 text-sm"></div>
+    </div>
+
+    <div class="overflow-x-auto rounded-xl border border-[#e2d6c2]">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
+        <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+          <tr>
+            <th class="px-4 py-3">Name</th><th class="px-4 py-3">Phone</th>
+            <th class="px-4 py-3">Email</th><th class="px-4 py-3">Role</th>
+            <th class="px-4 py-3">District</th><th class="px-4 py-3">Registered</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── SACCO tab ─────────────────────────────────────────── -->
+  <div id="tab-sacco" class="tab-panel hidden">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <h2 class="font-display text-xl font-bold text-bark">SACCO members</h2>
+      <button id="btnSaccoReg" class="rounded-full bg-leaf px-4 py-2 text-sm font-bold text-white hover:bg-leafdark">
+        Quick SACCO registration
+      </button>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="mb-5 grid grid-cols-3 gap-4">
+      <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4"><p class="text-xs uppercase tracking-[.12em] text-ink/45">Members</p><p class="mt-1 font-display text-2xl font-bold text-bark" id="smCount">—</p></div>
+      <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4"><p class="text-xs uppercase tracking-[.12em] text-ink/45">Total shares (UGX)</p><p class="mt-1 font-display text-2xl font-bold text-leaf" id="smShares">—</p></div>
+      <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4"><p class="text-xs uppercase tracking-[.12em] text-ink/45">Total savings (UGX)</p><p class="mt-1 font-display text-2xl font-bold text-leaf" id="smSavings">—</p></div>
+    </div>
+
+    <!-- Quick SACCO registration form -->
+    <div id="saccoRegForm" class="mb-5 hidden rounded-xl border border-[#e2d6c2] bg-paper p-5">
+      <h3 class="mb-3 font-display text-lg font-bold text-bark">Quick SACCO membership</h3>
+      <form id="saccoRegFormEl" class="grid gap-3 md:grid-cols-3">
+        <div><label class="mb-1 block text-xs font-semibold text-bark">Full name *</label>
+          <input id="srName" type="text" required class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+        <div><label class="mb-1 block text-xs font-semibold text-bark">Phone *</label>
+          <input id="srPhone" type="tel" required class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+        <div><label class="mb-1 block text-xs font-semibold text-bark">District</label>
+          <input id="srDistrict" type="text" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+        <div><label class="mb-1 block text-xs font-semibold text-bark">Opening shares (UGX)</label>
+          <input id="srShares" type="number" min="0" value="0" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+        <div><label class="mb-1 block text-xs font-semibold text-bark">Opening savings (UGX)</label>
+          <input id="srSavings" type="number" min="0" value="0" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+        <div><label class="mb-1 block text-xs font-semibold text-bark">Password (default: last 6 digits)</label>
+          <input id="srPassword" type="text" placeholder="auto" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+        <div class="md:col-span-3 flex gap-2">
+          <button type="submit" class="rounded-full bg-leaf px-5 py-2 text-sm font-bold text-white hover:bg-leafdark">Register member</button>
+          <button type="button" onclick="document.getElementById('saccoRegForm').classList.add('hidden')"
+            class="rounded-full border border-bark px-5 py-2 text-sm font-bold text-bark">Cancel</button>
+        </div>
+      </form>
+      <div id="saccoRegMsg" class="mt-2 hidden rounded-lg px-3 py-2 text-sm"></div>
+    </div>
+
+    <!-- Members table -->
+    <div class="overflow-x-auto rounded-xl border border-[#e2d6c2]">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
+        <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+          <tr>
+            <th class="px-4 py-3">Member no.</th><th class="px-4 py-3">Name</th>
+            <th class="px-4 py-3">Phone</th><th class="px-4 py-3">Shares (UGX)</th>
+            <th class="px-4 py-3">Savings (UGX)</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Joined</th>
+          </tr>
+        </thead>
+        <tbody id="saccoTableBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Farm Aid tab ───────────────────────────────────────── -->
+  <div id="tab-farmaid" class="tab-panel hidden">
+    <div class="mb-5 grid gap-4 md:grid-cols-2">
+      <!-- Roles -->
+      <div>
+        <h2 class="mb-3 font-display text-xl font-bold text-bark">BAF field roles</h2>
+        <div class="overflow-auto rounded-xl border border-[#e2d6c2]">
+          <table class="w-full border-collapse text-sm">
+            <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+              <tr><th class="px-3 py-2">Role</th><th class="px-3 py-2">Compartment</th><th class="px-3 py-2">Level</th><th class="px-3 py-2">Location</th></tr>
+            </thead>
+            <tbody id="farmRolesBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Reports -->
+      <div>
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="font-display text-xl font-bold text-bark">Reports</h2>
+          <button id="btnFaReport" class="rounded-full bg-seal px-3 py-1.5 text-xs font-bold text-white hover:bg-[#8a271e]">Submit report</button>
+        </div>
+        <!-- Report form -->
+        <div id="faReportForm" class="mb-3 hidden rounded-xl border border-[#e2d6c2] bg-paper p-4">
+          <form id="faReportFormEl" class="space-y-3">
+            <div><label class="mb-1 block text-xs font-semibold text-bark">Report type *</label>
+              <select id="faType" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm">
+                <option value="land_register">Land register</option>
+                <option value="transaction">Transaction</option>
+                <option value="inventory">Inventory</option>
+                <option value="payment">Payment</option>
+                <option value="dispute">Dispute</option>
+                <option value="verification">Verification</option>
+                <option value="quality">Quality</option>
+              </select></div>
+            <div><label class="mb-1 block text-xs font-semibold text-bark">Compartment *</label>
+              <select id="faCompartment" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm">
+                <option value="busolya">Busolya (lineage)</option>
+                <option value="butaka">Butaka (residents)</option>
+              </select></div>
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="mb-1 block text-xs font-semibold text-bark">Ssaza</label><input id="faSsaza" type="text" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+              <div><label class="mb-1 block text-xs font-semibold text-bark">Ssiga</label><input id="faSsiga" type="text" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+              <div><label class="mb-1 block text-xs font-semibold text-bark">Mutuba</label><input id="faMutuba" type="text" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+              <div><label class="mb-1 block text-xs font-semibold text-bark">Village</label><input id="faVillage" type="text" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+            </div>
+            <div><label class="mb-1 block text-xs font-semibold text-bark">Clan name</label><input id="faClan" type="text" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+            <div><label class="mb-1 block text-xs font-semibold text-bark">Report content *</label>
+              <textarea id="faContent" required rows="4" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></textarea></div>
+            <div class="flex gap-2">
+              <button type="submit" class="rounded-full bg-seal px-4 py-2 text-sm font-bold text-white hover:bg-[#8a271e]">Submit</button>
+              <button type="button" onclick="document.getElementById('faReportForm').classList.add('hidden')"
+                class="rounded-full border border-bark px-4 py-2 text-sm font-bold text-bark">Cancel</button>
+            </div>
+          </form>
+          <div id="faReportMsg" class="mt-2 hidden rounded-lg px-3 py-2 text-sm"></div>
+        </div>
+        <div class="overflow-auto rounded-xl border border-[#e2d6c2]">
+          <table class="w-full border-collapse text-sm">
+            <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+              <tr><th class="px-3 py-2">Type</th><th class="px-3 py-2">Compartment</th><th class="px-3 py-2">Location</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">Date</th></tr>
+            </thead>
+            <tbody id="faReportsBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Education tab ──────────────────────────────────────── -->
+  <div id="tab-education" class="tab-panel hidden">
+    <h2 class="mb-4 font-display text-xl font-bold text-bark">Subjects, topics &amp; notes</h2>
+    <div class="grid gap-5 md:grid-cols-3">
+      <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
+        <h3 class="mb-3 text-sm font-bold uppercase tracking-[.1em] text-bark">Subjects</h3>
+        <ul id="subjectsList" class="space-y-1 text-sm text-ink/80"></ul>
+      </div>
+      <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
+        <h3 class="mb-3 text-sm font-bold uppercase tracking-[.1em] text-bark">Topics (Farm Aid + all)</h3>
+        <ul id="topicsList" class="space-y-1 text-sm text-ink/80"></ul>
+      </div>
+      <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
+        <h3 class="mb-3 text-sm font-bold uppercase tracking-[.1em] text-bark">Notes</h3>
+        <div class="mb-2 flex gap-2">
+          <button onclick="loadNotes('en')" class="rounded-full border border-bark px-3 py-1 text-xs font-semibold text-bark hover:bg-bark hover:text-white">English</button>
+          <button onclick="loadNotes('lug')" class="rounded-full border border-bark px-3 py-1 text-xs font-semibold text-bark hover:bg-bark hover:text-white">Luganda</button>
+        </div>
+        <ul id="notesList" class="space-y-1 text-sm text-ink/80"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Supplier listings tab ─────────────────────────────── -->
+  <div id="tab-products" class="tab-panel hidden">
+    <h2 class="mb-4 font-display text-xl font-bold text-bark">All supplier listings</h2>
+    <div class="overflow-x-auto rounded-xl border border-[#e2d6c2]">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
+        <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+          <tr><th class="px-4 py-3">Product</th><th class="px-4 py-3">Category</th><th class="px-4 py-3">Price</th><th class="px-4 py-3">Stock</th><th class="px-4 py-3">District</th></tr>
+        </thead>
+        <tbody id="productsTableBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<div id="footer-placeholder"></div>
+<script src="assets/network.js"></script>
+<script src="../shared/components.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+    ? '' : 'https://busolya-api.onrender.com';
+
+  /* ── Auth guard ─────────────────────────────────────────── */
+  if (!window.BusolyaAuth || !window.BusolyaAuth.isAuthenticated()) {
+    location.href = 'login.html'; return;
+  }
+  var me = window.BusolyaAuth.getUser();
+  if (me && me.role !== 'admin' && me.role !== 'employee') {
+    location.href = 'index.html'; return;
+  }
+  var badge = document.getElementById('operatorBadge');
+  if (badge && me) badge.textContent = 'Signed in as ' + (me.name || me.phone) + ' (' + me.role + ')';
+
+  /* ── Tabs ────────────────────────────────────────────────── */
+  var tabs = document.querySelectorAll('[data-tab]');
+  var panels = document.querySelectorAll('.tab-panel');
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) { t.className = 'tab-off px-4 py-3'; });
+      panels.forEach(function (p) { p.classList.add('hidden'); });
+      tab.className = 'tab-on px-4 py-3';
+      document.getElementById('tab-' + tab.getAttribute('data-tab')).classList.remove('hidden');
+    });
+  });
+
+  /* ── Helpers ─────────────────────────────────────────────── */
+  function fmt(n) { return Number(n || 0).toLocaleString(); }
+  function fmtDate(s) { return s ? new Date(s).toLocaleDateString('en-GB') : '—'; }
+  function esc(s) { var d = document.createElement('span'); d.textContent = s || ''; return d.innerHTML; }
+
+  function showMsg(id, text, type) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'mt-2 rounded-lg px-3 py-2 text-sm ' +
+      (type === 'ok'  ? 'bg-[#e6efe0] text-leafdark' :
+       type === 'err' ? 'bg-[#fbe9e7] text-seal' : 'hidden');
+    el.textContent = text;
+    el.classList.remove('hidden');
+  }
+
+  function authedFetch(url, opts) {
+    return fetch(url, Object.assign({ credentials: 'include' }, opts || {}));
+  }
+
+  /* ── Load stats ──────────────────────────────────────────── */
+  function loadStats() {
+    authedFetch(API + '/api/users').then(function (r) { return r.json(); }).then(function (d) {
+      document.getElementById('sUsers').textContent = (d.users || []).length;
+    }).catch(function () {});
+    authedFetch(API + '/api/sacco/members').then(function (r) { return r.json(); }).then(function (d) {
+      var m = d.members || [];
+      document.getElementById('sSacco').textContent = m.length;
+      document.getElementById('sUsers').textContent = m.length; // will be overwritten by actual user count
+    }).catch(function () {});
+    authedFetch(API + '/api/farm-aid/reports').then(function (r) { return r.json(); }).then(function (d) {
+      document.getElementById('sFarm').textContent = (d.reports || []).length;
+    }).catch(function () {});
+    fetch(API + '/api/stats').then(function (r) { return r.json(); }).then(function (d) {
+      if (d.stats) {
+        document.getElementById('sDemand').textContent   = d.stats.demand || 0;
+        document.getElementById('sSuppliers').textContent = d.stats.suppliers || 0;
+        document.getElementById('sDir').textContent      = d.stats.directory || 0;
+      }
+    }).catch(function () {});
+  }
+  loadStats();
+
+  /* ── Users ───────────────────────────────────────────────── */
+  function loadUsers(role) {
+    var url = API + '/api/users' + (role ? '?role=' + role : '');
+    authedFetch(url).then(function (r) { return r.json(); }).then(function (d) {
+      var tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '';
+      (d.users || []).forEach(function (u) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="px-4 py-3">' + esc(u.name) + '</td>' +
+          '<td class="px-4 py-3">' + esc(u.phone) + '</td>' +
+          '<td class="px-4 py-3">' + esc(u.email) + '</td>' +
+          '<td class="px-4 py-3"><span class="rounded-full bg-[#f4e8d6] px-2 py-0.5 text-xs font-semibold text-bark">' + esc(u.role) + '</span></td>' +
+          '<td class="px-4 py-3">' + esc(u.district) + '</td>' +
+          '<td class="px-4 py-3 text-ink/50">' + fmtDate(u.created_at) + '</td>';
+        tbody.appendChild(tr);
+      });
+      document.getElementById('sUsers').textContent = (d.users || []).length;
+    }).catch(function () {});
+  }
+  loadUsers();
+
+  document.getElementById('roleFilter').addEventListener('change', function () {
+    loadUsers(this.value);
+  });
+  document.getElementById('btnAddUser').addEventListener('click', function () {
+    document.getElementById('addUserForm').classList.toggle('hidden');
+  });
+  document.getElementById('addUserFormEl').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var body = {
+      name: document.getElementById('quName').value.trim(),
+      phone: document.getElementById('quPhone').value.trim(),
+      email: document.getElementById('quEmail').value.trim() || undefined,
+      role: document.getElementById('quRole').value,
+      district: document.getElementById('quDistrict').value.trim() || undefined,
+      org: document.getElementById('quOrg').value.trim() || undefined
+    };
+    authedFetch(API + '/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+    .then(function (r) {
+      if (!r.ok) { showMsg('addUserMsg', r.data.error || 'Failed', 'err'); return; }
+      showMsg('addUserMsg', 'User registered — temp password: last 6 digits of phone.', 'ok');
+      this.reset && this.reset();
+      loadUsers();
+    }.bind(this)).catch(function () { showMsg('addUserMsg', 'Server error.', 'err'); });
+  });
+
+  /* ── SACCO ───────────────────────────────────────────────── */
+  function loadSacco() {
+    authedFetch(API + '/api/sacco/members').then(function (r) { return r.json(); }).then(function (d) {
+      var members = d.members || [];
+      var tbody = document.getElementById('saccoTableBody');
+      tbody.innerHTML = '';
+      var totalShares = 0, totalSavings = 0;
+      members.forEach(function (m) {
+        totalShares  += Number(m.shares || 0);
+        totalSavings += Number(m.savings || 0);
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="px-4 py-3 font-mono text-xs">' + esc(m.member_no) + '</td>' +
+          '<td class="px-4 py-3">' + esc(m.name) + '</td>' +
+          '<td class="px-4 py-3">' + esc(m.phone) + '</td>' +
+          '<td class="px-4 py-3 text-right">' + fmt(m.shares) + '</td>' +
+          '<td class="px-4 py-3 text-right">' + fmt(m.savings) + '</td>' +
+          '<td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2 py-0.5 text-xs font-semibold text-leafdark">' + esc(m.status) + '</span></td>' +
+          '<td class="px-4 py-3 text-ink/50">' + fmtDate(m.joined_at) + '</td>';
+        tbody.appendChild(tr);
+      });
+      document.getElementById('smCount').textContent   = members.length;
+      document.getElementById('smShares').textContent  = fmt(totalShares);
+      document.getElementById('smSavings').textContent = fmt(totalSavings);
+      document.getElementById('sSacco').textContent    = members.length;
+    }).catch(function () {});
+  }
+  loadSacco();
+
+  document.getElementById('btnSaccoReg').addEventListener('click', function () {
+    document.getElementById('saccoRegForm').classList.toggle('hidden');
+  });
+  document.getElementById('saccoRegFormEl').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var phone = document.getElementById('srPhone').value.trim();
+    var pw    = document.getElementById('srPassword').value.trim() || phone.slice(-6);
+    var body  = {
+      name:     document.getElementById('srName').value.trim(),
+      phone:    phone,
+      district: document.getElementById('srDistrict').value.trim() || undefined,
+      shares:   Number(document.getElementById('srShares').value) || 0,
+      savings:  Number(document.getElementById('srSavings').value) || 0,
+      password: pw
+    };
+    authedFetch(API + '/api/sacco/quick-register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+    .then(function (r) {
+      if (!r.ok) { showMsg('saccoRegMsg', r.data.error || 'Failed.', 'err'); return; }
+      showMsg('saccoRegMsg',
+        r.data.created ? 'Registered as ' + r.data.member_no + '. Temp password: last 6 digits of phone.' :
+                         'Already a member: ' + r.data.member_no, 'ok');
+      loadSacco();
+    }).catch(function () { showMsg('saccoRegMsg', 'Server error.', 'err'); });
+  });
+
+  /* ── Farm Aid ────────────────────────────────────────────── */
+  function loadFarmAid() {
+    authedFetch(API + '/api/farm-aid/roles').then(function (r) { return r.json(); }).then(function (d) {
+      var tbody = document.getElementById('farmRolesBody');
+      tbody.innerHTML = '';
+      (d.roles || []).forEach(function (r) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="px-3 py-2 capitalize">' + esc(r.role_code) + '</td>' +
+          '<td class="px-3 py-2 capitalize">' + esc(r.compartment) + '</td>' +
+          '<td class="px-3 py-2 capitalize">' + esc(r.location_level) + '</td>' +
+          '<td class="px-3 py-2">' + esc(r.location_name) + (r.district ? ', ' + esc(r.district) : '') + '</td>';
+        tbody.appendChild(tr);
+      });
+    }).catch(function () {});
+    authedFetch(API + '/api/farm-aid/reports').then(function (r) { return r.json(); }).then(function (d) {
+      var tbody = document.getElementById('faReportsBody');
+      tbody.innerHTML = '';
+      var rpts = d.reports || [];
+      document.getElementById('sFarm').textContent = rpts.length;
+      rpts.forEach(function (r) {
+        var loc = [r.ssaza, r.ssiga, r.mutuba, r.village].filter(Boolean).join(' / ');
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="px-3 py-2 capitalize">' + esc(r.report_type.replace('_',' ')) + '</td>' +
+          '<td class="px-3 py-2 capitalize">' + esc(r.compartment) + '</td>' +
+          '<td class="px-3 py-2">' + esc(loc || '—') + '</td>' +
+          '<td class="px-3 py-2"><span class="rounded-full bg-[#f4e8d6] px-2 py-0.5 text-xs font-semibold text-bark">' + esc(r.status) + '</span></td>' +
+          '<td class="px-3 py-2 text-ink/50">' + fmtDate(r.submitted_at) + '</td>';
+        tbody.appendChild(tr);
+      });
+    }).catch(function () {});
+  }
+  loadFarmAid();
+
+  document.getElementById('btnFaReport').addEventListener('click', function () {
+    document.getElementById('faReportForm').classList.toggle('hidden');
+  });
+  document.getElementById('faReportFormEl').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var body = {
+      reporter_id: me && me.id ? me.id : 1,
+      report_type: document.getElementById('faType').value,
+      compartment: document.getElementById('faCompartment').value,
+      ssaza:       document.getElementById('faSsaza').value.trim() || undefined,
+      ssiga:       document.getElementById('faSsiga').value.trim() || undefined,
+      mutuba:      document.getElementById('faMutuba').value.trim() || undefined,
+      village:     document.getElementById('faVillage').value.trim() || undefined,
+      clan_name:   document.getElementById('faClan').value.trim() || undefined,
+      content:     document.getElementById('faContent').value.trim()
+    };
+    if (!body.content) { showMsg('faReportMsg', 'Report content is required.', 'err'); return; }
+    authedFetch(API + '/api/farm-aid/reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+    .then(function (r) {
+      if (!r.ok) { showMsg('faReportMsg', r.data.error || 'Failed.', 'err'); return; }
+      showMsg('faReportMsg', 'Report submitted.', 'ok');
+      document.getElementById('faReportFormEl').reset();
+      loadFarmAid();
+    }).catch(function () { showMsg('faReportMsg', 'Server error.', 'err'); });
+  });
+
+  /* ── Education ────────────────────────────────────────────── */
+  function loadEducation() {
+    fetch(API + '/api/subjects').then(function (r) { return r.json(); }).then(function (d) {
+      var ul = document.getElementById('subjectsList');
+      ul.innerHTML = '';
+      (d.subjects || []).forEach(function (s) {
+        var li = document.createElement('li');
+        li.className = 'border-b border-[#e2d6c2] pb-1';
+        li.textContent = s.code + ' — ' + s.title;
+        ul.appendChild(li);
+      });
+    }).catch(function () {});
+    fetch(API + '/api/education/topics').then(function (r) { return r.json(); }).then(function (d) {
+      var ul = document.getElementById('topicsList');
+      ul.innerHTML = '';
+      (d.topics || []).forEach(function (t) {
+        var li = document.createElement('li');
+        li.className = 'border-b border-[#e2d6c2] pb-1';
+        li.textContent = t.code + ' — ' + t.title;
+        ul.appendChild(li);
+      });
+    }).catch(function () {});
+  }
+  loadEducation();
+
+  window.loadNotes = function (locale) {
+    fetch(API + '/api/education/notes?locale=' + locale).then(function (r) { return r.json(); }).then(function (d) {
+      var ul = document.getElementById('notesList');
+      ul.innerHTML = '';
+      (d.notes || []).forEach(function (n) {
+        var li = document.createElement('li');
+        li.className = 'border-b border-[#e2d6c2] pb-1';
+        li.textContent = n.topic_code + ' — ' + n.title + ' [' + n.locale + '] UGX ' + fmt(n.price_ugx);
+        ul.appendChild(li);
+      });
+    }).catch(function () {});
+  };
+  window.loadNotes('en');
+
+  /* ── Supplier products ────────────────────────────────────── */
+  function loadProducts() {
+    fetch(API + '/api/suppliers/products').then(function (r) { return r.json(); }).then(function (d) {
+      var tbody = document.getElementById('productsTableBody');
+      tbody.innerHTML = '';
+      (d.products || []).forEach(function (p) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="px-4 py-3">' + esc(p.title) + '</td>' +
+          '<td class="px-4 py-3">' + esc(p.category) + '</td>' +
+          '<td class="px-4 py-3 text-right">' + fmt(p.price) + (p.unit ? '/' + p.unit : '') + '</td>' +
+          '<td class="px-4 py-3 text-right">' + fmt(p.quantity_stock) + '</td>' +
+          '<td class="px-4 py-3">' + esc(p.district) + '</td>';
+        tbody.appendChild(tr);
+      });
+    }).catch(function () {});
+  }
+  loadProducts();
+
+})();
+</script>
+</body>
+</html>

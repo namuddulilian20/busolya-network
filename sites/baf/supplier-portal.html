@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en" data-site="baf">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supplier Portal — Busolya Agro Farmers Ltd</title>
+<meta name="description" content="Add and manage your products, services and demand leads in the Busolya network.">
+<link rel="icon" href="assets/logo.jpg">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: { colors: {
+    bark:'#4a2311', bark2:'#63301a', cream:'#fbf6ec', paper:'#fffdf8',
+    leaf:'#2f7d32', leafdark:'#1f5523', seal:'#a8321e', gold:'#c68a2e', ink:'#2a1a10'
+  }, fontFamily: { display:['Georgia','Times New Roman','serif'], body:['Segoe UI','system-ui','sans-serif'] } } }
+}
+</script>
+<style type="text/tailwindcss">
+  @layer base { body { @apply bg-cream text-ink font-body antialiased; } }
+  .tab-on { @apply border-b-2 border-leaf text-leaf font-bold; }
+  .tab-off { @apply border-b-2 border-transparent text-ink/50 hover:text-leafdark; }
+</style>
+</head>
+<body>
+<div id="header-placeholder"></div>
+
+<main class="mx-auto max-w-5xl px-5 py-8">
+
+  <div class="mb-7 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="font-display text-3xl font-bold text-bark">Supplier portal</h1>
+      <p class="mt-1 text-sm text-ink/60">Manage your products and services. Listings automatically feed the demand log.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="supplierName" class="rounded-full bg-bark/10 px-3 py-1.5 text-sm font-semibold text-bark"></span>
+      <button onclick="window.BusolyaAuth&&window.BusolyaAuth.logout()"
+        class="rounded-full border border-bark px-4 py-2 text-sm font-bold text-bark hover:bg-bark hover:text-white transition">
+        Sign out
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats row -->
+  <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
+      <p class="text-xs uppercase tracking-[.14em] text-ink/45">Listings</p>
+      <p class="mt-1 font-display text-2xl font-bold text-bark" id="statListings">—</p>
+    </div>
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
+      <p class="text-xs uppercase tracking-[.14em] text-ink/45">Active</p>
+      <p class="mt-1 font-display text-2xl font-bold text-leaf" id="statActive">—</p>
+    </div>
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
+      <p class="text-xs uppercase tracking-[.14em] text-ink/45">Demand leads</p>
+      <p class="mt-1 font-display text-2xl font-bold text-bark" id="statDemand">—</p>
+    </div>
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
+      <p class="text-xs uppercase tracking-[.14em] text-ink/45">Directory</p>
+      <p class="mt-1 font-display text-2xl font-bold text-bark" id="statDir">—</p>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="mb-6 flex flex-wrap border-b border-[#e2d6c2]">
+    <button class="tab-on px-4 py-3" data-tab="products">My products &amp; services</button>
+    <button class="tab-off px-4 py-3" data-tab="add">Add listing</button>
+    <button class="tab-off px-4 py-3" data-tab="directory">Directory entry</button>
+  </div>
+
+  <!-- Products tab -->
+  <div id="tab-products" class="tab-panel">
+    <div id="productList" class="space-y-3"></div>
+    <p id="noProducts" class="hidden text-sm text-ink/50">No listings yet. Use the "Add listing" tab to add your first product or service.</p>
+  </div>
+
+  <!-- Add listing tab -->
+  <div id="tab-add" class="tab-panel hidden">
+    <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
+      <h2 class="mb-4 font-display text-xl font-bold text-bark">Add a product or service</h2>
+      <form id="addProductForm" novalidate class="space-y-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div class="md:col-span-2">
+            <label class="mb-1 block text-sm font-semibold text-bark">Product / service name <span class="text-seal">*</span></label>
+            <input id="pTitle" type="text" required
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none"
+              placeholder="e.g. Certified maize seed — OPV 50kg bags">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Category</label>
+            <input id="pCategory" type="text"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none"
+              placeholder="e.g. Agro inputs">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Unit</label>
+            <input id="pUnit" type="text"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none"
+              placeholder="e.g. kg, bag, litre, head">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Price (UGX per unit)</label>
+            <input id="pPrice" type="number" min="0"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none"
+              placeholder="0">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Stock available (units)</label>
+            <input id="pStock" type="number" min="0"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none"
+              placeholder="0">
+          </div>
+          <div class="md:col-span-2">
+            <label class="mb-1 block text-sm font-semibold text-bark">Description</label>
+            <textarea id="pDescription" rows="3"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none"
+              placeholder="Quality, grade, origin, payment terms, minimum order…"></textarea>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Location</label>
+            <input id="pLocation" type="text"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none"
+              placeholder="e.g. Gayaza, Wakiso">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">District</label>
+            <input id="pDistrict" type="text"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none"
+              placeholder="e.g. Wakiso">
+          </div>
+        </div>
+        <button type="submit"
+          class="rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">
+          Add to listing
+        </button>
+      </form>
+      <div id="addMsg" class="mt-3 hidden rounded-lg px-4 py-3 text-sm"></div>
+    </div>
+  </div>
+
+  <!-- Directory tab -->
+  <div id="tab-directory" class="tab-panel hidden">
+    <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
+      <h2 class="mb-2 font-display text-xl font-bold text-bark">Your directory entry</h2>
+      <p class="mb-4 text-sm text-ink/65">This appears in the Busolya yellow pages. It was pre-populated when you registered. You can update it here.</p>
+      <div id="dirEntry" class="space-y-2 text-sm">
+        <p class="text-ink/40">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div id="footer-placeholder"></div>
+<script src="assets/network.js"></script>
+<script src="../shared/components.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+    ? '' : 'https://busolya-api.onrender.com';
+
+  /* ── Auth guard ─────────────────────────────────────────── */
+  if (!window.BusolyaAuth || !window.BusolyaAuth.isAuthenticated()) {
+    location.href = 'supplier-login.html';
+    return;
+  }
+  var me = window.BusolyaAuth.getUser();
+  if (me && me.role !== 'supplier') {
+    location.href = 'login.html';
+    return;
+  }
+  var nameEl = document.getElementById('supplierName');
+  if (nameEl && me) nameEl.textContent = me.name || me.phone;
+
+  /* ── Tabs ───────────────────────────────────────────────── */
+  var tabs   = document.querySelectorAll('[data-tab]');
+  var panels = document.querySelectorAll('.tab-panel');
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) { t.className = 'tab-off px-4 py-3'; });
+      panels.forEach(function (p) { p.classList.add('hidden'); });
+      tab.className = 'tab-on px-4 py-3';
+      var panel = document.getElementById('tab-' + tab.getAttribute('data-tab'));
+      if (panel) panel.classList.remove('hidden');
+    });
+  });
+
+  function fmt(n) { return Number(n || 0).toLocaleString(); }
+
+  function renderProducts(products) {
+    var list = document.getElementById('productList');
+    var none = document.getElementById('noProducts');
+    list.innerHTML = '';
+    if (!products.length) { none.classList.remove('hidden'); return; }
+    none.classList.add('hidden');
+    document.getElementById('statListings').textContent = products.length;
+    document.getElementById('statActive').textContent   = products.filter(function (p) { return p.available; }).length;
+    products.forEach(function (p) {
+      var card = document.createElement('div');
+      card.className = 'flex flex-wrap items-start justify-between gap-3 rounded-xl border border-[#e2d6c2] bg-paper p-4';
+      card.innerHTML =
+        '<div class="flex-1 min-w-0">' +
+          '<p class="font-semibold text-bark">' + (p.title || '') + '</p>' +
+          '<p class="text-xs text-ink/55">' + [p.category, p.district, p.location].filter(Boolean).join(' · ') + '</p>' +
+          (p.description ? '<p class="mt-1 text-sm text-ink/70">' + p.description + '</p>' : '') +
+          '<div class="mt-2 flex flex-wrap gap-3 text-xs">' +
+            '<span class="rounded bg-[#e6efe0] px-2 py-1 text-leafdark">' +
+              (p.unit ? 'UGX ' + fmt(p.price) + ' / ' + p.unit : 'UGX ' + fmt(p.price)) +
+            '</span>' +
+            '<span class="rounded bg-[#f4e8d6] px-2 py-1 text-bark">Stock: ' + fmt(p.quantity_stock) + '</span>' +
+            (p.available ? '<span class="rounded bg-[#e6efe0] px-2 py-1 text-leafdark">Available</span>' :
+                           '<span class="rounded bg-[#fbe9e7] px-2 py-1 text-seal">Unavailable</span>') +
+          '</div>' +
+        '</div>' +
+        '<div class="flex gap-2 shrink-0">' +
+          '<button data-id="' + p.id + '" class="del-btn rounded-lg border border-[#e2d6c2] px-3 py-1.5 text-xs text-seal hover:bg-[#fbe9e7] transition">Remove</button>' +
+        '</div>';
+      list.appendChild(card);
+    });
+    list.querySelectorAll('.del-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (!confirm('Remove this listing?')) return;
+        fetch(API + '/api/suppliers/products/' + btn.getAttribute('data-id'), {
+          method: 'DELETE', credentials: 'include'
+        }).then(function () { loadProducts(); })
+          .catch(function () { alert('Could not remove listing.'); });
+      });
+    });
+  }
+
+  function loadProducts() {
+    fetch(API + '/api/suppliers/products', { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { renderProducts(d.products || []); })
+      .catch(function () {});
+  }
+
+  function loadStats() {
+    fetch(API + '/api/stats')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.stats) {
+          document.getElementById('statDemand').textContent = d.stats.demand || 0;
+          document.getElementById('statDir').textContent    = d.stats.directory || 0;
+        }
+      }).catch(function () {});
+  }
+
+  function loadDirectory() {
+    fetch(API + '/api/directory?q=' + encodeURIComponent(me && me.phone ? me.phone : ''))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var el = document.getElementById('dirEntry');
+        var entries = d.entries || [];
+        if (!entries.length) {
+          el.innerHTML = '<p class="text-ink/50">No directory entry found for your phone number. Adding a product will create one.</p>';
+          return;
+        }
+        var e = entries[0];
+        el.innerHTML =
+          '<dl class="grid grid-cols-[120px_1fr] gap-x-4 gap-y-2 text-sm">' +
+          '<dt class="text-ink/50">Business</dt><dd class="text-bark font-semibold">' + (e.name || '—') + '</dd>' +
+          '<dt class="text-ink/50">Sector</dt><dd>' + (e.sector || '—') + '</dd>' +
+          '<dt class="text-ink/50">District</dt><dd>' + (e.district || '—') + '</dd>' +
+          '<dt class="text-ink/50">Phone</dt><dd>' + (e.phone || '—') + '</dd>' +
+          '<dt class="text-ink/50">Email</dt><dd>' + (e.email || '—') + '</dd>' +
+          '<dt class="text-ink/50">Verified</dt><dd>' + (e.verified ? '✓ Verified' : 'Pending verification') + '</dd>' +
+          '</dl>';
+      }).catch(function () {});
+  }
+
+  /* ── Add product form ────────────────────────────────────── */
+  var addForm = document.getElementById('addProductForm');
+  var addMsg  = document.getElementById('addMsg');
+
+  function showAddMsg(text, type) {
+    addMsg.className = 'mt-3 rounded-lg px-4 py-3 text-sm ' +
+      (type === 'ok'  ? 'bg-[#e6efe0] text-leafdark border border-leaf/30' :
+       type === 'err' ? 'bg-[#fbe9e7] text-seal border border-seal/30' : 'hidden');
+    addMsg.textContent = text;
+    addMsg.classList.remove('hidden');
+  }
+
+  addForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var body = {
+      title:          document.getElementById('pTitle').value.trim(),
+      category:       document.getElementById('pCategory').value.trim() || undefined,
+      unit:           document.getElementById('pUnit').value.trim() || undefined,
+      price:          Number(document.getElementById('pPrice').value) || 0,
+      quantity_stock: Number(document.getElementById('pStock').value) || 0,
+      description:    document.getElementById('pDescription').value.trim() || undefined,
+      location:       document.getElementById('pLocation').value.trim() || undefined,
+      district:       document.getElementById('pDistrict').value.trim() || undefined
+    };
+    if (!body.title) { showAddMsg('Product name is required.', 'err'); return; }
+
+    fetch(API + '/api/suppliers/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body)
+    })
+    .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+    .then(function (r) {
+      if (!r.ok) { showAddMsg(r.data.error || 'Could not add listing.', 'err'); return; }
+      showAddMsg('Listing added. It will appear in the demand log and directory.', 'ok');
+      addForm.reset();
+      loadProducts();
+      // Switch to products tab
+      document.querySelector('[data-tab="products"]').click();
+    })
+    .catch(function () { showAddMsg('Server error. Try again.', 'err'); });
+  });
+
+  loadProducts();
+  loadStats();
+  loadDirectory();
+})();
+</script>
+</body>
+</html>

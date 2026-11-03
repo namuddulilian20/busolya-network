@@ -180,14 +180,245 @@ BEGIN
 END $$;
 
 create table if not exists participants (
-  id          bigserial primary key,
-  phone       text unique not null,
-  name        text,
-  role        text not null default 'customer'
-              check (role in ('supplier','member','customer','employee')),
-  district    text,
-  org         text,
+  id            bigserial primary key,
+  phone         text unique not null,
+  email         text unique,
+  name          text,
+  role          text not null default 'customer'
+                check (role in ('supplier','member','customer','employee','admin')),
+  district      text,
+  org           text,
   password_hash text,
-  created_at  timestamptz not null default now()
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
 );
 create index if not exists participants_phone_idx on participants (phone);
+create index if not exists participants_email_idx on participants (email);
+create index if not exists participants_role_idx on participants (role);
+
+-- Add email column to existing installations
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'participants' AND column_name = 'email'
+  ) THEN
+    ALTER TABLE participants ADD COLUMN email text unique;
+    ALTER TABLE participants ADD COLUMN updated_at timestamptz not null default now();
+  END IF;
+END $$;
+create table if not exists users (
+  id          bigserial primary key,
+  phone       text unique not null,
+  email       text unique,
+  name        text not null,
+  role        text not null default 'customer'
+              check (role in ('supplier','member','employee','customer','admin')),
+  district    text,
+  clan        text,
+  village     text,
+  password_hash text not null,
+  is_active   boolean not null default true,
+  email_verified boolean not null default false,
+  phone_verified boolean not null default false,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists users_phone_idx on users (phone);
+create index if not exists users_email_idx on users (email);
+create index if not exists users_role_idx on users (role);
+
+create table if not exists user_sessions (
+  id         bigserial primary key,
+  user_id    bigint not null references users (id) on delete cascade,
+  token      text unique not null,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists user_sessions_token_idx on user_sessions (token);
+create index if not exists user_sessions_user_idx on user_sessions (user_id);
+
+-- ---------- supplier products & services ----------
+create table if not exists supplier_products (
+  id             bigserial primary key,
+  supplier_id    bigint not null references participants (id) on delete cascade,
+  title          text not null,
+  description    text,
+  category       text,
+  price          numeric(14,2),
+  unit           text,
+  quantity_stock numeric(14,2) default 0,
+  min_order      numeric(14,2) default 1,
+  available      boolean not null default true,
+  location       text,
+  district       text,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+create index if not exists supplier_products_supplier_idx on supplier_products (supplier_id);
+create index if not exists supplier_products_category_idx on supplier_products (category);
+create index if not exists supplier_products_available_idx on supplier_products (available);
+
+-- ---------- demand log stock linkage ----------
+create table if not exists demand_stock (
+  id             bigserial primary key,
+  product_id     bigint references supplier_products (id) on delete set null,
+  submission_id  bigint references submissions (id) on delete set null,
+  quantity       numeric(14,2) not null default 0,
+  status         text not null default 'pending'
+                 check (status in ('pending','fulfilled','cancelled')),
+  created_at     timestamptz not null default now()
+);
+create index if not exists demand_stock_product_idx on demand_stock (product_id);
+create index if not exists demand_stock_status_idx on demand_stock (status);
+
+-- ---------- education topics & notes ----------
+create table if not exists education_topics (
+  id          bigserial primary key,
+  subject_id  bigint not null references subjects (id) on delete cascade,
+  code        text not null,
+  title       text not null,
+  summary     text,
+  level       text not null default 'foundation',
+  sort_order  integer not null default 0,
+  active      boolean not null default true,
+  unique (subject_id, code)
+);
+create index if not exists education_topics_subject_idx on education_topics (subject_id);
+
+create table if not exists education_notes (
+  id           bigserial primary key,
+  topic_id     bigint not null references education_topics (id) on delete cascade,
+  title        text not null,
+  content      text not null,
+  locale       text not null default 'en',
+  presentation boolean not null default false,
+  format       text not null default 'text'
+               check (format in ('text','markdown','html','luganda')),
+  price_ugx    numeric(14,2) not null default 5000,
+  active       boolean not null default true,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+create index if not exists education_notes_topic_idx on education_notes (topic_id);
+create index if not exists education_notes_locale_idx on education_notes (locale);
+
+create table if not exists education_presentations (
+  id           bigserial primary key,
+  note_id      bigint not null references education_notes (id) on delete cascade,
+  title        text not null,
+  slides       jsonb not null default '[]'::jsonb,
+  locale       text not null default 'lug',
+  price_ugx    numeric(14,2) not null default 5000,
+  active       boolean not null default true,
+  created_at   timestamptz not null default now()
+);
+create index if not exists education_presentations_note_idx on education_presentations (note_id);
+
+create table if not exists education_shares (
+  id           bigserial primary key,
+  note_id      bigint not null references education_notes (id) on delete cascade,
+  participant_id bigint references participants (id) on delete set null,
+  amount_ugx   numeric(14,2) not null default 5000,
+  shared_at    timestamptz not null default now()
+);
+create index if not exists education_shares_participant_idx on education_shares (participant_id);
+create index if not exists education_shares_note_idx on education_shares (note_id);
+
+-- ---------- SACCO transactions ----------
+create table if not exists sacco_members (
+  id          bigserial primary key,
+  user_id     bigint not null references participants (id) on delete cascade,
+  member_no   text unique not null,
+  shares      numeric(14,2) not null default 0,
+  savings     numeric(14,2) not null default 0,
+  status      text not null default 'active'
+              check (status in ('active','suspended','closed')),
+  joined_at   timestamptz not null default now()
+);
+create index if not exists sacco_members_user_idx on sacco_members (user_id);
+create index if not exists sacco_members_no_idx on sacco_members (member_no);
+
+create table if not exists sacco_transactions (
+  id           bigserial primary key,
+  member_id    bigint not null references sacco_members (id) on delete cascade,
+  type         text not null check (type in ('deposit','withdrawal','payout','credit','repayment','share_purchase')),
+  amount       numeric(14,2) not null,
+  balance_after numeric(14,2) not null,
+  reference    text,
+  narr         text,
+  created_by   bigint references participants (id),
+  created_at   timestamptz not null default now()
+);
+create index if not exists sacco_transactions_member_idx on sacco_transactions (member_id);
+create index if not exists sacco_transactions_type_idx on sacco_transactions (type);
+
+create table if not exists sacco_creditors (
+  id           bigserial primary key,
+  member_id    bigint not null references sacco_members (id) on delete cascade,
+  creditor_name text not null,
+  creditor_phone text,
+  amount       numeric(14,2) not null,
+  status       text not null default 'outstanding'
+               check (status in ('outstanding','paid','defaulted')),
+  created_at   timestamptz not null default now()
+);
+create index if not exists sacco_creditors_member_idx on sacco_creditors (member_id);
+
+create table if not exists sacco_guarantors (
+  id           bigserial primary key,
+  member_id    bigint not null references sacco_members (id) on delete cascade,
+  guarantor_id bigint not null references sacco_members (id),
+  amount       numeric(14,2) not null,
+  relationship text,
+  status       text not null default 'active'
+               check (status in ('active','released')),
+  created_at   timestamptz not null default now()
+);
+create index if not exists sacco_guarantors_member_idx on sacco_guarantors (member_id);
+
+-- ---------- Farm-Aid governance roles ----------
+create table if not exists farm_aid_roles (
+  id          bigserial primary key,
+  user_id     bigint not null references participants (id) on delete cascade,
+  role_code   text not null
+              check (role_code in ('clerk','verifier','aggregator','courier','registrar','commissioner','committee')),
+  compartment text not null check (compartment in ('busolya','butaka')),
+  location_level text not null check (location_level in ('lunyiriri','village','mutuba','parish','ssiga','ssaza')),
+  location_name text not null,
+  district    text,
+  active      boolean not null default true,
+  appointed_at timestamptz not null default now()
+);
+create index if not exists farm_aid_roles_user_idx on farm_aid_roles (user_id);
+create index if not exists farm_aid_roles_role_idx on farm_aid_roles (role_code);
+create index if not exists farm_aid_roles_location_idx on farm_aid_roles (location_level, location_name);
+
+create table if not exists farm_aid_reports (
+  id          bigserial primary key,
+  reporter_id bigint not null references participants (id) on delete cascade,
+  report_type text not null check (report_type in ('land_register','transaction','inventory','payment','dispute','verification','quality')),
+  compartment text not null check (compartment in ('busolya','butaka')),
+  ssaza       text,
+  ssiga       text,
+  mutuba      text,
+  parish      text,
+  village     text,
+  clan_name   text,
+  content     jsonb not null default '{}'::jsonb,
+  submitted_at timestamptz not null default now(),
+  status      text not null default 'pending'
+              check (status in ('pending','reviewed','cleared','disputed'))
+);
+create index if not exists farm_aid_reports_reporter_idx on farm_aid_reports (reporter_id);
+create index if not exists farm_aid_reports_location_idx on farm_aid_reports (ssaza, ssiga, mutuba, parish, village);
+create index if not exists farm_aid_reports_status_idx on farm_aid_reports (status);
+
+-- ---------- supplier directory link ----------
+create table if not exists supplier_directory_link (
+  id              bigserial primary key,
+  supplier_id     bigint not null references participants (id) on delete cascade,
+  directory_entry_id bigint references directory_entries (id) on delete set null,
+  linked_at       timestamptz not null default now()
+);
+create index if not exists supplier_directory_link_supplier_idx on supplier_directory_link (supplier_id);

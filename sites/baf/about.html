@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-site="baf">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,8 +10,11 @@
 <script>
 tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a', cream:'#fbf6ec', paper:'#fffdf8', leaf:'#2f7d32', leafdark:'#1f5523', seal:'#a8321e', gold:'#c68a2e', ink:'#2a1a10' }, fontFamily: { display:['Georgia','Times New Roman','serif'], body:['Segoe UI','system-ui','sans-serif'] } } } }
 </script>
+<style type="text/tailwindcss">
+  @layer base { body { @apply bg-cream text-ink font-body antialiased; } }
+</style>
 </head>
-<body class="bg-cream font-body text-ink antialiased">
+<body>
 
 <div class="bg-bark text-[#f4e8d6]">
   <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-2 text-xs tracking-wide">
@@ -20,27 +23,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   </div>
 </div>
 
-<header class="sticky top-0 z-40 border-b border-[#e2d6c2] bg-cream/90 backdrop-blur">
-  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-5 py-2.5">
-    <a href="index.html" class="flex shrink-0 items-center gap-3">
-      <img src="assets/logo.jpg" alt="Busolya Agro Farmers Ltd seal" class="h-12 w-12 rounded-full ring-2 ring-bark ring-offset-2 ring-offset-cream">
-      <span class="leading-tight">
-        <span class="block font-display text-[1.05rem] font-bold text-bark">Busolya Agro Farmers</span>
-        <span class="block text-[.66rem] uppercase tracking-[.18em] text-ink/55">Ltd · Buganda, Uganda</span>
-      </span>
-    </a>
-    <nav class="ml-auto w-full md:w-auto">
-      <ul class="flex flex-wrap items-center gap-1 text-sm font-semibold">
-        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="index.html">Home</a></li>
-        <li><a class="rounded-full bg-bark px-3 py-2 text-white" href="about.html">Abasolya &amp; Bataka</a></li>
-        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="programs.html">Programs</a></li>
-        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="directory.html">Directory</a></li>
-        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="blog.html">Blog</a></li>
-        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="contact.html">Contact</a></li>
-      </ul>
-    </nav>
-  </div>
-</header>
+<div id="header-placeholder"></div>
 
 <main>
 <section class="bg-bark px-5 py-14 text-[#f6ecdd]">
@@ -62,7 +45,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
     <article class="rounded-2xl border border-[#e2d6c2] bg-paper p-7">
       <p class="text-[.7rem] font-bold uppercase tracking-[.16em] text-seal">Bataka</p>
       <h2 class="mt-2 font-display text-2xl font-bold text-bark">Omutaka — the land holder</h2>
-      <p class="mt-2">An <strong>Omutaka</strong> (plural <strong>Bataka</strong>) is a land owner who pays allegiance to the Kingdom of Buganda. That allegiance is not only ceremonial — it carries servitude where custom requires it, affiliation to a clan and a lineage, and the land dues owed to the Kingdom.</p>
+      <p class="mt-2">An <strong>Omutaka</strong> (plural <strong>Bataka</strong>) is a land owner who pays allegiance to the Kingdom of Buganda. That allegiance carries obligation to a clan and a lineage, and the land dues owed to the Kingdom.</p>
       <p>In practice the word is used for the clan heads who hold land under the Kingdom. The relation is reciprocal: land and standing come with obligation, and both are recorded.</p>
     </article>
   </div>
@@ -79,36 +62,12 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
           <tr><th class="px-4 py-3">Layer</th><th class="px-4 py-3">Literally</th><th class="px-4 py-3">What it is</th></tr>
         </thead>
         <tbody class="divide-y divide-[#e2d6c2] bg-paper align-top">
-          <tr>
-            <td class="px-4 py-4 font-semibold text-bark">Ekika / Kika</td>
-            <td class="px-4 py-4 italic text-ink/70">the clan</td>
-            <td class="px-4 py-4">The whole clan — totem, head, council, court duty and land. The widest circle a Musolya belongs to.</td>
-          </tr>
-          <tr class="bg-[#fdf9f1]">
-            <td class="px-4 py-4 font-semibold text-bark">Essiga / Ssiga</td>
-            <td class="px-4 py-4 italic text-ink/70">hearth-stone</td>
-            <td class="px-4 py-4">One of the three stones that hold the cooking pot. The sub-clan: the hearth at which the clan is fed and divided.</td>
-          </tr>
-          <tr>
-            <td class="px-4 py-4 font-semibold text-bark">Omutuba / Mutuba</td>
-            <td class="px-4 py-4 italic text-ink/70">the fig/bark-cloth tree</td>
-            <td class="px-4 py-4">The tree the bark cloth is cut from. The branch of descent under an essiga — named, planted and known.</td>
-          </tr>
-          <tr class="bg-[#fdf9f1]">
-            <td class="px-4 py-4 font-semibold text-bark">Olunyiriri / Lunyiriri</td>
-            <td class="px-4 py-4 italic text-ink/70">a line, a queue</td>
-            <td class="px-4 py-4">The lineage: the line of descent that marks who follows whom.</td>
-          </tr>
-          <tr>
-            <td class="px-4 py-4 font-semibold text-bark">Oluggya / Luggya</td>
-            <td class="px-4 py-4 italic text-ink/70">the front yard</td>
-            <td class="px-4 py-4">The large front compound where food is dried and meetings are held. In Buganda the front yard is public and generous; the back is for the family. Office holders at this level plan for gatherings.</td>
-          </tr>
-          <tr class="bg-[#fdf9f1]">
-            <td class="px-4 py-4 font-semibold text-bark">Enju / Nju</td>
-            <td class="px-4 py-4 italic text-ink/70">the homestead</td>
-            <td class="px-4 py-4">The great-grandfather's line — commonly counted to about the fifth generation, higher or lower where descent is stronger. The innermost circle.</td>
-          </tr>
+          <tr><td class="px-4 py-4 font-semibold text-bark">Ekika / Kika</td><td class="px-4 py-4 italic text-ink/70">the clan</td><td class="px-4 py-4">The whole clan — totem, head, council, court duty and land.</td></tr>
+          <tr class="bg-[#fdf9f1]"><td class="px-4 py-4 font-semibold text-bark">Essiga / Ssiga</td><td class="px-4 py-4 italic text-ink/70">hearth-stone</td><td class="px-4 py-4">The sub-clan: the hearth at which the clan is fed and divided.</td></tr>
+          <tr><td class="px-4 py-4 font-semibold text-bark">Omutuba / Mutuba</td><td class="px-4 py-4 italic text-ink/70">the fig/bark-cloth tree</td><td class="px-4 py-4">The branch of descent under an essiga — named, planted and known.</td></tr>
+          <tr class="bg-[#fdf9f1]"><td class="px-4 py-4 font-semibold text-bark">Olunyiriri / Lunyiriri</td><td class="px-4 py-4 italic text-ink/70">a line, a queue</td><td class="px-4 py-4">The lineage: the line of descent that marks who follows whom.</td></tr>
+          <tr><td class="px-4 py-4 font-semibold text-bark">Oluggya / Luggya</td><td class="px-4 py-4 italic text-ink/70">the front yard</td><td class="px-4 py-4">The large front compound where food is dried and meetings are held.</td></tr>
+          <tr class="bg-[#fdf9f1]"><td class="px-4 py-4 font-semibold text-bark">Enju / Nju</td><td class="px-4 py-4 italic text-ink/70">the homestead</td><td class="px-4 py-4">The great-grandfather's line — the innermost circle.</td></tr>
         </tbody>
       </table>
     </div>
@@ -120,18 +79,17 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
     <div>
       <p class="text-[.72rem] font-bold uppercase tracking-[.18em] text-seal">Governance</p>
       <h2 class="mt-2 font-display text-3xl font-bold text-bark">Every layer has a Katikkiro</h2>
-      <p class="mt-3">Each layer is headed by a <strong>Katikkiro</strong> — a premier who represents the head of that layer and can be removed by that head. The remaining offices at the layer are filled by agreement: candidates are proposed, the head and the council settle it.</p>
-      <p>That structure is why a farmers' network can be built on it. A layer already has a convener, a council, a meeting ground and a register of who belongs. Business facilitation plugs into an institution that is already running.</p>
+      <p class="mt-3">Each layer is headed by a <strong>Katikkiro</strong> — a premier who represents the head of that layer. The structure is why a farmers' network can be built on it: a layer already has a convener, a council, a meeting ground and a register of who belongs.</p>
       <ul class="mt-4 space-y-2 text-[.95rem]">
         <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> Head of the layer — holds authority, appoints and removes the premier</li>
         <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> Katikkiro — represents the head, runs the layer's business</li>
-        <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> Council — offices settled by proposal and consensus, not inheritance alone</li>
+        <li class="flex gap-2"><span class="text-leaf font-bold">✓</span> Council — offices settled by proposal and consensus</li>
       </ul>
     </div>
     <div class="rounded-2xl bg-leafdark p-7 text-[#eaf3e4]">
       <p class="text-[.7rem] font-bold uppercase tracking-[.16em] text-[#ffe9c7]">Teaching note</p>
       <h3 class="mt-2 font-display text-xl font-bold text-white">This is an expo subject</h3>
-      <p class="mt-2 text-[.94rem] text-[#cfe0c8]">Culture is not decoration on the programme. The clans, the layers, the councils and the land obligations are taught as one of the nine subjects — because suppliers, guarantors and land agreements are all settled inside them.</p>
+      <p class="mt-2 text-[.94rem] text-[#cfe0c8]">The clans, layers, councils and land obligations are taught as one of the nine subjects — because suppliers, guarantors and land agreements are all settled inside them.</p>
       <p class="mt-4"><a href="programs.html#subjects" class="inline-block rounded-full bg-white px-5 py-2.5 text-sm font-bold text-leafdark">See the nine subjects</a></p>
     </div>
   </div>
@@ -141,34 +99,22 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   <div class="mx-auto max-w-6xl">
     <p class="text-[.72rem] font-bold uppercase tracking-[.18em] text-seal">Working register</p>
     <h2 class="mt-2 font-display text-3xl font-bold text-bark">Clans we are documenting</h2>
-    <p class="mt-2 max-w-3xl text-ink/75">Buganda has 50+ recognised clans. The table below is the working register this project is compiling; spellings, totems and heads are checked with clan elders and the Butikkiro's office before the print edition goes out.</p>
+    <p class="mt-2 max-w-3xl text-ink/75">Buganda has 50+ recognised clans. The table below is the working register; spellings, totems and heads are checked with clan elders before the print edition goes out.</p>
     <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Butiko</strong><span class="text-sm text-ink/60">mushroom</span></div>
       <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Ffumbe</strong><span class="text-sm text-ink/60">civet</span></div>
       <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Lugave</strong><span class="text-sm text-ink/60">pangolin</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Ndwadde</strong><span class="text-sm text-ink/60">sickness</span></div>
+      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Mmamba</strong><span class="text-sm text-ink/60">lungfish</span></div>
       <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Ngonge</strong><span class="text-sm text-ink/60">otter</span></div>
       <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Njovu</strong><span class="text-sm text-ink/60">elephant</span></div>
       <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Nkima</strong><span class="text-sm text-ink/60">monkey</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Nnyonyi</strong><span class="text-sm text-ink/60">bird</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Nyange</strong><span class="text-sm text-ink/60">bull</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Mmamba</strong><span class="text-sm text-ink/60">lungfish</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Mbwa</strong><span class="text-sm text-ink/60">dog</span></div>
+      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Ngo</strong><span class="text-sm text-ink/60">leopard</span></div>
       <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Mpologoma</strong><span class="text-sm text-ink/60">lion</span></div>
       <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Ngaali</strong><span class="text-sm text-ink/60">crested crane</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Njaza</strong><span class="text-sm text-ink/60">antelope</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Nsuma</strong><span class="text-sm text-ink/60">fish</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Nte</strong><span class="text-sm text-ink/60">cow</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Ngo</strong><span class="text-sm text-ink/60">leopard</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Nkejje</strong><span class="text-sm text-ink/60">sardine</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Mbuzi</strong><span class="text-sm text-ink/60">goat</span></div>
       <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Ngabi</strong><span class="text-sm text-ink/60">bushbuck</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Nvubu</strong><span class="text-sm text-ink/60">hippopotamus</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Kasimba</strong><span class="text-sm text-ink/60">—</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Kkobe</strong><span class="text-sm text-ink/60">—</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Lukato</strong><span class="text-sm text-ink/60">—</span></div>
+      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Nte</strong><span class="text-sm text-ink/60">cow</span></div>
     </div>
-    <p class="mt-5 rounded-lg border-l-4 border-gold bg-[#fdf3e0] px-4 py-3 text-sm text-[#5d4423]">A clan head, elder or researcher with verified detail for a missing entry can send it through the contact page and it goes into the next revision.</p>
+    <p class="mt-5 rounded-lg border-l-4 border-gold bg-[#fdf3e0] px-4 py-3 text-sm text-[#5d4423]">A clan head, elder or researcher with verified detail for a missing entry can send it through the contact page.</p>
   </div>
 </section>
 
@@ -184,49 +130,8 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 </section>
 </main>
 
-<footer class="bg-[#2f1a0e] text-[#cdb9a5]">
-  <div class="mx-auto grid max-w-6xl gap-8 px-5 py-12 md:grid-cols-4">
-    <div>
-      <div class="flex items-center gap-3">
-        <img src="assets/logo.jpg" alt="" class="h-11 w-11 rounded-full">
-        <span class="font-display text-base font-bold text-white">Busolya Agro Farmers Ltd</span>
-      </div>
-      <p class="mt-3 text-sm">Obulimi n'Obulunzi Obwomulembe — farming and livestock excellence, organised.</p>
-    </div>
-    <div>
-      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Explore</h4>
-      <ul class="mt-3 space-y-2 text-sm">
-        <li><a class="hover:text-gold" href="about.html">Abasolya &amp; Bataka</a></li>
-        <li><a class="hover:text-gold" href="programs.html">Programs</a></li>
-        <li><a class="hover:text-gold" href="directory.html">Directory</a></li>
-        <li><a class="hover:text-gold" href="blog.html">Blog</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Network</h4>
-      <ul class="mt-3 space-y-2 text-sm">
-        <li><a class="hover:text-gold" href="#" data-net="bae">Bataka Agro Expo</a></li>
-        <li><a class="hover:text-gold" href="#" data-net="sacco">Abataka Mutindo SACCO</a></li>
-        <li><a class="hover:text-gold" href="programs.html#farmaid">Farm Aid</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Contact</h4>
-      <ul class="mt-3 space-y-2 text-sm">
-        <li>Information desk, Bataka Agro Expo</li>
-        <li>4–8 November 2026</li>
-        <li><a class="hover:text-gold" href="contact.html">Send an enquiry</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="border-t border-white/10">
-    <div class="mx-auto flex max-w-6xl flex-wrap justify-between gap-3 px-5 py-5 text-xs">
-      <p>© 2026 Busolya Agro Farmers Ltd</p>
-      <p>Bataka Agro Expo · 4–8 November</p>
-    </div>
-  </div>
-</footer>
-
+<div id="footer-placeholder"></div>
 <script src="assets/network.js"></script>
+<script src="../shared/components.js"></script>
 </body>
 </html>

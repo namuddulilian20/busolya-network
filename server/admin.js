@@ -83,7 +83,9 @@ const NAV = [
   ['/admin/subjects', 'Education'],
   ['/admin/governance', 'Governance'],
   ['/admin/networks', 'Networks'],
-  ['/admin/contacts', 'Messages']
+  ['/admin/contacts', 'Messages'],
+  ['/admin/sacco', 'SACCO'],
+  ['/admin/farmaid', 'Farm Aid']
 ];
 
 function layout({ title, body, active = '' }) {
@@ -339,28 +341,83 @@ function questionsPage({ groups }) {
   });
 }
 
-function subjectsPage({ subjects }) {
-  const rows = subjects.map((s) => [
+function subjectsPage({ subjects, topics = [], notes = [] }) {
+  const subjectRows = subjects.map((s) => [
     esc(s.code),
     esc(s.title),
     `<span class="wrap">${esc(s.summary)}</span>`,
     esc(s.level),
     `<form class="inline" method="post" action="/admin/subjects/${s.id}/toggle"><input type="hidden" name="active" value="${s.active ? 0 : 1}"><button class="btn small ${s.active ? 'warn' : ''}" type="submit">${s.active ? 'Retire' : 'Restore'}</button></form>`
   ]);
+
+  const topicRows = topics.map((t) => [
+    esc(t.subject_code + ' — ' + t.subject_title),
+    esc(t.code),
+    esc(t.title),
+    esc(t.level),
+    esc(String(t.sort_order)),
+    esc(t.summary || '')
+  ]);
+
+  const noteRows = notes.map((n) => [
+    esc(n.topic_code),
+    esc(n.title),
+    `<span class="pill">${esc(n.locale)}</span>`,
+    `<span class="pill">${esc(n.format)}</span>`,
+    esc(String(n.price_ugx)),
+    n.presentation ? '<span class="pill ok">pres</span>' : '',
+    n.active ? '<span class="pill ok">live</span>' : '<span class="pill new">off</span>',
+    `<form class="inline" method="post" action="/admin/notes/${n.id}/toggle"><input type="hidden" name="active" value="${n.active ? 0 : 1}"><button class="btn small ${n.active ? 'warn' : ''}" type="submit">${n.active ? 'Hide' : 'Show'}</button></form>`
+  ]);
+
   return layout({
     title: 'Education',
     active: '/admin/subjects',
     body: `
       <h1>Education platform</h1>
-      <p class="sub">The nine expo subjects plus anything the floor adds. Sessions attach to a subject.</p>
-      ${table(['Code', 'Subject', 'Summary', 'Level', ''], rows)}
+      <p class="sub">Subjects → topics → notes (English) → presentations (Luganda). Admin adds, paid-up users share for UGX 5,000.</p>
+
+      <h2>Subjects</h2>
+      ${table(['Code', 'Subject', 'Summary', 'Level', ''], subjectRows)}
       <form class="panel grid2" method="post" action="/admin/subjects">
         <label>Code<input name="code" required placeholder="10"></label>
         <label>Title<input name="title" required></label>
         <label>Level<select name="level"><option>foundation</option><option>practical</option><option>advanced</option></select></label>
         <label>Summary<input name="summary"></label>
-        <label style="grid-column:1/-1">Outline, one line per item<textarea name="outline"></textarea></label>
+        <label style="grid-column:1/-1">Outline (one item per line)<textarea name="outline"></textarea></label>
         <div style="grid-column:1/-1"><button class="btn" type="submit">Add subject</button></div>
+      </form>
+
+      <h2>Topics</h2>
+      ${table(['Subject', 'Code', 'Title', 'Level', 'Order', 'Summary'], topicRows)}
+      <form class="panel grid2" method="post" action="/admin/topics">
+        <label>Subject<select name="subject_id">${subjects.map((s) => `<option value="${s.id}">${esc(s.code + ' — ' + s.title)}</option>`).join('')}</select></label>
+        <label>Topic code (e.g. fa-09)<input name="code" required></label>
+        <label>Title<input name="title" required></label>
+        <label>Level<select name="level"><option>foundation</option><option>practical</option><option>advanced</option></select></label>
+        <label>Sort order<input name="sort_order" type="number" value="0"></label>
+        <label>Summary<input name="summary"></label>
+        <div style="grid-column:1/-1"><button class="btn" type="submit">Add / update topic</button></div>
+      </form>
+
+      <h2>Notes &amp; presentations</h2>
+      <p class="muted">Notes stay in English; presentations are in Luganda. UGX 5,000 per share/print to paid-up users.</p>
+      ${table(['Topic', 'Title', 'Locale', 'Format', 'Price (UGX)', 'Pres?', 'State', ''], noteRows)}
+      <form class="panel grid2" method="post" action="/admin/notes">
+        <label>Topic code<input name="topic_code" required list="topic-codes">
+          <datalist id="topic-codes">${topics.map((t) => `<option value="${esc(t.code)}">${esc(t.code + ' — ' + t.title)}</option>`).join('')}</datalist>
+        </label>
+        <label>Locale<select name="locale"><option value="en">English</option><option value="lug">Luganda</option></select></label>
+        <label>Title<input name="title" required></label>
+        <label>Format<select name="format"><option>text</option><option>markdown</option><option>html</option><option>luganda</option></select></label>
+        <label>Price (UGX)<input name="price_ugx" type="number" value="5000"></label>
+        <label style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" name="presentation" value="1"> This note is a presentation (Luganda localized)
+        </label>
+        <label style="grid-column:1/-1">Content (English notes / Luganda text for presentations)
+          <textarea name="content" required style="min-height:140px"></textarea>
+        </label>
+        <div style="grid-column:1/-1"><button class="btn" type="submit">Add note / presentation</button></div>
       </form>`
   });
 }
@@ -484,5 +541,157 @@ module.exports = {
   networksPage,
   visitorsPage,
   suppliersPage,
-  contactsPage
+  contactsPage,
+  saccoPage,
+  farmAidPage
 };
+
+function saccoPage({ members, transactions, creditors, guarantors }) {
+  const totalShares  = members.reduce((a, m) => a + Number(m.shares || 0), 0);
+  const totalSavings = members.reduce((a, m) => a + Number(m.savings || 0), 0);
+  const active       = members.filter((m) => m.status === 'active').length;
+
+  const memberRows = members.map((m) => [
+    esc(m.member_no),
+    esc(m.name),
+    esc(m.phone),
+    esc(m.district || ''),
+    Number(m.shares).toLocaleString(),
+    Number(m.savings).toLocaleString(),
+    `<span class="pill ${m.status === 'active' ? 'ok' : 'new'}">${esc(m.status)}</span>`,
+    fmtDate(m.joined_at)
+  ]);
+
+  const txRows = transactions.slice(0, 200).map((t) => [
+    esc(t.member_no || ''),
+    esc(t.type),
+    Number(t.amount).toLocaleString(),
+    Number(t.balance_after).toLocaleString(),
+    esc(t.narr || ''),
+    esc(t.reference || ''),
+    fmtDate(t.created_at)
+  ]);
+
+  return layout({
+    title: 'SACCO',
+    active: '/admin/sacco',
+    body: `
+      <h1>Abataka Mutindo SACCO</h1>
+      <p class="sub">Deposits, withdrawals, payouts, credits, repayments and share purchases.</p>
+      <div class="cards">
+        <div class="card"><div class="n">${active}</div><div class="l">Active members</div></div>
+        <div class="card"><div class="n">${members.length}</div><div class="l">Total members</div></div>
+        <div class="card"><div class="n">${totalShares.toLocaleString()}</div><div class="l">Total shares (UGX)</div></div>
+        <div class="card"><div class="n">${totalSavings.toLocaleString()}</div><div class="l">Total savings (UGX)</div></div>
+      </div>
+
+      <h2>Member registry</h2>
+      ${table(['Member no.', 'Name', 'Phone', 'District', 'Shares', 'Savings', 'Status', 'Joined'], memberRows)}
+
+      <h2>Quick membership registration</h2>
+      <form class="panel grid2" method="post" action="/admin/sacco/register">
+        <label>Full name<input name="name" required></label>
+        <label>Phone<input name="phone" required type="tel"></label>
+        <label>District<input name="district"></label>
+        <label>Opening shares (UGX)<input name="shares" type="number" value="0" min="0"></label>
+        <label>Opening savings (UGX)<input name="savings" type="number" value="0" min="0"></label>
+        <label>Temporary password (default: last 6 of phone)<input name="password" placeholder="auto"></label>
+        <div style="grid-column:1/-1"><button class="btn" type="submit">Register member</button></div>
+      </form>
+
+      <h2>Post a transaction</h2>
+      <form class="panel grid2" method="post" action="/admin/sacco/transaction">
+        <label>Member no.<input name="member_no" required list="member-nos">
+          <datalist id="member-nos">${members.map((m) => `<option value="${esc(m.member_no)}">${esc(m.name)}</option>`).join('')}</datalist>
+        </label>
+        <label>Type<select name="type">
+          <option value="deposit">Deposit</option>
+          <option value="withdrawal">Withdrawal</option>
+          <option value="payout">Payout</option>
+          <option value="credit">Credit (loan out)</option>
+          <option value="repayment">Repayment</option>
+          <option value="share_purchase">Share purchase</option>
+        </select></label>
+        <label>Amount (UGX)<input name="amount" type="number" min="1" required></label>
+        <label>Reference / receipt no.<input name="reference"></label>
+        <label style="grid-column:1/-1">Narration<input name="narr"></label>
+        <div style="grid-column:1/-1"><button class="btn" type="submit">Post transaction</button></div>
+      </form>
+
+      <h2>Recent transactions</h2>
+      ${table(['Member', 'Type', 'Amount', 'Balance after', 'Narration', 'Reference', 'Date'], txRows)}`
+  });
+}
+
+function farmAidPage({ roles, reports }) {
+  const byRole = {};
+  roles.forEach((r) => {
+    if (!byRole[r.role_code]) byRole[r.role_code] = [];
+    byRole[r.role_code].push(r);
+  });
+
+  const roleBlocks = ['clerk','verifier','aggregator','courier','registrar','commissioner','committee'].map((code) => {
+    const list = byRole[code] || [];
+    const rows = list.map((r) => [
+      esc(r.name || r.user_id),
+      esc(r.phone || ''),
+      esc(r.compartment),
+      esc(r.location_level),
+      esc(r.location_name),
+      esc(r.district || ''),
+      r.active ? '<span class="pill ok">active</span>' : '<span class="pill new">inactive</span>'
+    ]);
+    return `<h3 style="text-transform:capitalize">${code}</h3>
+      ${table(['Name', 'Phone', 'Compartment', 'Level', 'Location', 'District', 'State'], rows)}`;
+  }).join('');
+
+  const reportRows = reports.slice(0, 300).map((r) => {
+    const loc = [r.ssaza, r.ssiga, r.mutuba, r.parish, r.village].filter(Boolean).join(' / ');
+    const content = r.content && r.content.content ? r.content.content : JSON.stringify(r.content || '');
+    return [
+      esc(r.report_type.replace(/_/g, ' ')),
+      esc(r.compartment),
+      `<span class="muted">${esc(r.clan_name || '')}</span>`,
+      esc(loc),
+      `<span class="wrap">${esc(content)}</span>`,
+      `<span class="pill ${r.status === 'cleared' ? 'ok' : r.status === 'disputed' ? 'warn' : 'new'}">${esc(r.status)}</span>`,
+      fmtDate(r.submitted_at)
+    ];
+  });
+
+  return layout({
+    title: 'Farm Aid',
+    active: '/admin/farmaid',
+    body: `
+      <h1>Farm Aid — field staff and reports</h1>
+      <p class="sub">
+        Two compartments: <strong>Busolya</strong> (lineage / clan) and <strong>Butaka</strong> (residents).
+        Clerks and couriers cover Lunyiriri/village. Verifiers, aggregators at Mutuba/parish.
+        Registrars at Ssiga/Ssaza. Commissioners at Mutuba/Ssaza. Committee receives registrar &amp; commissioner reports.
+      </p>
+      <div class="cards">
+        <div class="card"><div class="n">${roles.length}</div><div class="l">Role assignments</div></div>
+        <div class="card"><div class="n">${reports.length}</div><div class="l">Reports filed</div></div>
+        <div class="card"><div class="n">${reports.filter((r) => r.status === 'pending').length}</div><div class="l">Pending review</div></div>
+        <div class="card"><div class="n">${reports.filter((r) => r.status === 'disputed').length}</div><div class="l">Disputed</div></div>
+      </div>
+
+      <h2>Field staff by role</h2>
+      ${roleBlocks}
+
+      <h2>Reports</h2>
+      ${table(['Type', 'Compartment', 'Clan', 'Location (Ssaza/Ssiga/Mutuba/Parish/Village)', 'Content', 'Status', 'Date'], reportRows)}
+
+      <h2>Update report status</h2>
+      <form class="panel grid2" method="post" action="/admin/farmaid/status">
+        <label>Report ID<input name="report_id" type="number" required></label>
+        <label>New status<select name="status">
+          <option value="reviewed">Reviewed</option>
+          <option value="cleared">Cleared</option>
+          <option value="disputed">Disputed</option>
+          <option value="pending">Pending</option>
+        </select></label>
+        <div style="grid-column:1/-1"><button class="btn" type="submit">Update</button></div>
+      </form>`
+  });
+}

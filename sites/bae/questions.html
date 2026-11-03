@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
+﻿<!DOCTYPE html>
+<html lang="en" data-site="bae">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -21,28 +21,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   </div>
 </div>
 
-<header class="sticky top-0 z-40 border-b border-[#e2d6c2] bg-cream/90 backdrop-blur">
-  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-5 py-2.5">
-    <a href="index.html" class="flex shrink-0 items-center gap-3">
-      <img src="assets/mark.svg" alt="Bataka Agro Expo mark" class="h-12 w-12">
-      <span class="leading-tight">
-        <span class="block font-display text-[1.05rem] font-bold text-bark">Bataka Agro Expo</span>
-        <span class="block text-[.66rem] uppercase tracking-[.18em] text-ink/55">Registry desk</span>
-      </span>
-    </a>
-    <nav class="ml-auto">
-      <ul class="flex flex-wrap items-center gap-1 text-sm font-semibold">
-        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="index.html">Home</a></li>
-        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="programme.html">Programme</a></li>
-        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="exhibitors.html">Exhibitors</a></li>
-        <li><a class="rounded-full bg-bark px-3 py-2 text-white" href="questions.html">Questionnaires</a></li>
-        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="visit.html">Log a lead</a></li>
-        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="#" data-net="baf">Agro Farmers</a></li>
-        <li><a class="rounded-full px-3 py-2 text-bark hover:bg-[#e6efe0] hover:text-leafdark" href="#" data-net="sacco">SACCO</a></li>
-      </ul>
-    </nav>
-  </div>
-</header>
+<div id="header-placeholder"></div>
 
 <main class="mx-auto max-w-4xl px-5 py-10">
   <p class="text-[.68rem] font-bold uppercase tracking-[.18em] text-seal">The registry desk</p>
@@ -105,12 +84,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   </section>
 </main>
 
-<footer class="mt-12 border-t border-[#e2d6c2] bg-bark text-[#f3e9db]">
-  <div class="mx-auto flex max-w-6xl flex-wrap justify-between gap-3 px-5 py-6 text-xs">
-    <p>© 2026 Bataka Agro Expo · Busolya Agro Farmers Ltd</p>
-    <p>Registry desk · Abataka Mutindo SACCO</p>
-  </div>
-</footer>
+<div id="footer-placeholder"></div>
 
 <script src="assets/api.js"></script>
 <script src="assets/network.js"></script>
@@ -263,5 +237,9 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   setTab('demand');
 })();
 </script>
+<script src="assets/network.js"></script>
+<script src="../shared/components.js"></script>
 </body>
 </html>
+
+

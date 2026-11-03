@@ -1,0 +1,43 @@
+<!-- Shared footer fragment — used only in local/same-origin dev.
+     In production components.js builds the footer inline.
+     Keep in sync with buildFooterHTML() in components.js -->
+<footer>
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 py-12 md:grid-cols-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <img src="assets/logo.jpg" alt="" class="h-11 w-11 rounded-full" id="ftr-logo">
+        <span class="font-display text-base font-bold text-white" id="ftr-brand">Busolya Network</span>
+      </div>
+      <p class="mt-3 text-sm" id="ftr-tagline">Farming and livestock excellence, organised.</p>
+    </div>
+    <div>
+      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Explore</h4>
+      <ul class="mt-3 space-y-2 text-sm" id="ftr-explore"><!-- filled by components.js --></ul>
+    </div>
+    <div>
+      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Network</h4>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li><a class="hover:text-gold transition-colors" href="#" data-net="baf">Busolya Agro Farmers</a></li>
+        <li><a class="hover:text-gold transition-colors" href="#" data-net="bae">Bataka Agro Expo</a></li>
+        <li><a class="hover:text-gold transition-colors" href="#" data-net="sacco">Abataka Mutindo SACCO</a></li>
+        <li><a class="hover:text-gold transition-colors" href="programs.html#farmaid">Farm Aid</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Portals</h4>
+      <ul class="mt-3 space-y-2 text-sm">
+        <li><a class="hover:text-gold transition-colors" href="login.html">Member sign in</a></li>
+        <li><a class="hover:text-gold transition-colors" href="supplier-login.html">Supplier login</a></li>
+        <li><a class="hover:text-gold transition-colors" href="register.html">Register</a></li>
+        <li><a class="hover:text-gold transition-colors" id="ftr-admin-link" href="admin.html">Admin dashboard</a></li>
+      </ul>
+    </div>
+  </div>
+  <div style="border-top:1px solid rgba(255,255,255,.10)">
+    <div class="mx-auto flex max-w-6xl flex-wrap justify-between gap-3 px-5 py-5 text-xs">
+      <p id="ftr-copy">© 2026 Busolya Network</p>
+      <p>An annual fixture: Bataka Agro Expo · 4–8 November</p>
+      <p>Developed by <a class="hover:text-gold" href="mailto:digidanlpai@gmail.com">digidanlpai@gmail.com</a> · +256 731 235 987 / +256 780 698 353</p>
+    </div>
+  </div>
+</footer>

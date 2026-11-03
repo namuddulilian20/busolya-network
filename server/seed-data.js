@@ -123,4 +123,37 @@ const NETWORKS = [
   }
 ];
 
-module.exports = { SUBJECTS, QUESTIONS, LAYERS, NETWORKS };
+const FARM_AID_TOPICS = [
+  { subject_code: '01', code: 'fa-01', title: 'Land registration and ownership', summary: 'How to register land under the Busolya and Butaka compartments.', level: 'foundation', sort_order: 1 },
+  { subject_code: '01', code: 'fa-02', title: 'Clerk duties and land records', summary: 'The clerk registers land owners and labourers and records at least one transaction per Lunyiriri or village.', level: 'practical', sort_order: 2 },
+  { subject_code: '01', code: 'fa-03', title: 'Verifier duties and ownership vetting', summary: 'The verifier vets ownership and validity of transactions and payments, at least one per Mutuba or parish.', level: 'practical', sort_order: 3 },
+  { subject_code: '01', code: 'fa-04', title: 'Aggregator duties and stock inventory', summary: 'The aggregator takes stock and inventory of all items and products received and produced, at least one per Mutuba or parish.', level: 'practical', sort_order: 4 },
+  { subject_code: '01', code: 'fa-05', title: 'Courier duties and quality transport', summary: 'The courier vets quality and transports items and products from one place to another, at least one per Lunyiriri or village.', level: 'practical', sort_order: 5 },
+  { subject_code: '01', code: 'fa-06', title: 'Registrar duties and payment clearing', summary: 'The registrar clears payments and settles disputes, one per Ssiga or Ssaza.', level: 'practical', sort_order: 6 },
+  { subject_code: '01', code: 'fa-07', title: 'Commissioner for stock and inventory', summary: 'The commissioner oversees stock and inventory, at least one per Mutuba or Ssaza.', level: 'practical', sort_order: 7 },
+  { subject_code: '01', code: 'fa-08', title: 'Committee and clan reports', summary: 'The committee selected by the abobusolya receives registrar and commissioner reports.', level: 'foundation', sort_order: 8 },
+];
+
+const FARM_AID_NOTES_EN = [
+  { topic_code: 'fa-01', title: 'How to Register Land in Busolya and Butaka', content: 'Land registration under the Busolya (lineage establishment) compartment follows clan protocols. Under Butaka (residents establishment), residency and occupation are recorded. Both require the clerk to record at least one transaction per Lunyiriri or village.', locale: 'en', format: 'text', price_ugx: 5000 },
+  { topic_code: 'fa-02', title: 'Clerk Duties: Registering Owners and Labourers', content: 'The clerk is the first point of contact. They register land owners and labourers, and record transactions. There must be at least one clerk per Lunyiriri or village.', locale: 'en', format: 'text', price_ugx: 5000 },
+  { topic_code: 'fa-03', title: 'Verifier Duties: Vetting Ownership and Payments', content: 'The verifier checks ownership documents and validates transactions and payments. At least one verifier per Mutuba or parish.', locale: 'en', format: 'text', price_ugx: 5000 },
+  { topic_code: 'fa-04', title: 'Aggregator Duties: Stock and Inventory', content: 'The aggregator takes stock and inventory of all items and products received and produced. At least one aggregator per Mutuba or parish.', locale: 'en', format: 'text', price_ugx: 5000 },
+  { topic_code: 'fa-05', title: 'Courier Duties: Quality Vetting and Transport', content: 'The courier vets quality and transports items and products from one place to another. At least one courier per Lunyiriri or village.', locale: 'en', format: 'text', price_ugx: 5000 },
+  { topic_code: 'fa-06', title: 'Registrar Duties: Clearing Payments and Settling Disputes', content: 'The registrar clears payments and settles disputes. One registrar per Ssiga or Ssaza.', locale: 'en', format: 'text', price_ugx: 5000 },
+  { topic_code: 'fa-07', title: 'Commissioner for Stock and Inventory', content: 'The commissioner oversees stock and inventory across the network. At least one commissioner per Mutuba or Ssaza.', locale: 'en', format: 'text', price_ugx: 5000 },
+  { topic_code: 'fa-08', title: 'Committee Reports from Abobusolya', content: 'The committee is selected by the abobusolya to receive registrar and commissioner reports. Reports are structured for locating each clan in each Ssaza.', locale: 'en', format: 'text', price_ugx: 5000 },
+];
+
+const FARM_AID_NOTES_LUG = [
+  { topic_code: 'fa-01', title: 'Okubaka Obulamu mu Busolya n\'Butaka', content: 'Obulamu bw\'obulimo mu Busolya (ekika kya botaka) tegereza amagufu g\'abalongo. Mu Butaka (obulamu bwaffe bwaffe), obulungi bw\'obulimi bwogererekwa. Bbiri bbeera n\'okubaka mu Lunyiriri amaaga ga kya clone.', locale: 'lug', format: 'luganda', price_ugx: 5000 },
+  { topic_code: 'fa-02', title: 'Olugero lwa Clerk: Okubaka Ab\'akasolya n\'Abalasimu', content: 'Clerk ni omuntu wa kwanja oba baliko batyo. Yeyagala ab\'akasolya n\'abalasimu, n\'eyogera ebikumbi. Atiide one clerk mu Lunyiriri okukubaka.', locale: 'lug', format: 'luganda', price_ugx: 5000 },
+  { topic_code: 'fa-03', title: 'Olugero lwa Verifier: Okulabirira Bulungi n\'Obuwendo', content: 'Verifier yeyatulira ensibo ya bulungi n\'eyogera ebikumbi n\'obuwaalo. Atiide one verifier mu Mutuba amaaga ga kya parish.', locale: 'lug', format: 'luganda', price_ugx: 5000 },
+  { topic_code: 'fa-04', title: 'Olugero lwa Aggregator: Ebintu by\'okumala n\'ebya\'sisa', content: 'Aggregator yeyogeresa ebintu byonna by\'okumala n\'ebya\'sisa ebifulumidde n\'ebya\'sisidde. Atiide one aggregator mu Mutuba amaaga ga kya parish.', locale: 'lug', format: 'luganda', price_ugx: 5000 },
+  { topic_code: 'fa-05', title: 'Olugero lwa Courier: Okulabirira Bulungi n\'Okutambala', content: 'Courier yeyatulira bulungi n\'eyokutambala ebyo byonna mu Lunyiriri amaaga ga kya village.', locale: 'lug', format: 'luganda', price_ugx: 5000 },
+  { topic_code: 'fa-06', title: 'Olugero lwa Registrar: Okusaaba Obuwaalo n\'Okutegereza Amayembo', content: 'Registrar yeyasaaba obuwaalo n\'eyategereza amayembo. One registrar mu Ssiga okukubaka Ssaza.', locale: 'lug', format: 'luganda', price_ugx: 5000 },
+  { topic_code: 'fa-07', title: 'Commissioner mu Ebintu by\'okumala n\'ebya\'sisa', content: 'Commissioner yeyokumala ebintu byonna by\'okumala n\'ebya\'sisa mu network. Atiide one commissioner mu Mutuba okukubaka Ssaza.', locale: 'lug', format: 'luganda', price_ugx: 5000 },
+  { topic_code: 'fa-08', title: 'Ebikumbi bya Committee mu Abobusolya', content: 'Committee yeyagaliwa mu abobusolya eyogera ebikumbi bya registrar n\'commissioner. Ebikumbi bekyebwa mu ssanga ya bonna abakasolya mu Ssaza.', locale: 'lug', format: 'luganda', price_ugx: 5000 },
+];
+
+module.exports = { SUBJECTS, QUESTIONS, LAYERS, NETWORKS, FARM_AID_TOPICS, FARM_AID_NOTES_EN, FARM_AID_NOTES_LUG };

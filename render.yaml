@@ -29,7 +29,7 @@ services:
       - key: ADMIN_PASSWORD
         generateValue: true
       - key: SESSION_SECRET
-        value: busolya-session-signing-key-2026
+        generateValue: true
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION

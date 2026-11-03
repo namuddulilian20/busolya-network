@@ -1,7 +1,12 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { Pool } = require('pg');
 const seed = require('./seed-data');
+
+function hashPwd(password) {
+  return crypto.createHash('sha256').update(String(password)).digest('hex');
+}
 
 const connectionString = process.env.DATABASE_URL || '';
 const isLocal = !connectionString || /localhost|127\.0\.0\.1/.test(connectionString);
@@ -98,6 +103,92 @@ async function seedIfEmpty() {
      on conflict (key) do nothing`,
     [JSON.stringify({ clan_register: 'working register, pending verification', updated: new Date().toISOString() })]
   );
+
+  // Seed staff / BAF employees into participants (idempotent)
+  const existingParticipants = await query("select count(*)::int as c from participants where role = 'employee'");
+  if (Number(existingParticipants.rows[0].c || 0) === 0) {
+    const staffUsers = [
+      { phone: '+256700000001', name: 'Alice Nakato',      role: 'employee', district: 'Mengo' },
+      { phone: '+256700000002', name: 'Bob Kato',          role: 'employee', district: 'Mengo' },
+      { phone: '+256700000003', name: 'Grace Nambi',       role: 'employee', district: 'Mengo' },
+      { phone: '+256700000004', name: 'David Ssebugenyi',  role: 'employee', district: 'Mengo' },
+      { phone: '+256700000005', name: 'Mary Namuleme',     role: 'employee', district: 'Mengo' },
+      { phone: '+256700000006', name: 'Peter Musoke',      role: 'employee', district: 'Mengo' },
+      { phone: '+256700000007', name: 'Sarah Nalwoga',     role: 'employee', district: 'Mengo' },
+    ];
+    for (const u of staffUsers) {
+      await query(
+        `insert into participants (phone, name, role, password_hash, district)
+         values ($1,$2,$3,$4,$5) on conflict (phone) do nothing`,
+        [u.phone, u.name, u.role, hashPwd('BafStaff2026!'), u.district]
+      );
+    }
+  }
+
+  // Seed Farm Aid roles using participants (idempotent)
+  const existingRoles = await query('select count(*)::int as c from farm_aid_roles');
+  if (Number(existingRoles.rows[0].c || 0) === 0) {
+    const roles = [
+      { role_code: 'clerk',        compartment: 'butaka',  location_level: 'village', location_name: 'Lunyiriri Village A', district: 'Mengo', phone: '+256700000001' },
+      { role_code: 'clerk',        compartment: 'butaka',  location_level: 'village', location_name: 'Lunyiriri Village B', district: 'Mengo', phone: '+256700000001' },
+      { role_code: 'verifier',     compartment: 'busolya', location_level: 'mutuba',  location_name: 'Mutuba North',        district: 'Mengo', phone: '+256700000002' },
+      { role_code: 'verifier',     compartment: 'busolya', location_level: 'mutuba',  location_name: 'Mutuba South',        district: 'Mengo', phone: '+256700000002' },
+      { role_code: 'aggregator',   compartment: 'busolya', location_level: 'mutuba',  location_name: 'Mutuba North',        district: 'Mengo', phone: '+256700000003' },
+      { role_code: 'aggregator',   compartment: 'busolya', location_level: 'mutuba',  location_name: 'Mutuba South',        district: 'Mengo', phone: '+256700000003' },
+      { role_code: 'courier',      compartment: 'butaka',  location_level: 'village', location_name: 'Lunyiriri Village A', district: 'Mengo', phone: '+256700000004' },
+      { role_code: 'courier',      compartment: 'butaka',  location_level: 'village', location_name: 'Lunyiriri Village B', district: 'Mengo', phone: '+256700000004' },
+      { role_code: 'registrar',    compartment: 'busolya', location_level: 'ssiga',   location_name: 'Ssiga Central',       district: 'Mengo', phone: '+256700000005' },
+      { role_code: 'registrar',    compartment: 'busolya', location_level: 'ssiga',   location_name: 'Ssiga East',          district: 'Mengo', phone: '+256700000005' },
+      { role_code: 'commissioner', compartment: 'busolya', location_level: 'ssaza',   location_name: 'Ssaza North',         district: 'Mengo', phone: '+256700000006' },
+      { role_code: 'commissioner', compartment: 'busolya', location_level: 'ssaza',   location_name: 'Ssaza South',         district: 'Mengo', phone: '+256700000006' },
+      { role_code: 'committee',    compartment: 'busolya', location_level: 'ssaza',   location_name: 'Ssaza North',         district: 'Mengo', phone: '+256700000007' },
+    ];
+    for (const r of roles) {
+      const u = await query('select id from participants where phone = $1 limit 1', [r.phone]);
+      if (u.rows.length) {
+        await query(
+          `insert into farm_aid_roles (user_id, role_code, compartment, location_level, location_name, district)
+           values ($1,$2,$3,$4,$5,$6) on conflict do nothing`,
+          [u.rows[0].id, r.role_code, r.compartment, r.location_level, r.location_name, r.district]
+        );
+      }
+    }
+  }
+
+  // Seed education topics for Farm Aid subject (idempotent)
+  const existingTopics = await query('select count(*)::int as c from education_topics');
+  if (Number(existingTopics.rows[0].c || 0) === 0) {
+    const subjectRes = await query("select id from subjects where code = '01' limit 1");
+    if (subjectRes.rows.length > 0) {
+      const subjectId = subjectRes.rows[0].id;
+      for (const t of seed.FARM_AID_TOPICS) {
+        if (t.subject_code === '01') {
+          await query(
+            `insert into education_topics (subject_id, code, title, summary, level, sort_order)
+             values ($1,$2,$3,$4,$5,$6) on conflict (subject_id, code) do nothing`,
+            [subjectId, t.code, t.title, t.summary, t.level, t.sort_order]
+          );
+        }
+      }
+    }
+  }
+
+  // Seed education notes EN and LUG (idempotent)
+  const existingNotes = await query('select count(*)::int as c from education_notes');
+  if (Number(existingNotes.rows[0].c || 0) === 0) {
+    for (const set of [seed.FARM_AID_NOTES_EN, seed.FARM_AID_NOTES_LUG]) {
+      for (const n of set) {
+        const t = await query('select id from education_topics where code = $1 limit 1', [n.topic_code]);
+        if (t.rows.length) {
+          await query(
+            `insert into education_notes (topic_id, title, content, locale, format, price_ugx)
+             values ($1,$2,$3,$4,$5,$6) on conflict do nothing`,
+            [t.rows[0].id, n.title, n.content, n.locale, n.format, n.price_ugx]
+          );
+        }
+      }
+    }
+  }
 }
 
 async function health() {
