@@ -958,7 +958,15 @@ app.post('/api/users', requireAdminOrEmployee, rateLimit, async (req, res, next)
 
 app.get('/api/suppliers/products', async (req, res, next) => {
   try {
-    const r = await db.query('select * from supplier_products order by created_at desc limit 500');
+    const supplierId = req.query.supplier_id;
+    let sql = 'select * from supplier_products';
+    const params = [];
+    if (supplierId) {
+      sql += ' where supplier_id = $1';
+      params.push(supplierId);
+    }
+    sql += ' order by created_at desc limit 500';
+    const r = await db.query(sql, params);
     return res.json({ ok: true, products: r.rows });
   } catch (err) { next(err); }
 });
