@@ -1146,14 +1146,14 @@ app.post('/api/education/shares', requireSupplier, rateLimit, async (req, res, n
 
 // ---------- demand stock ----------
 
-app.get('/api/demand/stock', async (req, res, next) => {
+app.get('/api/visitor-requests/stock', async (req, res, next) => {
   try {
     const productId = Number(req.query.product_id) || null;
     const supplierId = Number(req.query.supplier_id) || null;
     let sql = `
       select ds.*, sp.title as product_title, sp.category, sp.district,
              sub.name as demand_name, sub.phone as demand_phone, sub.ref as demand_ref
-      from demand_stock ds
+      from visitor_requests_stock ds
       left join supplier_products sp on sp.id = ds.product_id
       left join submissions sub on sub.id = ds.submission_id
     `;
@@ -1172,8 +1172,8 @@ app.get('/api/demand/stock', async (req, res, next) => {
     const r = await db.query(sql, params);
     return res.json({ ok: true, stock: r.rows });
   } catch (err) { next(err); }
-}); // — link a supplier product to a demand submission
-app.post('/api/demand/stock', requireSupplier, rateLimit, async (req, res, next) => {
+}); // — link a supplier product to a visitor request submission
+app.post('/api/visitor-requests/stock', requireSupplier, rateLimit, async (req, res, next) => {
   try {
     const b = req.body || {};
     const product_id = Number(b.product_id) || null;
@@ -1181,7 +1181,7 @@ app.post('/api/demand/stock', requireSupplier, rateLimit, async (req, res, next)
     const quantity = Number(b.quantity) || 0;
     if (!product_id && !submission_id) return res.status(400).json({ ok: false, error: 'product_id or submission_id required' });
     const r = await db.query(
-      `insert into demand_stock (product_id, submission_id, quantity, status) values ($1,$2,$3,'pending') returning *`,
+      `insert into visitor_requests_stock (product_id, submission_id, quantity, status) values ($1,$2,$3,'pending') returning *`,
       [product_id, submission_id, quantity]
     );
     return res.status(201).json({ ok: true, entry: r.rows[0] });

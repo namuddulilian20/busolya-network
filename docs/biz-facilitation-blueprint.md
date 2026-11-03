@@ -8,7 +8,7 @@ This document specifies the operational model, the data entities and the phasing
 ## 1. The two networks
 
 ### Busolya Biz Network (business)
-Membership, listing and matched demand. A member is verified once, listed in the yellow-pages directory, and receives demand leads that match their sector and district. Revenue: annual membership + directory placement + a per-closed-deal facilitation fee agreed in writing.
+Membership, listing and matched demand. A member is verified once, listed in the yellow-pages directory, and receives visitor request leads that match their sector and district. Revenue: annual membership + directory placement + a per-closed-deal facilitation fee agreed in writing.
 
 ### Bataka Trade Network (trade)
 Aggregation and off-take. Farmers deliver to a named collection point at a published grade and price; the network bulks, transports and contracts to buyers. Every consignment gets a receipt with weight, grade and moisture. Revenue: fixed handling fee per kilogram.

@@ -50,7 +50,7 @@ On first boot the server runs `schema.sql` (idempotent) and seeds all reference 
 
 | Network | Kind | What it does |
 |---|---|---|
-| **Busolya Biz Network** | Business | Membership, listing, matched demand. Verified once, listed in the yellow-pages directory, receives demand leads matching sector and district. Revenue: annual membership + directory placement + per-deal facilitation fee. |
+| **Busolya Biz Network** | Business | Membership, listing, matched demand. Verified once, listed in the yellow-pages directory, receives visitor request leads matching sector and district. Revenue: annual membership + directory placement + per-deal facilitation fee. |
 | **Bataka Trade Network** | Trade | Aggregation and off-take. Farmers deliver to a collection point at a published grade and price; the network bulks, transports and contracts to buyers. Revenue: fixed handling fee per kilogram. |
 
 ### Two Farm Aid compartments
@@ -270,7 +270,7 @@ Notes are in English. Presentations are in Luganda. Sharing or printing a note c
 | `visitors` | One row per phone number, deduped, with visit count |
 | `suppliers` | Every supplier registration; also created from supply submissions |
 | `supplier_products` | Products and services added by suppliers via the portal |
-| `demand_stock` | Links between supplier products and demand submissions |
+| `visitor_requests_stock` | Links between supplier products and visitor request submissions |
 | `directory_entries` | Yellow-pages register; hidden until verified by admin |
 | `supplier_directory_link` | Links a registered supplier user to their directory entry |
 | `questions` | Configurable questionnaires per audience (demand / supply / linkage) |
@@ -350,7 +350,7 @@ All public endpoints are CORS-open. Auth-protected endpoints require the `bsl_su
 | `POST /api/education/notes` | admin / employee | Add a note |
 | `POST /api/education/presentations` | admin / employee | Add a presentation |
 | `POST /api/education/shares` | any signed-in user | Share / print a note (UGX 5,000, idempotent) |
-| `POST /api/demand/stock` | admin / employee | Link a product to a demand submission |
+| `POST /api/visitor-requests/stock` | admin / employee | Link a product to a visitor request submission |
 | `GET /api/sacco/members` | admin / employee | SACCO member list |
 | `POST /api/sacco/members` | admin / employee | Add a member manually |
 | `GET /api/sacco/transactions` | admin / employee | Transaction log |
@@ -391,9 +391,9 @@ These are the items to be produced for distribution at the expo and through soci
 | Item | Content | Format | Audience |
 |---|---|---|---|
 | **Expo programme card** | Six-day schedule with session titles (Luganda), presenters and times | A5 double-sided, 1,000 copies | Gate, information desk, exhibitor stands |
-| **Demand log form** | Objective form: visitor name, phone, district, what they need, quantity, timing, payment route, credit needed (yes/no) | A4 single-sided, carbon-copy pad of 200 | Information desk and exhibitor marshals |
+| **Visitor request form** | Objective form: visitor name, phone, district, what they need, quantity, timing, payment route, credit needed (yes/no) | A4 single-sided, carbon-copy pad of 200 | Information desk and exhibitor marshals |
 | **Supply log form** | Exhibitor registration: business name, contact, district, category, what they supply, capacity, price band, listing opt-in | A4 single-sided | Exhibitor registration desk |
-| **QR card** | QR code linking to `bae/visit.html` (demand log), `bae/questions.html` (supply form) | Business card size, 2,000 copies | Gate, information desk, all exhibitor stands |
+| **QR card** | QR code linking to `bae/visit.html` (visitor requests), `bae/questions.html` (supply form) | Business card size, 2,000 copies | Gate, information desk, all exhibitor stands |
 | **Business directory insert** | Current verified listings from the Busolya Biz Network directory | A5 booklet, 500 copies | Information desk, SACCO desk |
 | **Farm Aid one-pager** | What Farm Aid is, how to offer land, how to become a manager, the 17× recoupment model, contact | A4 single-sided, 500 copies | All stands, gate |
 | **SACCO membership card** | Member number, name, join date, space for savings record stamps | Credit card size | SACCO desk on registration |
@@ -405,8 +405,8 @@ These are the items to be produced for distribution at the expo and through soci
 |---|---|---|---|
 | **Daily session announcement** | Session title (Luganda + English), presenter name, time and day | WhatsApp broadcast, Facebook | Morning of each expo day |
 | **Presenter profile posts** | Photo, name, institution, one-line bio, what they will teach | Facebook, Instagram | One per day, day before each presenter's session |
-| **QR code graphic** | QR to demand log form with short caption: *"Log your order at the expo"* | WhatsApp broadcast, Facebook | Daily during expo |
-| **Demand log call-to-action** | *"What did you come to buy? Fill in the form and a supplier will call you."* | WhatsApp, SMS broadcast | Day 1 morning, Day 3 morning |
+| **QR code graphic** | QR to visitor requests form with short caption: *"Log your order at the expo"* | WhatsApp broadcast, Facebook | Daily during expo |
+| **Visitor request call-to-action** | *"What did you come to buy? Fill in the form and a supplier will call you."* | WhatsApp, SMS broadcast | Day 1 morning, Day 3 morning |
 | **Supplier registration call-to-action** | *"Register your business now. Be found. Be matched."* with link to `baf/supplier-login.html` | WhatsApp, Facebook | One week before expo, Day 1 |
 | **Farm Aid call-to-action** | *"Do you have dormant land? We put it to work."* with link to `baf/programs.html#farmaid` | WhatsApp, Facebook | Day 3, Day 5 |
 | **SACCO membership call-to-action** | *"Join at the expo desk or register online in 2 minutes."* with link to `mutindo/index.html#membership` | WhatsApp broadcast | Day 2, Day 4 |

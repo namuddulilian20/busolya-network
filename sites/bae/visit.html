@@ -25,7 +25,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 <div class="bg-leafdark text-[#eaf3e4] no-print">
   <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-2 text-xs tracking-wide">
     <p><span class="text-gold">●</span> Bataka Agro Expo · 4 to 8 November 2026</p>
-    <p class="hidden sm:block">Registry desk — demand log, suppliers log, credit desk</p>
+    <p class="hidden sm:block">Registry desk — visitor requests, suppliers log, credit desk</p>
   </div>
 </div>
 
@@ -35,8 +35,8 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 <section class="bg-bark px-5 py-10 text-[#f6ecdd] no-print">
   <div class="mx-auto max-w-6xl">
     <p class="text-[.72rem] font-bold uppercase tracking-[.18em] text-gold">Three routes, one record</p>
-    <h1 class="mt-2 font-display text-3xl font-bold text-white sm:text-4xl">The expo questionnaire</h1>
-    <p class="mt-3 max-w-2xl text-[#e8d9c4]">Scan, print, or log at the stand. Every answer lands in the demand log; every exhibitor lands in the suppliers log; credit sits on a named creditor or guarantor.</p>
+    <h1 class="mt-2 font-display text-3xl font-bold text-white sm:text-4xl">What are you here to buy?</h1>
+    <p class="mt-3 max-w-2xl text-[#e8d9c4]">Two minutes. Tell us what you need, how much, and when. We'll match you with exhibitors who have it — before the tent comes down.</p>
   </div>
 </section>
 
@@ -44,17 +44,17 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   <div class="mx-auto max-w-6xl">
 
     <div class="flex flex-wrap gap-2" role="tablist">
-      <button type="button" data-tab="demand" class="tab rounded-full bg-bark px-5 py-2.5 text-sm font-bold text-white">I am a visitor</button>
-      <button type="button" data-tab="supply" class="tab rounded-full border-2 border-bark px-5 py-2.5 text-sm font-bold text-bark">I am an exhibitor / supplier</button>
+      <button type="button" data-tab="visitor-requests" class="tab rounded-full bg-bark px-5 py-2.5 text-sm font-bold text-white">What I need</button>
+      <button type="button" data-tab="supply" class="tab rounded-full border-2 border-bark px-5 py-2.5 text-sm font-bold text-bark">What I supply</button>
       <button type="button" data-tab="desk" class="tab rounded-full border-2 border-bark px-5 py-2.5 text-sm font-bold text-bark">Marshal desk</button>
       <button type="button" data-tab="print" class="tab rounded-full border-2 border-bark px-5 py-2.5 text-sm font-bold text-bark">Printed forms &amp; QR</button>
     </div>
 
-    <!-- ================= DEMAND LOG ================= -->
+    <!-- ================= VISITOR REQUESTS ================= -->
     <div data-panel="demand" class="panel mt-6 hidden"><div class="grid gap-6 md:grid-cols-[1.2fr_.8fr]">
-      <form id="demandForm" class="rounded-2xl border border-[#e2d6c2] bg-paper p-7">
-        <h2 class="font-display text-2xl font-bold text-bark">Demand log entry</h2>
-        <p class="mt-1 text-sm text-ink/60">Two minutes. Name and phone are the only things you must write.</p>
+      <form id="visitorRequestForm" class="rounded-2xl border border-[#e2d6c2] bg-paper p-7">
+        <h2 class="font-display text-2xl font-bold text-bark">Tell us what you need</h2>
+        <p class="mt-1 text-sm text-ink/60">Tell us what you came for. Name and phone are all we need.</p>
 
         <div class="mt-5 grid gap-4 sm:grid-cols-2">
           <div class="sm:col-span-2">
@@ -179,7 +179,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
         <label class="mt-4 flex items-start gap-3 text-sm">
           <input type="checkbox" id="d-consent" class="mt-1 h-4 w-4 rounded border-[#e2d6c2]">
-          <span>I agree that these details may be kept in the Busolya demand log and shared with a matching supplier, creditor or SACCO. *</span>
+          <span>I agree that these details may be kept in the Busolya visitor requests and shared with a matching supplier, creditor or SACCO. *</span>
         </label>
 
         <p id="demandMsg" class="mt-4 hidden rounded-lg border-l-4 px-4 py-3 text-sm"></p>
@@ -279,7 +279,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
           <h3 class="font-display text-lg font-bold text-bark">What a listing buys you</h3>
           <ul class="mt-3 space-y-2 text-sm">
             <li class="flex gap-2"><span class="text-leaf font-bold">œ“</span> A record that survives the expo</li>
-            <li class="flex gap-2"><span class="text-leaf font-bold">œ“</span> Matching against every demand-log entry in your category</li>
+            <li class="flex gap-2"><span class="text-leaf font-bold">œ“</span> Matching against every visitor-requests entry in your category</li>
             <li class="flex gap-2"><span class="text-leaf font-bold">œ“</span> A credit history once your orders clear</li>
             <li class="flex gap-2"><span class="text-leaf font-bold">œ“</span> Print and online directory placement</li>
           </ul>
@@ -406,7 +406,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
     </div>
 
     <p class="mt-5 text-sm font-bold">7. Consent</p>
-    <p class="mt-1 text-xs">☐ The visitor agrees that these details may be kept in the Busolya demand log and shared with a matching supplier, creditor or SACCO.</p>
+    <p class="mt-1 text-xs">☐ The visitor agrees that these details may be kept in the Busolya visitor requests and shared with a matching supplier, creditor or SACCO.</p>
     <div class="mt-6 grid grid-cols-2 gap-6 text-xs">
       <p>Visitor signature: ____________________________</p>
       <p>Marshal signature: ___________________________</p>
@@ -479,8 +479,8 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   });
 
   /* ---------- demand submit ---------- */
-  var demandForm = document.getElementById('demandForm');
-  demandForm.addEventListener('submit', function (e) {
+  var visitorRequestForm = document.getElementById('visitorRequestForm');
+  visitorRequestForm.addEventListener('submit', function (e) {
     e.preventDefault();
     var msg = document.getElementById('demandMsg');
     var need = ['d-name', 'd-phone', 'd-district', 'd-role', 'd-cat'];
@@ -488,7 +488,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
     if (missing.length) { say(msg, 'Please fill the required fields (name, phone, district, who you are, what you came for).', false); return; }
     if (!document.getElementById('d-consent').checked) { say(msg, 'The consent box must be ticked before the entry can be logged.', false); return; }
 
-    var arr = read(KEYS.demand);
+    var arr = read(KEYS.visitorRequests);
     var rec = {
       ref: ref('BAE-D', arr.length + 1),
       type: 'Demand',
@@ -510,7 +510,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
       at: new Date().toISOString()
     };
     arr.push(rec);
-    if (!write(KEYS.demand, arr)) { say(msg, 'This browser blocked local storage. Use the printed form at the desk instead.', false); return; }
+    if (!write(KEYS.visitorRequests, arr)) { say(msg, 'This browser blocked local storage. Use the printed form at the desk instead.', false); return; }
     say(msg, 'Logged as ' + rec.ref + '. Keep that reference — the desk uses it to follow up.', true);
     var sent = {
       kind: 'demand',
@@ -535,7 +535,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
       source: 'expo-desk'
     };
     sync(sent, msg, rec.ref);
-    demandForm.reset();
+    visitorRequestForm.reset();
     creditBox.classList.add('hidden');
   });
 
@@ -589,7 +589,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   /* ---------- desk ---------- */
   function renderDesk() {
     var rows = document.getElementById('deskRows');
-    var all = read(KEYS.demand).concat(read(KEYS.supply));
+    var all = read(KEYS.visitorRequests).concat(read(KEYS.supply));
     rows.innerHTML = '';
     all.forEach(function (r) {
       var tr = document.createElement('tr');
@@ -607,7 +607,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
       rows.appendChild(tr);
     });
     document.getElementById('deskCount').textContent =
-      read(KEYS.demand).length + ' demand entries · ' + read(KEYS.supply).length + ' supplier entries in this browser';
+      read(KEYS.visitorRequests).length + ' visitor request entries · ' + read(KEYS.supply).length + ' supplier entries in this browser';
   }
 
   function csvCell(v) {
@@ -615,7 +615,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
     return '"' + s + '"';
   }
   document.getElementById('exportBtn').addEventListener('click', function () {
-    var rows = read(KEYS.demand).concat(read(KEYS.supply));
+    var rows = read(KEYS.visitorRequests).concat(read(KEYS.supply));
     if (!rows.length) { alert('No entries in this browser yet.'); return; }
     var cols = ['ref', 'type', 'name', 'person', 'phone', 'district', 'role', 'category', 'qty', 'budget', 'when', 'credit', 'amount', 'guarantor', 'guarantorPhone', 'relationship', 'source', 'offer', 'listing', 'creditTerms', 'note', 'at'];
     var out = [cols.join(',')];
@@ -632,7 +632,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
   document.getElementById('clearBtn').addEventListener('click', function () {
     if (!confirm('Clear all demand and supplier entries saved in this browser? Export first if you still need them.')) return;
-    localStorage.removeItem(KEYS.demand);
+    localStorage.removeItem(KEYS.visitorRequests);
     localStorage.removeItem(KEYS.supply);
     renderDesk();
   });
