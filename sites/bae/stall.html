@@ -27,6 +27,10 @@
     <div class="flex items-center gap-3">
       <a href="visit.html" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Log interest / demand</a>
       <a href="exhibitors.html" class="rounded-full border-2 border-bark px-6 py-3 text-sm font-bold text-bark hover:bg-bark hover:text-white">Back to register</a>
+      <div class="flex items-center gap-2">
+        <button onclick="shareStall('wa')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on WhatsApp">WhatsApp</button>
+        <button onclick="shareStall('tg')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on Telegram">Telegram</button>
+      </div>
     </div>
   </div>
   <section class="mb-8">
@@ -76,12 +80,16 @@
         if (!mine.length) { none.style.display = ''; return; }
         none.style.display = 'none';
         list.innerHTML = mine.map(function (p) {
-          return '<article class="rounded-xl border border-[#e2d6c2] bg-white p-4">' +
+          return '<article data-pid="' + p.id + '" class="rounded-xl border border-[#e2d6c2] bg-white p-4" id="product-' + p.id + '">' +
             '<h3 class="font-display text-lg font-bold text-bark">' + (p.title || 'Product') + '</h3>' +
             '<p class="mt-1 text-sm text-ink/60">' + (p.category || '') + (p.unit ? ' · ' + p.unit : '') + '</p>' +
             (p.price ? '<p class="mt-1 text-sm font-bold text-leaf">UGX ' + Number(p.price).toLocaleString() + '</p>' : '') +
             (p.description ? '<p class="mt-1 text-xs text-ink/50">' + p.description + '</p>' : '') +
             '<p class="mt-2 text-xs text-ink/40">Stock: ' + (p.quantity_stock || 0) + ' · ' + (p.district || '—') + '</p>' +
+            '<div class="mt-3 flex gap-2">' +
+            '<button onclick="shareProduct(' + p.id + ',\'wa\')" class="flex-1 rounded border border-[#e2d6c2] px-2 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on WhatsApp">WhatsApp</button>' +
+            '<button onclick="shareProduct(' + p.id + ',\'tg\')" class="flex-1 rounded border border-[#e2d6c2] px-2 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on Telegram">Telegram</button>' +
+            '</div>' +
             '</article>';
         }).join('');
       }).catch(function () {
@@ -130,6 +138,33 @@
     })
     .catch(function () { showDemandMsg('Server error. Try again.', 'err'); });
   });
+  /* ── WhatsApp / Telegram sharing ─────────────────────────── */
+  function shareWhatsApp(text) {
+    var url = 'https://wa.me/?text=' + encodeURIComponent(text);
+    window.open(url, '_blank');
+  }
+  function shareTelegram(text, link) {
+    var url = 'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text);
+    window.open(url, '_blank');
+  }
+  function shareStall(platform) {
+    var name = document.getElementById('stallName').textContent;
+    var ex = document.getElementById('stallExhibitor').textContent;
+    var pageUrl = location.origin + location.pathname + location.search;
+    var text = (ex ? ex + '\n' : '') + name + '\n' + pageUrl;
+    if (platform === 'wa') shareWhatsApp(text);
+    else shareTelegram(text, pageUrl);
+  }
+  function shareProduct(pid, platform) {
+    var card = document.querySelector('[data-pid="' + pid + '"]');
+    if (!card) return;
+    var title = card.querySelector('h3') ? card.querySelector('h3').textContent : 'Product';
+    var pageUrl = location.origin + location.pathname + location.search + '#product-' + pid;
+    var text = title + '\n' + (stallBiz || '') + '\n' + pageUrl;
+    if (platform === 'wa') shareWhatsApp(text);
+    else shareTelegram(text, pageUrl);
+  }
+
   function showDemandMsg(text, type) {
     var msg = document.getElementById('demandMsg');
     msg.className = 'mt-3 rounded-lg px-4 py-3 text-sm ' +

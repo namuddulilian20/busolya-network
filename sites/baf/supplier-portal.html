@@ -33,6 +33,10 @@ tailwind.config = {
     </div>
     <div class="flex items-center gap-3">
       <span id="supplierName" class="rounded-full bg-bark/10 px-3 py-1.5 text-sm font-semibold text-bark"></span>
+      <div class="flex items-center gap-2">
+        <button onclick="shareStore('wa')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on WhatsApp">WhatsApp</button>
+        <button onclick="shareStore('tg')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on Telegram">Telegram</button>
+      </div>
       <button onclick="window.BusolyaAuth&&window.BusolyaAuth.logout()"
         class="rounded-full border border-bark px-4 py-2 text-sm font-bold text-bark hover:bg-bark hover:text-white transition">
         Sign out
@@ -199,6 +203,7 @@ tailwind.config = {
     products.forEach(function (p) {
       var card = document.createElement('div');
       card.className = 'flex flex-wrap items-start justify-between gap-3 rounded-xl border border-[#e2d6c2] bg-paper p-4';
+      card.setAttribute('data-pid', p.id);
       card.innerHTML =
         '<div class="flex-1 min-w-0">' +
           '<p class="font-semibold text-bark">' + (p.title || '') + '</p>' +
@@ -215,6 +220,8 @@ tailwind.config = {
         '</div>' +
         '<div class="flex gap-2 shrink-0">' +
           '<button data-id="' + p.id + '" class="del-btn rounded-lg border border-[#e2d6c2] px-3 py-1.5 text-xs text-seal hover:bg-[#fbe9e7] transition">Remove</button>' +
+          '<button onclick="shareProduct(' + p.id + ',\'wa\')" class="rounded border border-[#e2d6c2] px-2 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on WhatsApp">WhatsApp</button>' +
+          '<button onclick="shareProduct(' + p.id + ',\'tg\')" class="rounded border border-[#e2d6c2] px-2 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on Telegram">Telegram</button>' +
         '</div>';
       list.appendChild(card);
     });
@@ -313,6 +320,30 @@ tailwind.config = {
     })
     .catch(function () { showAddMsg('Server error. Try again.', 'err'); });
   });
+
+  /* ── WhatsApp / Telegram sharing ─────────────────────────── */
+  function shareWhatsApp(text) {
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+  }
+  function shareTelegram(text, link) {
+    window.open('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text), '_blank');
+  }
+  function shareStore(platform) {
+    var name = document.getElementById('supplierName').textContent || 'Supplier Store';
+    var pageUrl = location.origin + location.pathname;
+    var text = name + '\n' + pageUrl;
+    if (platform === 'wa') shareWhatsApp(text);
+    else shareTelegram(text, pageUrl);
+  }
+  function shareProduct(pid, platform) {
+    var card = document.querySelector('[data-pid="' + pid + '"]');
+    if (!card) return;
+    var title = card.querySelector('.font-semibold') ? card.querySelector('.font-semibold').textContent : 'Product';
+    var pageUrl = location.origin + location.pathname + '#product-' + pid;
+    var text = title + '\n' + pageUrl;
+    if (platform === 'wa') shareWhatsApp(text);
+    else shareTelegram(text, pageUrl);
+  }
 
   loadProducts();
   loadStats();

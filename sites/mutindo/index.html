@@ -46,6 +46,10 @@ tailwind.config = {
       <div class="mt-7 flex flex-wrap gap-3">
         <a href="#network" class="rounded-full bg-gold px-6 py-3 text-sm font-bold text-[#40200f] hover:bg-[#d9a03d]">See the network</a>
         <a href="#" data-net="baf" class="rounded-full border-2 border-[#fbeade]/70 px-6 py-3 text-sm font-bold text-[#fbeade] hover:bg-[#fbeade] hover:text-maroon">Busolya Agro Farmers</a>
+        <div class="flex items-center gap-2">
+          <button onclick="shareSacco('wa')" class="rounded-full border border-[#fbeade]/50 px-3 py-1.5 text-[.7rem] font-semibold text-[#fbeade] hover:bg-white/20 transition" title="Share on WhatsApp">WhatsApp</button>
+          <button onclick="shareSacco('tg')" class="rounded-full border border-[#fbeade]/50 px-3 py-1.5 text-[.7rem] font-semibold text-[#fbeade] hover:bg-white/20 transition" title="Share on Telegram">Telegram</button>
+        </div>
       </div>
     </div>
     <div class="justify-self-center">
@@ -224,6 +228,17 @@ tailwind.config = {
       })
       .catch(function () { showMsg('Could not reach the server.', 'err'); });
     });
+  }
+
+  /* ── SACCO hub sharing ───────────────────────────────────── */
+  function shareSacco(platform) {
+    var pageUrl = location.origin + location.pathname;
+    var text = 'Abataka Mutindo SACCO — join the network\n' + pageUrl;
+    if (platform === 'wa') {
+      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    } else {
+      window.open('https://t.me/share/url?url=' + encodeURIComponent(pageUrl) + '&text=' + encodeURIComponent(text), '_blank');
+    }
   }
 })();
 </script>
