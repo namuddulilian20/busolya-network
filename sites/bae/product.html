@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en" data-site="bae">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Product — Bataka Agro Expo 2026</title>
+<meta id="metaDesc" name="description" content="Product detail — Bataka Agro Expo 2026">
+<link rel="icon" href="assets/mark.svg">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: {
+      bark:'#4a2311', bark2:'#63301a', cream:'#fbf6ec', paper:'#fffdf8',
+      leaf:'#2f7d32', leafdark:'#1f5523', seal:'#a8321e',
+      gold:'#c68a2e', golddark:'#a06e1a', ink:'#2a1a10',
+      expo:'#0d2d1e', expomid:'#164430'
+    },
+    fontFamily: {
+      display:['Georgia','Times New Roman','serif'],
+      body:['Segoe UI','system-ui','sans-serif']
+    }
+  }}
+}
+</script>
+<style>
+/* ── Gallery thumbnails ── */
+.thumb { cursor: pointer; transition: ring .15s, opacity .15s; }
+.thumb.active { ring: 2px; ring-color: #c68a2e; opacity: 1; }
+.thumb:not(.active) { opacity: .65; }
+.thumb:hover { opacity: 1; }
+
+/* ── Skeleton shimmer ── */
+@keyframes shimmer { 0%{background-position:-600px 0} 100%{background-position:600px 0} }
+.skeleton {
+  background: linear-gradient(90deg, #e8ddd0 25%, #f4ede5 50%, #e8ddd0 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: .75rem;
+}
+
+/* ── Gallery scroll hint on mobile ── */
+.media-strip { scrollbar-width: none; }
+.media-strip::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body class="bg-cream font-body text-ink antialiased">
+
+<!-- ticker -->
+<div class="overflow-hidden bg-expomid text-[#c8e8bc] py-1.5 text-[.68rem] font-bold uppercase tracking-[.18em]">
+  <div style="white-space:nowrap;animation:ticker 28s linear infinite" class="inline-flex gap-10 px-6">
+    <span>🟡 Bataka Agro Expo 2026</span><span>📍 Lwatamu Gardens, Mengo, Kampala</span>
+    <span>📅 4–8 November 2026</span><span>🎟 Adults UGX 5,000</span>
+    <span>🟡 Bataka Agro Expo 2026</span><span>📍 Lwatamu Gardens, Mengo, Kampala</span>
+    <span>📅 4–8 November 2026</span><span>🎟 Adults UGX 5,000</span>
+  </div>
+</div>
+<style>@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}</style>
+
+<div id="header-placeholder"></div>
+
+<!-- breadcrumb -->
+<div class="border-b border-[#e2d6c2] bg-paper px-5 py-3">
+  <nav class="mx-auto max-w-7xl flex items-center gap-2 text-xs text-ink/50 flex-wrap">
+    <a href="index.html" class="hover:text-bark">Marketplace</a>
+    <span>/</span>
+    <a id="bcStall" href="index.html" class="hover:text-bark">Stall</a>
+    <span>/</span>
+    <span id="bcProduct" class="text-bark font-semibold">Product</span>
+  </nav>
+</div>
+
+<main class="mx-auto max-w-7xl px-5 py-8">
+
+  <!-- skeleton -->
+  <div id="skeleton" class="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
+    <div class="skeleton h-80 w-full"></div>
+    <div class="space-y-4">
+      <div class="skeleton h-8 w-2/3"></div>
+      <div class="skeleton h-4 w-1/3"></div>
+      <div class="skeleton h-4 w-full"></div>
+      <div class="skeleton h-4 w-5/6"></div>
+      <div class="skeleton h-12 w-1/2"></div>
+    </div>
+  </div>
+
+  <!-- content (hidden until loaded) -->
+  <div id="content" class="hidden">
+
+    <div class="grid gap-10 lg:grid-cols-[1.15fr_1fr]">
+
+      <!-- ── Left: image gallery ── -->
+      <div>
+        <!-- Main image -->
+        <div id="mainImgWrap" class="relative overflow-hidden rounded-2xl border border-[#e2d6c2] bg-paper"
+          style="aspect-ratio:4/3">
+          <img id="mainImg" src="" alt="" class="h-full w-full object-cover hidden" loading="eager">
+          <div id="noImgPlaceholder"
+            class="flex h-full w-full items-center justify-center bg-[#e6efe0] text-7xl">🌱</div>
+          <!-- media type badge -->
+          <span id="mediaBadge" class="absolute top-3 left-3 hidden rounded-full bg-black/50 px-3 py-1 text-[.7rem] font-bold text-white backdrop-blur-sm"></span>
+        </div>
+
+        <!-- Thumbnail strip -->
+        <div id="thumbStrip" class="media-strip mt-3 flex gap-2 overflow-x-auto pb-1"></div>
+
+        <!-- Audio / video player (shown when selected item is non-image) -->
+        <div id="mediaPlayerWrap" class="mt-3 hidden">
+          <audio id="audioPlayer" controls class="w-full hidden rounded-xl"></audio>
+          <video id="videoPlayer" controls class="w-full hidden rounded-xl max-h-64" playsinline></video>
+        </div>
+      </div>
+
+      <!-- ── Right: product info ── -->
+      <div class="flex flex-col gap-6">
+
+        <!-- Category + stall badges -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span id="badgeCat" class="rounded-full bg-[#e6efe0] px-3 py-1 text-[.72rem] font-bold uppercase tracking-[.1em] text-leafdark hidden"></span>
+          <a id="badgeStall" href="#" class="rounded-full bg-bark/8 border border-bark/20 px-3 py-1 text-[.72rem] font-semibold text-bark hover:bg-bark hover:text-white transition hidden">
+            🏪 View full stall →
+          </a>
+        </div>
+
+        <!-- Title -->
+        <div>
+          <h1 id="productTitle" class="font-display text-3xl font-bold text-bark leading-tight"></h1>
+          <p id="productMeta" class="mt-1 text-sm text-ink/50"></p>
+        </div>
+
+        <!-- Price block -->
+        <div id="priceBlock" class="rounded-2xl border-2 border-[#e2d6c2] bg-paper p-5">
+          <div class="flex flex-wrap items-end gap-4">
+            <div>
+              <p class="text-[.68rem] uppercase tracking-[.1em] text-ink/45 mb-1">Price</p>
+              <p id="productPrice" class="font-display text-3xl font-bold text-leaf"></p>
+            </div>
+            <div id="stockBlock" class="hidden">
+              <p class="text-[.68rem] uppercase tracking-[.1em] text-ink/45 mb-1">Available stock</p>
+              <p id="productStock" class="font-display text-2xl font-bold text-bark"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div id="descBlock" class="hidden">
+          <h2 class="mb-2 text-sm font-bold uppercase tracking-[.1em] text-bark">About this product</h2>
+          <p id="productDesc" class="text-[.95rem] leading-relaxed text-ink/80 whitespace-pre-wrap"></p>
+        </div>
+
+        <!-- Details table -->
+        <div>
+          <h2 class="mb-2 text-sm font-bold uppercase tracking-[.1em] text-bark">Details</h2>
+          <dl id="detailsTable" class="grid grid-cols-[140px_1fr] gap-x-4 gap-y-2 text-sm">
+          </dl>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="flex flex-wrap gap-3 mt-auto">
+          <a id="btnDemand" href="visit.html" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark transition">
+            Log a demand for this
+          </a>
+          <a id="btnStall" href="#" class="rounded-full border-2 border-bark px-6 py-3 text-sm font-bold text-bark hover:bg-bark hover:text-white transition">
+            See full stall
+          </a>
+          <button id="btnShare" class="rounded-full border border-[#e2d6c2] px-6 py-3 text-sm font-semibold text-bark hover:bg-bark hover:text-white transition">
+            Share
+          </button>
+        </div>
+
+        <!-- Share pills (expand on click) -->
+        <div id="sharePills" class="hidden flex flex-wrap gap-2">
+          <button onclick="doShare('wa')" class="rounded-full bg-[#25d366] px-5 py-2 text-sm font-bold text-white">WhatsApp</button>
+          <button onclick="doShare('tg')" class="rounded-full bg-[#2ca5e0] px-5 py-2 text-sm font-bold text-white">Telegram</button>
+          <button onclick="doShare('fb')" class="rounded-full bg-[#1877f2] px-5 py-2 text-sm font-bold text-white">Facebook</button>
+          <button onclick="doShare('copy')" id="copyBtn" class="rounded-full border border-[#e2d6c2] px-5 py-2 text-sm font-semibold text-bark">Copy link</button>
+        </div>
+
+      </div><!-- /right -->
+    </div><!-- /grid -->
+
+    <!-- ── More from this stall ── -->
+    <section class="mt-14" id="moreSection">
+      <div class="mb-5 flex items-end justify-between">
+        <h2 class="font-display text-2xl font-bold text-bark">More from <span id="moreStallName"></span></h2>
+        <a id="moreStallLink" href="#" class="text-sm font-semibold text-leaf hover:underline">View full stall →</a>
+      </div>
+      <div id="moreGrid" class="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"></div>
+      <p id="noMore" class="hidden text-sm text-ink/50 py-4">No other listings from this stall yet.</p>
+    </section>
+
+    <!-- ── Demand form inline ── -->
+    <section class="mt-12 rounded-2xl border border-[#e2d6c2] bg-paper p-7" id="demandSection">
+      <h2 class="mb-1 font-display text-xl font-bold text-bark">Order or enquire about this product</h2>
+      <p class="mb-5 text-sm text-ink/55">Leave your details and what you need. The exhibitor will see your message at the expo and after.</p>
+      <form id="demandForm" novalidate class="grid gap-4 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <label class="mb-1 block text-sm font-semibold text-bark">Your name <span class="text-seal">*</span></label>
+          <input id="dName" type="text" required class="w-full rounded-lg border border-[#e2d6c2] bg-white px-4 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf">
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-bark">Phone <span class="text-seal">*</span></label>
+          <input id="dPhone" type="tel" required class="w-full rounded-lg border border-[#e2d6c2] bg-white px-4 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" placeholder="+256 700 000 000">
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-bark">District</label>
+          <input id="dDistrict" type="text" class="w-full rounded-lg border border-[#e2d6c2] bg-white px-4 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" placeholder="e.g. Wakiso">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="mb-1 block text-sm font-semibold text-bark">Quantity needed</label>
+          <input id="dQty" type="text" class="w-full rounded-lg border border-[#e2d6c2] bg-white px-4 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" placeholder="e.g. 50 kg, 2 boxes">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="mb-1 block text-sm font-semibold text-bark">Message / special requirements</label>
+          <textarea id="dMessage" rows="3" class="w-full rounded-lg border border-[#e2d6c2] bg-white px-4 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" placeholder="Delivery, payment terms, grade preference…"></textarea>
+        </div>
+        <div class="sm:col-span-2 flex items-center gap-4">
+          <button type="submit" class="rounded-full bg-leaf px-7 py-3 text-sm font-bold text-white hover:bg-leafdark transition">
+            Send enquiry
+          </button>
+        </div>
+      </form>
+      <div id="demandMsg" class="mt-3 hidden rounded-lg px-4 py-3 text-sm"></div>
+    </section>
+
+  </div><!-- /content -->
+
+  <!-- 404 state -->
+  <div id="notFound" class="hidden py-24 text-center">
+    <p class="text-5xl mb-4">🔍</p>
+    <p class="font-display text-2xl font-bold text-bark mb-2">Product not found</p>
+    <p class="text-sm text-ink/55 mb-6">This product may have been removed or the link is incorrect.</p>
+    <a href="index.html" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Back to marketplace</a>
+  </div>
+
+</main>
+
+<div id="footer-placeholder"></div>
+<script src="assets/network.js"></script>
+<script src="../shared/components.js"></script>
+<script>
+(function () {
+'use strict';
+
+var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+  ? '' : 'https://busolya-api.onrender.com';
+
+var params     = new URLSearchParams(location.search);
+var productId  = Number(params.get('id'));
+var stallId    = Number(params.get('stall'));   // optional hint from marketplace
+var stallBiz   = params.get('biz') || '';
+var stallEx    = params.get('ex')  || '';
+
+var _product   = null;
+var _media     = [];
+var _activeIdx = 0;
+
+/* ── helpers ── */
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmt(n) { return Number(n||0).toLocaleString('en-UG'); }
+function showEl(id)  { var el=document.getElementById(id); if(el) el.classList.remove('hidden'); }
+function hideEl(id)  { var el=document.getElementById(id); if(el) el.classList.add('hidden'); }
+function setText(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; }
+function showMsg(el,text,type) {
+  el.className='mt-3 rounded-lg px-4 py-3 text-sm ' +
+    (type==='ok'  ? 'bg-[#e6efe0] text-leafdark border border-leaf/30' :
+     type==='err' ? 'bg-[#fbe9e7] text-seal border border-seal/30' : 'hidden');
+  el.textContent=text; el.classList.remove('hidden');
+}
+
+/* ── Gallery ── */
+function activateMedia(idx) {
+  if (!_media.length) return;
+  _activeIdx = idx;
+  var m = _media[idx];
+  var mainImg   = document.getElementById('mainImg');
+  var noImg     = document.getElementById('noImgPlaceholder');
+  var badge     = document.getElementById('mediaBadge');
+  var audioEl   = document.getElementById('audioPlayer');
+  var videoEl   = document.getElementById('videoPlayer');
+  var playerWrap= document.getElementById('mediaPlayerWrap');
+
+  // Reset
+  mainImg.classList.add('hidden'); noImg.classList.add('hidden');
+  audioEl.classList.add('hidden'); videoEl.classList.add('hidden');
+  playerWrap.classList.add('hidden');
+  badge.classList.add('hidden');
+
+  if (m.media_type === 'image') {
+    if (m.storage_url) {
+      mainImg.src = m.storage_url;
+      mainImg.alt = m.title || _product.title || '';
+      mainImg.classList.remove('hidden');
+    } else {
+      noImg.classList.remove('hidden');
+    }
+  } else if (m.media_type === 'audio') {
+    noImg.classList.remove('hidden');
+    audioEl.src = m.storage_url || '';
+    audioEl.classList.remove('hidden');
+    playerWrap.classList.remove('hidden');
+    badge.textContent = '🎵 Audio'; badge.classList.remove('hidden');
+  } else if (m.media_type === 'video') {
+    videoEl.src = m.storage_url || '';
+    videoEl.classList.remove('hidden');
+    playerWrap.classList.remove('hidden');
+    badge.textContent = '🎬 Video'; badge.classList.remove('hidden');
+  } else {
+    noImg.classList.remove('hidden');
+    badge.textContent = '📄 ' + (m.media_type||'file'); badge.classList.remove('hidden');
+  }
+
+  // Thumbnails active state
+  document.querySelectorAll('.thumb').forEach(function(t,i){
+    t.classList.toggle('active', i === idx);
+    t.classList.toggle('ring-2', i === idx);
+    t.classList.toggle('ring-gold', i === idx);
+  });
+}
+
+function buildThumbs(media) {
+  var strip = document.getElementById('thumbStrip');
+  if (!media.length) { strip.style.display='none'; return; }
+  strip.innerHTML = media.map(function(m, i){
+    var icon = m.media_type === 'image'
+      ? (m.storage_url ? '<img src="'+esc(m.storage_url)+'" alt="" class="h-full w-full object-cover">' : '<span class="text-2xl">🌱</span>')
+      : (m.media_type === 'audio' ? '<span class="text-xl">🎵</span>' :
+         m.media_type === 'video' ? '<span class="text-xl">🎬</span>' : '<span class="text-xl">📄</span>');
+    return '<div class="thumb flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-xl overflow-hidden border-2 border-[#e2d6c2] bg-paper" data-idx="'+i+'">'+icon+'</div>';
+  }).join('');
+  strip.querySelectorAll('.thumb').forEach(function(t){
+    t.addEventListener('click', function(){ activateMedia(Number(t.getAttribute('data-idx'))); });
+  });
+}
+
+/* ── Render product ── */
+function renderProduct(product, media) {
+  _product = product;
+  _media   = media;
+
+  // Page title
+  document.title = esc(product.title) + ' — Bataka Agro Expo 2026';
+  document.getElementById('metaDesc').content = (product.description || product.title || '') + ' — Bataka Agro Expo 2026';
+
+  // Breadcrumb
+  var sId   = product.supplier_id || stallId;
+  var sBiz  = stallBiz || 'Stall';
+  var sUrl  = 'stall.html?id=' + sId + '&biz=' + encodeURIComponent(sBiz) + '&ex=' + encodeURIComponent(stallEx || sBiz);
+  var bcStall = document.getElementById('bcStall');
+  if (bcStall) { bcStall.textContent = sBiz; bcStall.href = sUrl; }
+  setText('bcProduct', product.title || 'Product');
+
+  // Title & meta
+  setText('productTitle', product.title || '');
+  var metaParts = [product.category, product.location, product.district].filter(Boolean);
+  setText('productMeta', metaParts.join(' · '));
+
+  // Category badge
+  if (product.category) {
+    var cat = document.getElementById('badgeCat');
+    cat.textContent = product.category; cat.classList.remove('hidden');
+  }
+  // Stall badge
+  var stallBadge = document.getElementById('badgeStall');
+  stallBadge.textContent = '🏪 ' + esc(sBiz) + ' — view full stall';
+  stallBadge.href = sUrl; stallBadge.classList.remove('hidden');
+
+  // Price
+  var priceEl = document.getElementById('productPrice');
+  if (product.price && Number(product.price) > 0) {
+    priceEl.textContent = 'UGX ' + fmt(product.price) + (product.unit ? ' / ' + product.unit : '');
+  } else {
+    priceEl.textContent = 'Ask for price';
+    priceEl.className   = 'font-display text-2xl font-bold text-ink/40 italic';
+  }
+
+  // Stock
+  if (product.quantity_stock && Number(product.quantity_stock) > 0) {
+    showEl('stockBlock');
+    setText('productStock', fmt(product.quantity_stock) + (product.unit ? ' ' + product.unit : ' units'));
+  }
+
+  // Description
+  if (product.description) {
+    document.getElementById('productDesc').textContent = product.description;
+    showEl('descBlock');
+  }
+
+  // Details table
+  var dl = document.getElementById('detailsTable');
+  var rows = [
+    ['Category',    product.category],
+    ['Unit',        product.unit],
+    ['Price',       product.price && Number(product.price) > 0 ? 'UGX ' + fmt(product.price) + (product.unit ? ' per ' + product.unit : '') : null],
+    ['Stock',       product.quantity_stock && Number(product.quantity_stock) > 0 ? fmt(product.quantity_stock) + (product.unit ? ' ' + product.unit : '') : null],
+    ['Location',    product.location],
+    ['District',    product.district],
+    ['Listed',      product.created_at ? new Date(product.created_at).toLocaleDateString('en-UG', {day:'numeric',month:'short',year:'numeric'}) : null]
+  ];
+  dl.innerHTML = rows.filter(function(r){return r[1];}).map(function(r){
+    return '<dt class="text-ink/45 font-medium">'+esc(r[0])+'</dt><dd class="text-bark">'+esc(r[1])+'</dd>';
+  }).join('');
+
+  // Action buttons
+  var btnStall = document.getElementById('btnStall');
+  btnStall.href = sUrl;
+  var moreLink = document.getElementById('moreStallLink');
+  if (moreLink) moreLink.href = sUrl;
+
+  // Demand button pre-fills the stall context
+  var btnDemand = document.getElementById('btnDemand');
+  btnDemand.href = 'visit.html?stall=' + (product.supplier_id||stallId) + '&product=' + product.id;
+
+  // Share
+  document.getElementById('btnShare').addEventListener('click', function(){
+    var pills = document.getElementById('sharePills');
+    pills.classList.toggle('hidden');
+  });
+
+  // Gallery
+  buildThumbs(media);
+  if (media.length) {
+    activateMedia(0);
+  } else {
+    // no media at all
+    document.getElementById('noImgPlaceholder').classList.remove('hidden');
+  }
+
+  // "More from stall" section
+  var moreNameEl = document.getElementById('moreStallName');
+  if (moreNameEl) moreNameEl.textContent = sBiz;
+  loadMoreFromStall(product.supplier_id || stallId, product.id);
+
+  hideEl('skeleton');
+  showEl('content');
+}
+
+/* ── More from stall ── */
+function loadMoreFromStall(supplierId, excludeId) {
+  if (!supplierId) return;
+  fetch(API + '/api/suppliers/products?supplier_id=' + supplierId)
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var products = (d.products || []).filter(function(p){ return p.id !== excludeId; }).slice(0,5);
+      var grid = document.getElementById('moreGrid');
+      if (!products.length) { showEl('noMore'); return; }
+      grid.innerHTML = products.map(function(p){
+        var detailUrl = 'product.html?id=' + p.id + '&stall=' + supplierId +
+          '&biz=' + encodeURIComponent(stallBiz || '') +
+          '&ex='  + encodeURIComponent(stallEx  || '');
+        return '<a href="' + detailUrl + '" class="rounded-2xl border border-[#e2d6c2] bg-paper overflow-hidden hover:shadow-md transition block no-underline">' +
+          '<div class="flex h-28 items-center justify-center bg-[#e6efe0] text-4xl overflow-hidden" id="more-thumb-' + p.id + '">🌱</div>' +
+          '<div class="p-3">' +
+            '<p class="font-semibold text-bark text-sm leading-snug line-clamp-2">' + esc(p.title) + '</p>' +
+            (p.price && Number(p.price) > 0
+              ? '<p class="mt-1 font-bold text-leaf text-xs">UGX ' + fmt(p.price) + (p.unit ? ' / '+esc(p.unit) : '') + '</p>'
+              : '<p class="mt-1 text-xs text-ink/40 italic">Ask for price</p>') +
+          '</div>' +
+        '</a>';
+      }).join('');
+
+      // Lazy-load thumbnails for more products
+      products.forEach(function(p){
+        fetch(API + '/api/products/' + p.id + '/media')
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            var imgs = (d.media||[]).filter(function(m){return m.media_type==='image';});
+            if (!imgs.length) return;
+            var el = document.getElementById('more-thumb-' + p.id);
+            if (!el) return;
+            el.innerHTML = '<img src="'+esc(imgs[0].storage_url)+'" alt="" class="h-full w-full object-cover">';
+          }).catch(function(){});
+      });
+    }).catch(function(){});
+}
+
+/* ── Demand form ── */
+document.getElementById('demandForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  var msgEl = document.getElementById('demandMsg');
+  var body = {
+    kind:     'demand',
+    name:     document.getElementById('dName').value.trim(),
+    phone:    document.getElementById('dPhone').value.trim(),
+    district: document.getElementById('dDistrict').value.trim() || undefined,
+    category: _product ? (_product.category || undefined) : undefined,
+    payload: {
+      product_id:    _product ? _product.id : null,
+      product_title: _product ? _product.title : null,
+      stall_id:      _product ? _product.supplier_id : stallId,
+      stall_biz:     stallBiz || undefined,
+      qty:           document.getElementById('dQty').value.trim() || undefined,
+      message:       document.getElementById('dMessage').value.trim() || undefined
+    },
+    answers:  {},
+    consent:  true,
+    source:   'product-page-' + (productId || 0)
+  };
+  if (!body.name || !body.phone) { showMsg(msgEl,'Name and phone are required.','err'); return; }
+
+  fetch(API + '/api/submissions', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    credentials: 'include',
+    body: JSON.stringify(body)
+  })
+  .then(function(r){ return r.json().then(function(d){return{ok:r.ok,data:d};}); })
+  .then(function(r){
+    if (!r.ok) { showMsg(msgEl, r.data.error || 'Could not submit enquiry.', 'err'); return; }
+    showMsg(msgEl, 'Enquiry sent. Reference: ' + (r.data.ref||'saved') + '. The exhibitor will follow up with you.', 'ok');
+    document.getElementById('demandForm').reset();
+  })
+  .catch(function(){ showMsg(msgEl,'Server error. Try again.','err'); });
+});
+
+/* ── Share ── */
+function doShare(platform) {
+  var url  = location.href;
+  var text = (_product ? _product.title : 'Product') + '\nBataka Agro Expo 2026\n' + url;
+  if (platform === 'wa')   window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+  if (platform === 'tg')   window.open('https://t.me/share/url?url='+encodeURIComponent(url)+'&text='+encodeURIComponent(text),'_blank');
+  if (platform === 'fb')   window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(url),'_blank');
+  if (platform === 'copy') {
+    navigator.clipboard.writeText(url).then(function(){
+      var btn = document.getElementById('copyBtn');
+      if(btn){btn.textContent='Copied!'; setTimeout(function(){btn.textContent='Copy link';},2000);}
+    }).catch(function(){});
+  }
+}
+
+/* ── Load ── */
+if (!productId) {
+  hideEl('skeleton');
+  showEl('notFound');
+} else {
+  fetch(API + '/api/products/' + productId)
+    .then(function(r){ return r.json().then(function(d){return{ok:r.ok,data:d};}); })
+    .then(function(r){
+      if (!r.ok || !r.data.product) { hideEl('skeleton'); showEl('notFound'); return; }
+      var product = r.data.product;
+      var media   = product.media || [];
+      // Fill stall info from URL params if not in product
+      if (!stallBiz && product.supplier_id) stallId = product.supplier_id;
+      renderProduct(product, media);
+    })
+    .catch(function(){ hideEl('skeleton'); showEl('notFound'); });
+}
+
+})();
+</script>
+</body>
+</html>

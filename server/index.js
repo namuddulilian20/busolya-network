@@ -1098,6 +1098,61 @@ app.get('/api/suppliers/products', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /api/products/:id — public single product detail with its media
+app.get('/api/products/:id', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ ok: false, error: 'bad id' });
+    const r = await db.query('select * from supplier_products where id = $1', [id]);
+    if (!r.rows.length) return res.status(404).json({ ok: false, error: 'product not found' });
+    const product = r.rows[0];
+    // Attach public media (images, audio, video)
+    const m = await db.query(
+      `select id, media_type, title, description, filename, mime_type, size_bytes,
+              storage_url, product_id, created_at
+       from supplier_media
+       where product_id = $1 and status = 'active'
+       order by created_at asc`,
+      [id]
+    );
+    product.media = m.rows || [];
+    return res.json({ ok: true, product });
+  } catch (err) { next(err); }
+});
+
+// GET /api/products/:id/media — public media for one product
+app.get('/api/products/:id/media', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ ok: false, error: 'bad id' });
+    const m = await db.query(
+      `select id, media_type, title, description, filename, mime_type, size_bytes,
+              storage_url, product_id, created_at
+       from supplier_media
+       where product_id = $1 and status = 'active'
+       order by created_at asc`,
+      [id]
+    );
+    return res.json({ ok: true, media: m.rows || [] });
+  } catch (err) { next(err); }
+});
+
+// GET /api/stall/:supplierId/media — public: all media for a stall (for the marketplace thumbnails)
+app.get('/api/stall/:supplierId/media', async (req, res, next) => {
+  try {
+    const sid = Number(req.params.supplierId);
+    if (!Number.isInteger(sid) || sid < 1) return res.status(400).json({ ok: false, error: 'bad id' });
+    const m = await db.query(
+      `select id, media_type, title, storage_url, product_id
+       from supplier_media
+       where supplier_id = $1 and status = 'active' and media_type = 'image'
+       order by created_at asc`,
+      [sid]
+    );
+    return res.json({ ok: true, media: m.rows || [] });
+  } catch (err) { next(err); }
+});
+
 app.post('/api/suppliers/products', requireSupplier, rateLimit, async (req, res, next) => {
   try {
     const b = req.body || {};

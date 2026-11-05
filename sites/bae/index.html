@@ -439,7 +439,13 @@ function buildProductCard(p, stallId, biz) {
     ? '<img src="' + esc(hasImg) + '" alt="' + esc(p.title) + '" class="h-36 w-full object-cover" loading="lazy">'
     : '<div class="flex h-36 w-full items-center justify-center bg-[#e6efe0] text-4xl">🌱</div>';
 
-  return '<a href="stall.html?id=' + stallId + '&biz=' + encodeURIComponent(biz) + '&ex=' + encodeURIComponent(biz) + '#product-' + p.id + '"' +
+  // Link to product detail page
+  var detailUrl = 'product.html?id=' + p.id
+    + '&stall=' + stallId
+    + '&biz=' + encodeURIComponent(biz)
+    + '&ex='  + encodeURIComponent(biz);
+
+  return '<a href="' + detailUrl + '"' +
     ' class="product-card flex flex-col rounded-2xl border border-[#e2d6c2] bg-paper overflow-hidden cursor-pointer no-underline">' +
     '<div class="overflow-hidden">' + imgHtml + '</div>' +
     '<div class="flex flex-col flex-1 p-3">' +
@@ -578,29 +584,38 @@ function loadMarketplace() {
         byStall[sid].push(p);
       });
 
-      // Also attempt to load media thumbnails for each product (best-effort)
-      // We merge images into products that have matching product_id in media
-      fetch(API + '/api/media')
-        .then(function (r2) { return r2.json(); })
-        .then(function (md) {
-          var mediaByProduct = {};
-          (md.media || []).forEach(function (m) {
-            if (m.media_type === 'image' && m.product_id) {
-              if (!mediaByProduct[m.product_id]) mediaByProduct[m.product_id] = m.storage_url;
-            }
-          });
-          // Attach first image to each product
-          Object.keys(byStall).forEach(function (sid) {
-            byStall[sid].forEach(function (p) {
-              if (mediaByProduct[p.id]) p.storage_url = mediaByProduct[p.id];
-            });
-          });
+        // Fetch media thumbnails per stall using the public endpoint
+        // We fire requests in parallel for all stalls that have products
+        var stallIds = Object.keys(byStall).filter(function(sid){ return byStall[sid].length > 0; });
+        if (!stallIds.length) {
           _stallData = byStall;
           renderStalls(byStall);
-        })
-        .catch(function () {
-          _stallData = byStall;
-          renderStalls(byStall);
+          return;
+        }
+        var pending = stallIds.length;
+        function done() {
+          pending -= 1;
+          if (pending <= 0) {
+            _stallData = byStall;
+            renderStalls(byStall);
+          }
+        }
+        stallIds.forEach(function(sid) {
+          fetch(API + '/api/stall/' + sid + '/media')
+            .then(function(r2){ return r2.json(); })
+            .then(function(md) {
+              var mediaByProduct = {};
+              (md.media || []).forEach(function(m){
+                if (m.media_type === 'image' && m.product_id) {
+                  if (!mediaByProduct[m.product_id]) mediaByProduct[m.product_id] = m.storage_url;
+                }
+              });
+              byStall[sid].forEach(function(p){
+                if (mediaByProduct[p.id]) p.storage_url = mediaByProduct[p.id];
+              });
+              done();
+            })
+            .catch(function(){ done(); });
         });
     })
     .catch(function () {
