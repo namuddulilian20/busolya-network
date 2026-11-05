@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en" data-site="mutindo">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Member Portal â€” Abataka Mutindo SACCO</title>
+  <link rel="icon" href="assets/amslogo.jpg">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: {
+      maroon: '#8a2f24', maroon2: '#5e1f18', sand: '#f7efe6', paper: '#fffdfa',
+      leaf: '#2f7d32', leafdark: '#1f5523', gold: '#c68a2e', ink: '#2b1a14'
+    } } } }
+  </script>
+  <style type="text/tailwindcss">
+    @layer base { body { @apply bg-sand text-ink font-body antialiased; } }
+    .tab-on { @apply border-b-2 border-maroon text-maroon font-bold; }
+    .tab-off { @apply border-b-2 border-transparent text-ink/50 hover:text-maroon2; }
+  </style>
+</head>
+<body>
+<div id="header-placeholder"></div>
+
+<main class="mx-auto max-w-5xl px-5 py-8">
+  <div class="mb-7 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="font-display text-3xl font-bold text-maroon2">Your SACCO account</h1>
+      <p class="mt-1 text-sm text-ink/60">Deposits, withdrawals, shares and guarantor records. Members only.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="memberName" class="rounded-full bg-maroon/10 px-3 py-1.5 text-sm font-semibold text-maroon2"></span>
+      <button onclick="window.BusolyaAuth&&window.BusolyaAuth.logout()" class="rounded-full border border-maroon px-4 py-2 text-sm font-bold text-maroon hover:bg-maroon hover:text-white transition">Sign out</button>
+    </div>
+  </div>  <!-- Stats row -->
+  <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-5">
+    <div class="rounded-xl border border-[#e6d5c8] bg-paper p-4"><p class="text-xs uppercase tracking-[.14em] text-ink/45">Member number</p><p class="mt-1 font-display text-2xl font-bold text-maroon2" id="statMemberNo">—</p></div>
+    <div class="rounded-xl border border-[#e6d5c8] bg-paper p-4"><p class="text-xs uppercase tracking-[.14em] text-ink/45">Shares (UGX)</p><p class="mt-1 font-display text-2xl font-bold text-maroon2" id="statShares">—</p></div>
+    <div class="rounded-xl border border-[#e6d5c8] bg-paper p-4"><p class="text-xs uppercase tracking-[.14em] text-ink/45">Savings (UGX)</p><p class="mt-1 font-display text-2xl font-bold text-maroon2" id="statSavings">—</p></div>
+    <div class="rounded-xl border border-[#e6d5c8] bg-paper p-4"><p class="text-xs uppercase tracking-[.14em] text-ink/45">Balance (UGX)</p><p class="mt-1 font-display text-2xl font-bold text-leaf" id="statBalance">—</p></div>
+    <div class="rounded-xl border border-[#e6d5c8] bg-paper p-4"><p class="text-xs uppercase tracking-[.14em] text-ink/45">Status</p><p class="mt-1 font-display text-2xl font-bold text-maroon2" id="statStatus">—</p></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="mb-6 flex flex-wrap border-b border-[#e6d5c8]">
+    <button class="tab-on px-4 py-3" data-tab="account">Account</button>
+    <button class="tab-off px-4 py-3" data-tab="transactions">Transactions</button>
+    <button class="tab-off px-4 py-3" data-tab="deposit">Deposit</button>
+    <button class="tab-off px-4 py-3" data-tab="withdraw">Withdraw / Payout</button>
+    <button class="tab-off px-4 py-3" data-tab="guarantors">Guarantors</button>
+  </div>
+
+  <!-- Account tab -->
+  <div id="tab-account" class="tab-panel">
+    <div class="rounded-xl border border-[#e6d5c8] bg-paper p-6">
+      <h2 class="mb-4 font-display text-xl font-bold text-maroon2">Account details</h2>
+      <dl class="grid gap-2 sm:grid-cols-2 text-sm">
+        <dt class="text-ink/60">Member number</dt><dd class="font-semibold" id="dMemberNo">—</dd>
+        <dt class="text-ink/60">Name</dt><dd class="font-semibold" id="dName">—</dd>
+        <dt class="text-ink/60">Phone</dt><dd class="font-semibold" id="dPhone">—</dd>
+        <dt class="text-ink/60">District</dt><dd class="font-semibold" id="dDistrict">—</dd>
+        <dt class="text-ink/60">Status</dt><dd class="font-semibold" id="dStatus">—</dd>
+        <dt class="text-ink/60">Joined</dt><dd class="font-semibold" id="dJoined">—</dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- Transactions tab -->
+  <div id="tab-transactions" class="tab-panel hidden">
+    <h2 class="mb-4 font-display text-xl font-bold text-maroon2">Transaction history</h2>
+    <div id="txList" class="space-y-2"></div>
+    <p id="noTx" class="hidden text-sm text-ink/50">No transactions yet.</p>
+  </div>
+
+  <!-- Deposit tab -->
+  <div id="tab-deposit" class="tab-panel hidden">
+    <div class="max-w-md rounded-xl border border-[#e6d5c8] bg-paper p-6">
+      <h2 class="mb-4 font-display text-xl font-bold text-maroon2">Make a deposit</h2>
+      <form id="depositForm" class="space-y-4">
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-maroon2">Amount (UGX) <span class="text-seal">*</span></label>
+          <input id="depAmount" type="number" required min="1000" class="w-full rounded-lg border border-[#e6d5c8] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none">
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-maroon2">Reference / narr <span class="text-seal">*</span></label>
+          <input id="depNarr" type="text" required placeholder="e.g. Share purchase / monthly savings" class="w-full rounded-lg border border-[#e6d5c8] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none">
+        </div>
+        <button type="submit" class="w-full rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark transition">Deposit</button>
+      </form>
+      <p id="depMsg" class="mt-3 hidden rounded-lg px-4 py-2 text-sm"></p>
+    </div>
+  </div>
+
+  <!-- Withdraw tab -->
+  <div id="tab-withdraw" class="tab-panel hidden">
+    <div class="max-w-md rounded-xl border border-[#e6d5c8] bg-paper p-6">
+      <h2 class="mb-4 font-display text-xl font-bold text-maroon2">Withdrawal / Payout</h2>
+      <form id="withdrawForm" class="space-y-4">
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-maroon2">Amount (UGX) <span class="text-seal">*</span></label>
+          <input id="wdAmount" type="number" required min="1000" class="w-full rounded-lg border border-[#e6d5c8] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none">
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-maroon2">Type <span class="text-seal">*</span></label>
+          <select id="wdType" class="w-full rounded-lg border border-[#e6d5c8] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none">
+            <option value="withdrawal">Withdrawal</option>
+            <option value="payout">Payout</option>
+            <option value="repayment">Loan repayment</option>
+          </select>
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-maroon2">Reference / narr <span class="text-seal">*</span></label>
+          <input id="wdNarr" type="text" required placeholder="e.g. School fees / farm input" class="w-full rounded-lg border border-[#e6d5c8] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none">
+        </div>
+        <button type="submit" class="w-full rounded-full bg-seal px-6 py-3 text-sm font-bold text-white hover:bg-seal/90 transition">Request payout</button>
+      </form>
+      <p id="wdMsg" class="mt-3 hidden rounded-lg px-4 py-2 text-sm"></p>
+    </div>
+  </div>
+
+  <!-- Guarantors tab -->
+  <div id="tab-guarantors" class="tab-panel hidden">
+    <h2 class="mb-4 font-display text-xl font-bold text-maroon2">Your guarantees</h2>
+    <p class="mt-1 text-sm text-ink/60 mb-4">Members you guarantee, and who guarantees you.</p>
+    <div id="guarList" class="space-y-2"></div>
+    <p id="noGuar" class="hidden text-sm text-ink/50">No guarantee records yet.</p>
+  </div>
+</main>
+
+<div id="footer-placeholder"></div>
+<script src="assets/network.js"></script>
+<script src="../shared/components.js"></script>
+<script>
+(function () {
+  'use strict';
+  var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+    ? '' : 'https://busolya-api.onrender.com';
+
+  if (!window.BusolyaAuth || !window.BusolyaAuth.isAuthenticated()) {
+    location.href = 'login.html';
+    return;
+  }
+  var me = window.BusolyaAuth.getUser();
+  if (!me || me.role !== 'member') {
+    location.href = 'login.html';
+    return;
+  }
+
+  var nameEl = document.getElementById('memberName');
+  if (nameEl && me) nameEl.textContent = me.name || me.phone;
+
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fmt(n) { return Number(n || 0).toLocaleString(); }
+  function show(id, text, type) {
+    var el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'mt-3 rounded-lg px-4 py-2 text-sm ' + (type === 'ok' ? 'bg-[#e6efe0] text-leafdark border border-leaf/30' : 'bg-[#fbe9e7] text-seal border border-seal/30');
+    el.classList.remove('hidden');
+  }
+  function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+  var tabs = document.querySelectorAll('[data-tab]');
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) {
+        t.classList.remove('tab-on'); t.classList.add('tab-off');
+        document.getElementById('tab-' + t.getAttribute('data-tab')).classList.add('hidden');
+      });
+      tab.classList.remove('tab-off'); tab.classList.add('tab-on');
+      document.getElementById('tab-' + tab.getAttribute('data-tab')).classList.remove('hidden');
+    });
+  });
+
+  function loadMember() {
+    document.getElementById('statMemberNo').textContent = me.member_no || '—';
+    document.getElementById('statShares').textContent = fmt(me.shares || 0);
+    document.getElementById('statSavings').textContent = fmt(me.savings || 0);
+    document.getElementById('statBalance').textContent = fmt((me.shares || 0) + (me.savings || 0));
+    document.getElementById('statStatus').textContent = me.status || 'active';
+    document.getElementById('dMemberNo').textContent = me.member_no || '—';
+    document.getElementById('dName').textContent = me.name || '—';
+    document.getElementById('dPhone').textContent = me.phone || '—';
+    document.getElementById('dDistrict').textContent = me.district || '—';
+    document.getElementById('dStatus').textContent = me.status || 'active';
+    document.getElementById('dJoined').textContent = me.joined_at || '—';
+  }
+
+  function loadTransactions() {
+    fetch(API + '/api/sacco/transactions', { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var list = document.getElementById('txList');
+        var none = document.getElementById('noTx');
+        var txs = d.transactions || [];
+        if (!txs.length) { none.classList.remove('hidden'); return; }
+        none.classList.add('hidden');
+        list.innerHTML = txs.map(function (t) {
+          return '<div class="rounded-lg border border-[#e6d5c8] bg-paper p-3 flex justify-between items-start"><div><p class="text-xs font-semibold text-maroon2">' + esc(t.type) + '</p><p class="text-xs text-ink/60">' + esc(t.narr || '') + '</p></div><div class="text-right"><p class="text-sm font-bold text-leafdark">UGX ' + fmt(t.amount) + '</p><p class="text-xs text-ink/50">' + esc(t.reference || '') + '</p><p class="text-xs text-ink/40">' + esc(t.created_at ? t.created_at.slice(0,16) : '') + '</p></div></div>';
+        }).join('');
+      }).catch(function () {});
+  }
+
+  function loadGuarantors() {
+    fetch(API + '/api/sacco/guarantors', { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var list = document.getElementById('guarList');
+        var none = document.getElementById('noGuar');
+        var guarantors = d.guarantors || [];
+        var mine = guarantors.filter(function (g) {
+          return String(g.guarantor_id) === String(me.id) || String(g.member_id) === String(me.id);
+        });
+        if (!mine.length) { none.classList.remove('hidden'); return; }
+        none.classList.add('hidden');
+        list.innerHTML = mine.map(function (g) {
+          var isGuarantor = String(g.guarantor_id) === String(me.id);
+          return '<div class="rounded-lg border border-[#e6d5c8] bg-paper p-3"><p class="text-xs font-semibold text-maroon2">' + (isGuarantor ? 'You guarantee' : 'You are guaranteed by') + '</p><p class="text-sm text-ink">' + esc(isGuarantor ? g.member_name : g.guarantor_name) + '</p><p class="text-xs text-ink/60">UGX ' + fmt(g.amount) + ' · ' + esc(g.status) + '</p></div>';
+        }).join('');
+      }).catch(function () {});
+  }
+
+  document.getElementById('depositForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var amount = Number(document.getElementById('depAmount').value);
+    var narr = document.getElementById('depNarr').value;
+    if (!amount || amount <= 0) return show('depMsg', 'Enter a valid amount.', 'err');
+    fetch(API + '/api/sacco/transactions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ member_id: me.id, type: 'deposit', amount: amount, narr: narr, reference: 'WEB-DEP' })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.ok) { show('depMsg', 'Deposit recorded.', 'ok'); document.getElementById('depositForm').reset(); loadTransactions(); loadMember(); }
+      else show('depMsg', d.error || 'Deposit failed.', 'err');
+    }).catch(function () { show('depMsg', 'Deposit failed.', 'err'); });
+  });
+
+  document.getElementById('withdrawForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var amount = Number(document.getElementById('wdAmount').value);
+    var type = document.getElementById('wdType').value;
+    var narr = document.getElementById('wdNarr').value;
+    if (!amount || amount <= 0) return show('wdMsg', 'Enter a valid amount.', 'err');
+    fetch(API + '/api/sacco/transactions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ member_id: me.id, type: type, amount: amount, narr: narr, reference: 'WEB-WD' })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.ok) { show('wdMsg', type + ' recorded.', 'ok'); document.getElementById('withdrawForm').reset(); loadTransactions(); loadMember(); }
+      else show('wdMsg', d.error || 'Request failed.', 'err');
+    }).catch(function () { show('wdMsg', 'Request failed.', 'err'); });
+  });
+
+  loadMember();
+  loadTransactions();
+  loadGuarantors();
+})();
+</script>
+</body>
+</html>

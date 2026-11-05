@@ -138,10 +138,60 @@ function rateLimit(req, res, next) {
 app.get('/api/health', async (req, res) => {
   try {
     const now = await db.health();
-    res.json({ ok: true, db: 'up', time: now });
+    res.json({ ok: true, db: 'up', time: now, mode: db.isLocal ? 'jsonl' : 'postgres' });
   } catch (err) {
     res.status(503).json({ ok: false, db: 'down', error: err.message });
   }
+});
+
+// ---------- sync API (JSONL ↔ PostgreSQL) — admin only ----------
+
+app.get('/api/sync/status', requireAdmin, async (req, res, next) => {
+  try {
+    const sync = db.sync;
+    if (!sync) return res.json({ ok: true, mode: 'postgres', note: 'running in postgres mode — no local JSONL layer active' });
+    const status = await sync.syncStatus();
+    return res.json({ ok: true, ...status });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/sync/delta', requireAdmin, rateLimit, async (req, res, next) => {
+  try {
+    const sync = db.sync;
+    if (!sync) return res.json({ ok: true, note: 'postgres mode — delta sync not applicable' });
+    const result = await sync.deltaSync();
+    return res.json({ ok: true, ...result });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/sync/export', requireAdmin, rateLimit, async (req, res, next) => {
+  try {
+    const sync = db.sync;
+    if (!sync) return res.status(400).json({ ok: false, error: 'not in JSONL mode' });
+    const result = await sync.exportToPg();
+    return res.json({ ok: true, result });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/sync/import', requireAdmin, rateLimit, async (req, res, next) => {
+  try {
+    const sync = db.sync;
+    if (!sync) return res.status(400).json({ ok: false, error: 'not in JSONL mode' });
+    const result = await sync.importFromPg();
+    return res.json({ ok: true, result });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/sync/backup', requireAdmin, rateLimit, async (req, res, next) => {
+  try {
+    const sync = db.sync;
+    if (!sync) return res.status(400).json({ ok: false, error: 'not in JSONL mode' });
+    const path    = require('path');
+    const ts      = new Date().toISOString().replace(/[:.]/g, '-');
+    const outFile = path.join(__dirname, '..', 'backups', `backup-${ts}.json`);
+    await sync.backupToFile(outFile);
+    return res.json({ ok: true, file: outFile });
+  } catch (err) { next(err); }
 });
 
 app.get('/api/questions/:kind', async (req, res, next) => {
@@ -382,23 +432,29 @@ function requireSupplier(req, res, next) {
 }
 
 // POST /api/auth/register — idempotent by phone; also accepts email.
-// If the role is 'supplier', auto-creates / updates a directory_entries row
-// so the business yellow-pages data is collected on self-registration.
+// Default password is the phone number itself so lay users can log in immediately.
+// If the role is 'supplier', auto-creates / updates a directory_entries row.
 app.post('/api/auth/register', rateLimit, async (req, res, next) => {
   try {
     const b = req.body || {};
-    const phone = clean(b.phone, 40);
-    const email = clean(b.email, 160);
-    const name = clean(b.name, 120);
-    const role = b.role && ['supplier','member','customer','employee'].includes(b.role) ? b.role : 'customer';
+    const phone    = clean(b.phone, 40);
+    const email    = clean(b.email, 160);
+    const name     = clean(b.name, 120);
+    const role     = b.role && ['supplier','member','customer','employee'].includes(b.role) ? b.role : 'customer';
     const district = clean(b.district, 80);
-    const org = clean(b.org, 160);
-    const sector = clean(b.sector, 80);
-    const password = String(b.password || '');
+    const org      = clean(b.org, 160);
+    const sector   = clean(b.sector, 80);
+
+    // Password is optional — if omitted the phone number is the initial password.
+    const rawPassword    = String(b.password || '');
+    const usePhone       = !rawPassword;                // true → phone is the password
+    const effectivePass  = usePhone ? phone : rawPassword;
+    if (!usePhone && effectivePass.length < 6) {
+      return res.status(400).json({ ok: false, error: 'password must be at least 6 characters' });
+    }
 
     if (!phoneOk(phone)) return res.status(400).json({ ok: false, error: 'a valid phone number (9–15 digits) is required' });
     if (!name) return res.status(400).json({ ok: false, error: 'full name is required' });
-    if (password.length < 6) return res.status(400).json({ ok: false, error: 'password must be at least 6 characters' });
 
     // Idempotent: upsert by phone
     const existing = await db.query('select id, role from participants where phone = $1', [phone]);
@@ -406,22 +462,26 @@ app.post('/api/auth/register', rateLimit, async (req, res, next) => {
     if (existing.rows.length) {
       await db.query(
         `update participants set
-           name = coalesce($2, name),
-           email = coalesce(nullif($3,''), email),
-           role = $4,
-           district = coalesce(nullif($5,''), district),
-           org = coalesce(nullif($6,''), org),
-           password_hash = $7
+           name              = coalesce($2, name),
+           email             = coalesce(nullif($3,''), email),
+           role              = $4,
+           district          = coalesce(nullif($5,''), district),
+           org               = coalesce(nullif($6,''), org),
+           password_hash     = $7,
+           password_is_phone = $8
          where phone = $1`,
-        [phone, name, email || null, role, district || null, org || null, hashPwd(password)]
+        [phone, name, email || null, role, district || null, org || null,
+         hashPwd(effectivePass), usePhone]
       );
       participantId = existing.rows[0].id;
       isNew = false;
     } else {
       const ins = await db.query(
-        `insert into participants (phone, email, name, role, district, org, password_hash)
-         values ($1,$2,$3,$4,$5,$6,$7) returning id`,
-        [phone, email || null, name, role, district || null, org || null, hashPwd(password)]
+        `insert into participants
+           (phone, email, name, role, district, org, password_hash, password_is_phone)
+         values ($1,$2,$3,$4,$5,$6,$7,$8) returning id`,
+        [phone, email || null, name, role, district || null, org || null,
+         hashPwd(effectivePass), usePhone]
       );
       participantId = ins.rows[0].id;
       isNew = true;
@@ -457,50 +517,79 @@ app.post('/api/auth/register', rateLimit, async (req, res, next) => {
       phone,
       role,
       created: isNew,
-      message: isNew ? 'Account created. You can now sign in.' : 'Account updated.'
+      password_is_phone: usePhone,
+      message: isNew
+        ? (usePhone
+            ? 'Account created. Your phone number is your initial password — change it any time from your portal.'
+            : 'Account created. You can now sign in.')
+        : 'Account updated.'
     });
   } catch (err) { next(err); }
 });
 
-// POST /api/auth/login — accepts phone OR email as login_id; sets session cookie
+// POST /api/auth/login — accepts phone OR email as login_id; sets session cookie.
+// Phone-as-password: users whose password_is_phone = true can log in by entering
+// their own phone number as the password, until they change it.
 app.post('/api/auth/login', rateLimit, async (req, res, next) => {
   try {
     const b = req.body || {};
     // Accept login_id (email or phone) sent by the client login forms, or explicit phone/email
-    const loginId = clean(b.login_id || b.phone || b.email, 160);
+    const loginId  = clean(b.login_id || b.phone || b.email, 160);
     const password = String(b.password || '');
-    if (!loginId || !password) {
-      return res.status(400).json({ ok: false, error: 'login identifier and password are required' });
+    if (!loginId) {
+      return res.status(400).json({ ok: false, error: 'phone number or email is required' });
     }
+    // If no password supplied, attempt phone-as-password (password = loginId)
+    const effectivePassword = password || loginId;
+
     const isEmail = loginId.includes('@');
     const col = isEmail ? 'email' : 'phone';
     const p = await db.query(
-      `select id, name, phone, email, password_hash, role, org from participants where ${col} = $1`,
+      `select id, name, phone, email, password_hash, password_is_phone, role, org from participants where ${col} = $1`,
       [loginId]
     );
     let row = p.rows[0] || null;
+
     // Fallback: legacy supplier rows created via supply submissions
     if (!row) {
       const s = await db.query(
-        `select id, business as name, phone, password_hash, 'supplier' as role, business as org from suppliers where phone = $1`,
+        `select id, business as name, phone, password_hash, false as password_is_phone, 'supplier' as role, business as org from suppliers where phone = $1`,
         [loginId]
       );
       row = s.rows[0] || null;
     }
-    if (!row || !row.password_hash || row.password_hash !== hashPwd(password)) {
-      return res.status(401).json({ ok: false, error: 'invalid credentials' });
+
+    if (!row) {
+      return res.status(401).json({ ok: false, error: 'no account found for that phone number' });
     }
+
+    // Check password: always compare hashed. Phone-as-password: hash(phone) matches stored hash.
+    const hashMatch = row.password_hash && row.password_hash === hashPwd(effectivePassword);
+    if (!hashMatch) {
+      return res.status(401).json({ ok: false, error: 'wrong password' });
+    }
+
     const payload = {
-      id: row.id,
+      id:    row.id,
       phone: row.phone || loginId,
-      name: row.name || '',
-      role: row.role || 'customer',
-      exp: Date.now() + SESSION_HOURS * 3600 * 1000
+      name:  row.name || '',
+      role:  row.role || 'customer',
+      exp:   Date.now() + SESSION_HOURS * 3600 * 1000
     };
     res.cookie(SUPPLIER_COOKIE, signSupplier(payload), {
       httpOnly: true, sameSite: 'lax', secure: req.secure, maxAge: SESSION_HOURS * 3600 * 1000
     });
-    return res.json({ ok: true, id: row.id, phone: row.phone || loginId, name: row.name, role: payload.role });
+    return res.json({
+      ok:               true,
+      id:               row.id,
+      phone:            row.phone || loginId,
+      name:             row.name,
+      role:             payload.role,
+      password_is_phone: row.password_is_phone || false,
+      hint:             row.password_is_phone
+        ? 'You are using your phone number as your password. Visit your portal to change it.'
+        : null
+    });
   } catch (err) { next(err); }
 });
 
@@ -508,6 +597,39 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
 app.post('/api/auth/logout', async (req, res) => {
   res.clearCookie(SUPPLIER_COOKIE);
   return res.json({ ok: true });
+});
+
+// POST /api/auth/change-password
+// Lets any logged-in user replace their phone-as-password with a real one,
+// or change an existing password. Requires current_password OR phone-as-password acceptance.
+app.post('/api/auth/change-password', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const b              = req.body || {};
+    const newPassword    = String(b.new_password || b.password || '');
+    const currentGuess   = String(b.current_password || req.supplier.phone || '');
+    if (newPassword.length < 6) {
+      return res.status(400).json({ ok: false, error: 'new password must be at least 6 characters' });
+    }
+    const r = await db.query(
+      'select password_hash, password_is_phone, phone from participants where id = $1',
+      [req.supplier.id]
+    );
+    if (!r.rows.length) return res.status(404).json({ ok: false, error: 'user not found' });
+    const { password_hash, password_is_phone, phone } = r.rows[0];
+
+    // Verify current password — accept either the stored hash or phone-as-password
+    const currentOk = (password_hash === hashPwd(currentGuess)) ||
+                      (password_is_phone && hashPwd(phone) === password_hash);
+    if (!currentOk) {
+      return res.status(401).json({ ok: false, error: 'current password is incorrect' });
+    }
+
+    await db.query(
+      `update participants set password_hash = $1, password_is_phone = false where id = $2`,
+      [hashPwd(newPassword), req.supplier.id]
+    );
+    return res.json({ ok: true, message: 'Password updated successfully.' });
+  } catch (err) { next(err); }
 });
 
 // GET /api/auth/me
@@ -927,30 +1049,35 @@ app.get('/api/users', requireAdminOrEmployee, async (req, res, next) => {
 app.post('/api/users', requireAdminOrEmployee, rateLimit, async (req, res, next) => {
   try {
     const b = req.body || {};
-    const phone = clean(b.phone, 40);
-    const name = clean(b.name, 120);
-    const role = b.role && ['supplier','member','customer','employee'].includes(b.role) ? b.role : 'customer';
+    const phone    = clean(b.phone, 40);
+    const name     = clean(b.name, 120);
+    const role     = b.role && ['supplier','member','customer','employee'].includes(b.role) ? b.role : 'customer';
     const district = clean(b.district, 80);
-    const org = clean(b.org, 160);
-    const email = clean(b.email, 160);
-    const password = String(b.password || (phone ? phone.slice(-6) : 'changeme'));
+    const org      = clean(b.org, 160);
+    const email    = clean(b.email, 160);
+    // Default password = last 6 digits of phone (or the phone itself if shorter)
+    const rawPwd      = String(b.password || '');
+    const usePhone    = !rawPwd;
+    const effectivePwd = usePhone ? phone : rawPwd;
 
     if (!phoneOk(phone)) return res.status(400).json({ ok: false, error: 'valid phone required' });
     if (!name) return res.status(400).json({ ok: false, error: 'name required' });
 
     const r = await db.query(
-      `insert into participants (phone, email, name, role, district, org, password_hash)
-       values ($1,$2,$3,$4,$5,$6,$7)
+      `insert into participants
+         (phone, email, name, role, district, org, password_hash, password_is_phone)
+       values ($1,$2,$3,$4,$5,$6,$7,$8)
        on conflict (phone) do update set
-         name = excluded.name,
-         email = coalesce(excluded.email, participants.email),
-         role = excluded.role,
-         district = coalesce(excluded.district, participants.district),
-         org = coalesce(excluded.org, participants.org)
+         name              = excluded.name,
+         email             = coalesce(excluded.email, participants.email),
+         role              = excluded.role,
+         district          = coalesce(excluded.district, participants.district),
+         org               = coalesce(excluded.org, participants.org)
        returning id, phone, name, role, created_at`,
-      [phone, email || null, name, role, district || null, org || null, hashPwd(password)]
+      [phone, email || null, name, role, district || null, org || null,
+       hashPwd(effectivePwd), usePhone]
     );
-    return res.status(201).json({ ok: true, user: r.rows[0] });
+    return res.status(201).json({ ok: true, user: r.rows[0], password_is_phone: usePhone });
   } catch (err) { next(err); }
 });
 
@@ -1028,6 +1155,140 @@ app.delete('/api/suppliers/products/:id', requireSupplier, rateLimit, async (req
     return res.json({ ok: true });
   } catch (err) { next(err); }
 });
+
+// ---------- supplier media (images / audio / video / documents) ----------
+//
+// Suppliers, members, and other lay users can upload product images, audio
+// descriptions, video demonstrations, or any blob.  The phone-as-password
+// flow means they can land here immediately after registration with no
+// password setup friction.
+//
+// Storage is local on disk (uploads/ dir) in local/dev mode; in production
+// swap MEDIA_BASE_URL + MEDIA_STORAGE_PATH or integrate with an object store.
+
+(function mediaRoutes() {
+  const multer = require('multer');
+  const path   = require('path');
+  const fs     = require('fs');
+
+  const UPLOADS_DIR = process.env.MEDIA_STORAGE_PATH ||
+    path.join(__dirname, '..', 'uploads');
+  if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+  const MEDIA_BASE_URL = process.env.MEDIA_BASE_URL || '/media';
+
+  // Multer storage: organise by supplier id
+  const storage = multer.diskStorage({
+    destination(req, file, cb) {
+      const dir = path.join(UPLOADS_DIR, String(req.supplier.id));
+      fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename(req, file, cb) {
+      const ext  = path.extname(file.originalname) || '';
+      const base = path.basename(file.originalname, ext)
+        .replace(/[^a-zA-Z0-9_-]/g, '_')
+        .slice(0, 60);
+      const ts   = Date.now();
+      cb(null, `${base}_${ts}${ext}`);
+    }
+  });
+
+  const ALLOWED_MIME = /^(image|audio|video|application\/pdf|application\/octet-stream)/;
+  const MAX_FILE_MB  = Number(process.env.MEDIA_MAX_MB || 50);
+
+  const upload = multer({
+    storage,
+    limits: { fileSize: MAX_FILE_MB * 1024 * 1024 },
+    fileFilter(req, file, cb) {
+      if (!ALLOWED_MIME.test(file.mimetype)) {
+        return cb(new Error('File type not allowed. Accepted: images, audio, video, PDF.'));
+      }
+      cb(null, true);
+    }
+  });
+
+  function mediaType(mime) {
+    if (/^image/.test(mime))                return 'image';
+    if (/^audio/.test(mime))                return 'audio';
+    if (/^video/.test(mime))                return 'video';
+    if (/^application\/pdf/.test(mime))     return 'document';
+    return 'blob';
+  }
+
+  // GET /api/media — list my media (or by product)
+  app.get('/api/media', requireSupplier, async (req, res, next) => {
+    try {
+      const productId = req.query.product_id ? Number(req.query.product_id) : null;
+      let sql    = 'select * from supplier_media where supplier_id = $1 and status = \'active\'';
+      const args = [req.supplier.id];
+      if (productId) { sql += ' and product_id = $2'; args.push(productId); }
+      sql += ' order by created_at desc limit 200';
+      const r = await db.query(sql, args);
+      return res.json({ ok: true, media: r.rows });
+    } catch (err) { next(err); }
+  });
+
+  // POST /api/media — upload one file
+  app.post('/api/media', requireSupplier, rateLimit, upload.single('file'), async (req, res, next) => {
+    try {
+      if (!req.file) return res.status(400).json({ ok: false, error: 'no file received' });
+      const b         = req.body || {};
+      const suppId    = req.supplier.id;
+      const relPath   = path.relative(UPLOADS_DIR, req.file.path).replace(/\\/g, '/');
+      const publicUrl = `${MEDIA_BASE_URL}/${relPath}`;
+      const mtype     = mediaType(req.file.mimetype);
+      const productId = b.product_id ? Number(b.product_id) : null;
+
+      const r = await db.query(
+        `insert into supplier_media
+           (supplier_id, media_type, title, description, filename, mime_type,
+            size_bytes, storage_path, storage_url, product_id)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning *`,
+        [suppId, mtype, clean(b.title, 160), clean(b.description, 500),
+         req.file.originalname, req.file.mimetype, req.file.size,
+         relPath, publicUrl, productId || null]
+      );
+      return res.status(201).json({ ok: true, media: r.rows[0] });
+    } catch (err) { next(err); }
+  });
+
+  // DELETE /api/media/:id — remove a file (marks as deleted + removes from disk)
+  app.delete('/api/media/:id', requireSupplier, rateLimit, async (req, res, next) => {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id)) return res.status(400).json({ ok: false, error: 'bad id' });
+      const r = await db.query(
+        'select storage_path from supplier_media where id = $1 and supplier_id = $2',
+        [id, req.supplier.id]
+      );
+      if (!r.rows.length) return res.status(404).json({ ok: false, error: 'media not found' });
+
+      // Soft-delete in db
+      await db.query(
+        "update supplier_media set status = 'deleted', updated_at = now() where id = $1",
+        [id]
+      );
+      // Remove file from disk (best-effort)
+      try {
+        const diskPath = path.join(UPLOADS_DIR, r.rows[0].storage_path);
+        if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath);
+      } catch (_) { /* ignore */ }
+
+      return res.json({ ok: true });
+    } catch (err) { next(err); }
+  });
+
+  // Serve uploads as static files at /media/*
+  app.use(MEDIA_BASE_URL, express.static(UPLOADS_DIR, {
+    // Never cache in dev
+    setHeaders(res) {
+      if (process.env.NODE_ENV !== 'production') {
+        res.setHeader('Cache-Control', 'no-store');
+      }
+    }
+  }));
+})();
 
 // ---------- education topics & notes ----------
 

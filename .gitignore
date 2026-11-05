@@ -5,3 +5,13 @@ node_modules/
 .DS_Store
 Thumbs.db
 .idea/
+.continue/
+
+# TEE JSONL runtime data (encrypted on disk — not source, not committed)
+server/data/Data/
+
+# Uploaded media files
+uploads/
+
+# Backup files
+backups/

@@ -1,8 +1,8 @@
-const fs = require('fs');
+'use strict';
+
+const fs   = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { Pool } = require('pg');
-const seed = require('./seed-data');
 
 function hashPwd(password) {
   return crypto.createHash('sha256').update(String(password)).digest('hex');
@@ -11,43 +11,81 @@ function hashPwd(password) {
 const connectionString = process.env.DATABASE_URL || '';
 const isLocal = !connectionString || /localhost|127\.0\.0\.1/.test(connectionString);
 
-const pool = new Pool({
-  connectionString,
-  max: Number(process.env.PG_POOL_MAX || 5),
-  ssl: isLocal ? false : { rejectUnauthorized: false },
-  connectionTimeoutMillis: 10000
-});
+/*
+ * Dual-storage database layer.
+ *
+ * Production  (DATABASE_URL set to a remote host): use pg Pool directly.
+ * Local / dev (no DATABASE_URL or localhost):       use TEE-encrypted JSONL adapter.
+ *
+ * The exported interface (pool, query, migrate, seedIfEmpty, health) is
+ * identical in both modes so server/index.js needs no changes.
+ */
 
-pool.on('error', (err) => {
-  console.error('postgres pool error', err.message);
-});
+let pgPool  = null;
+let adapter = null;
+
+if (!isLocal) {
+  const { Pool } = require('pg');
+  pgPool = new Pool({
+    connectionString,
+    max: Number(process.env.PG_POOL_MAX || 5),
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10000
+  });
+  pgPool.on('error', (err) => {
+    console.error('[db] postgres pool error', err.message);
+  });
+} else {
+  adapter = require('./data/adapter');
+}
+
+// ---------- core interface ----------
 
 async function query(text, params) {
-  const started = Date.now();
-  const res = await pool.query(text, params);
-  const ms = Date.now() - started;
-  if (ms > 800) console.warn('slow query', ms, text.slice(0, 120));
-  return res;
+  if (!isLocal) {
+    const started = Date.now();
+    const res = await pgPool.query(text, params);
+    const ms  = Date.now() - started;
+    if (ms > 800) console.warn('[db] slow query', ms + 'ms', text.slice(0, 120));
+    return res;
+  }
+  return adapter.query(text, params);
 }
 
 async function migrate() {
-  const sql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-  await pool.query(sql);
+  if (!isLocal) {
+    const sql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+    await pgPool.query(sql);
+    return;
+  }
+  return adapter.migrate();
 }
 
+const pool = isLocal ? null : pgPool;
+
+// ---------- seed ----------
+
+const seed = require('./seed-data');
+
 async function seedIfEmpty() {
+  if (isLocal) {
+    return adapter.seedIfEmpty();
+  }
+
+  /* ── PostgreSQL production seeding (all idempotent) ── */
+
   const counts = await query(`
     select
-      (select count(*)::int from subjects) as subjects,
-      (select count(*)::int from questions) as questions,
-      (select count(*)::int from governance_layers) as layers,
-      (select count(*)::int from networks) as networks
+      (select count(*)::int from subjects)          as subjects,
+      (select count(*)::int from questions)          as questions,
+      (select count(*)::int from governance_layers)  as layers,
+      (select count(*)::int from networks)            as networks
   `);
   const c = {
-    subjects: Number(counts.rows[0].subjects || 0),
+    subjects:  Number(counts.rows[0].subjects  || 0),
     questions: Number(counts.rows[0].questions || 0),
-    layers: Number(counts.rows[0].layers || 0),
-    networks: Number(counts.rows[0].networks || 0)
+    layers:    Number(counts.rows[0].layers    || 0),
+    networks:  Number(counts.rows[0].networks  || 0)
   };
 
   if (c.subjects === 0) {
@@ -70,7 +108,8 @@ async function seedIfEmpty() {
           `insert into questions (kind, position, field, prompt, type, options, required)
            values ($1, $2, $3, $4, $5, $6::jsonb, $7)
            on conflict (kind, field) do nothing`,
-          [kind, i + 1, q.field, q.prompt, q.type, q.options ? JSON.stringify(q.options) : null, q.required !== false]
+          [kind, i + 1, q.field, q.prompt, q.type,
+           q.options ? JSON.stringify(q.options) : null, q.required !== false]
         );
       }
     }
@@ -101,31 +140,36 @@ async function seedIfEmpty() {
   await query(
     `insert into settings (key, value) values ('register_status', $1::jsonb)
      on conflict (key) do nothing`,
-    [JSON.stringify({ clan_register: 'working register, pending verification', updated: new Date().toISOString() })]
+    [JSON.stringify({
+      clan_register: 'working register, pending verification',
+      updated: new Date().toISOString()
+    })]
   );
 
-  // Seed staff / BAF employees into participants (idempotent)
-  const existingParticipants = await query("select count(*)::int as c from participants where role = 'employee'");
-  if (Number(existingParticipants.rows[0].c || 0) === 0) {
+  // Staff / BAF employees
+  const existingStaff = await query(
+    "select count(*)::int as c from participants where role = 'employee'"
+  );
+  if (Number(existingStaff.rows[0].c || 0) === 0) {
     const staffUsers = [
-      { phone: '+256700000001', name: 'Alice Nakato',      role: 'employee', district: 'Mengo' },
-      { phone: '+256700000002', name: 'Bob Kato',          role: 'employee', district: 'Mengo' },
-      { phone: '+256700000003', name: 'Grace Nambi',       role: 'employee', district: 'Mengo' },
-      { phone: '+256700000004', name: 'David Ssebugenyi',  role: 'employee', district: 'Mengo' },
-      { phone: '+256700000005', name: 'Mary Namuleme',     role: 'employee', district: 'Mengo' },
-      { phone: '+256700000006', name: 'Peter Musoke',      role: 'employee', district: 'Mengo' },
-      { phone: '+256700000007', name: 'Sarah Nalwoga',     role: 'employee', district: 'Mengo' },
+      { phone: '+256700000001', name: 'Alice Nakato',     district: 'Mengo' },
+      { phone: '+256700000002', name: 'Bob Kato',         district: 'Mengo' },
+      { phone: '+256700000003', name: 'Grace Nambi',      district: 'Mengo' },
+      { phone: '+256700000004', name: 'David Ssebugenyi', district: 'Mengo' },
+      { phone: '+256700000005', name: 'Mary Namuleme',    district: 'Mengo' },
+      { phone: '+256700000006', name: 'Peter Musoke',     district: 'Mengo' },
+      { phone: '+256700000007', name: 'Sarah Nalwoga',    district: 'Mengo' }
     ];
     for (const u of staffUsers) {
       await query(
         `insert into participants (phone, name, role, password_hash, district)
-         values ($1,$2,$3,$4,$5) on conflict (phone) do nothing`,
-        [u.phone, u.name, u.role, hashPwd('BafStaff2026!'), u.district]
+         values ($1,$2,'employee',$3,$4) on conflict (phone) do nothing`,
+        [u.phone, u.name, hashPwd('BafStaff2026!'), u.district]
       );
     }
   }
 
-  // Seed Farm Aid roles using participants (idempotent)
+  // Farm Aid roles
   const existingRoles = await query('select count(*)::int as c from farm_aid_roles');
   if (Number(existingRoles.rows[0].c || 0) === 0) {
     const roles = [
@@ -141,13 +185,14 @@ async function seedIfEmpty() {
       { role_code: 'registrar',    compartment: 'busolya', location_level: 'ssiga',   location_name: 'Ssiga East',          district: 'Mengo', phone: '+256700000005' },
       { role_code: 'commissioner', compartment: 'busolya', location_level: 'ssaza',   location_name: 'Ssaza North',         district: 'Mengo', phone: '+256700000006' },
       { role_code: 'commissioner', compartment: 'busolya', location_level: 'ssaza',   location_name: 'Ssaza South',         district: 'Mengo', phone: '+256700000006' },
-      { role_code: 'committee',    compartment: 'busolya', location_level: 'ssaza',   location_name: 'Ssaza North',         district: 'Mengo', phone: '+256700000007' },
+      { role_code: 'committee',    compartment: 'busolya', location_level: 'ssaza',   location_name: 'Ssaza North',         district: 'Mengo', phone: '+256700000007' }
     ];
     for (const r of roles) {
       const u = await query('select id from participants where phone = $1 limit 1', [r.phone]);
       if (u.rows.length) {
         await query(
-          `insert into farm_aid_roles (user_id, role_code, compartment, location_level, location_name, district)
+          `insert into farm_aid_roles
+             (user_id, role_code, compartment, location_level, location_name, district)
            values ($1,$2,$3,$4,$5,$6) on conflict do nothing`,
           [u.rows[0].id, r.role_code, r.compartment, r.location_level, r.location_name, r.district]
         );
@@ -155,45 +200,73 @@ async function seedIfEmpty() {
     }
   }
 
-  // Seed education topics for Farm Aid subject (idempotent)
+  // Education topics — all subjects (idempotent)
   const existingTopics = await query('select count(*)::int as c from education_topics');
   if (Number(existingTopics.rows[0].c || 0) === 0) {
-    const subjectRes = await query("select id from subjects where code = '01' limit 1");
-    if (subjectRes.rows.length > 0) {
-      const subjectId = subjectRes.rows[0].id;
-      for (const t of seed.FARM_AID_TOPICS) {
-        if (t.subject_code === '01') {
-          await query(
-            `insert into education_topics (subject_id, code, title, summary, level, sort_order)
-             values ($1,$2,$3,$4,$5,$6) on conflict (subject_id, code) do nothing`,
-            [subjectId, t.code, t.title, t.summary, t.level, t.sort_order]
-          );
-        }
+    const subjectMap = new Map();
+    const subjRes = await query('select id, code from subjects');
+    for (const s of subjRes.rows) subjectMap.set(s.code, s.id);
+
+    const allTopics = [
+      ...(seed.FARM_AID_TOPICS || []),
+      ...(seed.ALL_TOPICS      || [])
+    ];
+    for (const t of allTopics) {
+      const subjectId = subjectMap.get(t.subject_code);
+      if (subjectId) {
+        await query(
+          `insert into education_topics
+             (subject_id, code, title, summary, level, sort_order)
+           values ($1,$2,$3,$4,$5,$6)
+           on conflict (subject_id, code) do nothing`,
+          [subjectId, t.code, t.title, t.summary, t.level, t.sort_order]
+        );
       }
     }
   }
 
-  // Seed education notes EN and LUG (idempotent)
+  // Education notes — EN and LUG (idempotent)
   const existingNotes = await query('select count(*)::int as c from education_notes');
   if (Number(existingNotes.rows[0].c || 0) === 0) {
-    for (const set of [seed.FARM_AID_NOTES_EN, seed.FARM_AID_NOTES_LUG]) {
-      for (const n of set) {
-        const t = await query('select id from education_topics where code = $1 limit 1', [n.topic_code]);
-        if (t.rows.length) {
-          await query(
-            `insert into education_notes (topic_id, title, content, locale, format, price_ugx)
-             values ($1,$2,$3,$4,$5,$6) on conflict do nothing`,
-            [t.rows[0].id, n.title, n.content, n.locale, n.format, n.price_ugx]
-          );
-        }
+    const topicMap = new Map();
+    const topicRes = await query('select id, code from education_topics');
+    for (const t of topicRes.rows) topicMap.set(t.code, t.id);
+
+    const allNotes = [
+      ...(seed.FARM_AID_NOTES_EN  || []),
+      ...(seed.FARM_AID_NOTES_LUG || []),
+      ...(seed.ALL_NOTES_EN        || [])
+    ];
+    for (const n of allNotes) {
+      const topicId = topicMap.get(n.topic_code);
+      if (topicId) {
+        await query(
+          `insert into education_notes
+             (topic_id, title, content, locale, format, price_ugx)
+           values ($1,$2,$3,$4,$5,$6) on conflict do nothing`,
+          [topicId, n.title, n.content, n.locale, n.format, n.price_ugx]
+        );
       }
     }
   }
 }
 
+// ---------- health ----------
+
 async function health() {
+  if (isLocal) return adapter.health();
   const r = await query('select now() as now');
   return r.rows[0].now;
 }
 
-module.exports = { pool, query, migrate, seedIfEmpty, health };
+module.exports = {
+  pool,
+  query,
+  migrate,
+  seedIfEmpty,
+  health,
+  hashPwd,
+  isLocal,
+  get adapter() { return adapter; },
+  get sync()    { return adapter ? adapter.sync : null; }
+};

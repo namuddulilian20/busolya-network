@@ -422,3 +422,36 @@ create table if not exists supplier_directory_link (
   linked_at       timestamptz not null default now()
 );
 create index if not exists supplier_directory_link_supplier_idx on supplier_directory_link (supplier_id);
+
+-- ---------- participants: phone-as-password + phone_verified columns ----------
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'participants' AND column_name = 'password_is_phone'
+  ) THEN
+    ALTER TABLE participants ADD COLUMN password_is_phone boolean not null default true;
+    ALTER TABLE participants ADD COLUMN phone_verified    boolean not null default false;
+  END IF;
+END $$;
+
+-- ---------- supplier_media: blobs/images/audio/video per supplier ----------
+create table if not exists supplier_media (
+  id              bigserial primary key,
+  supplier_id     bigint not null references participants (id) on delete cascade,
+  media_type      text not null check (media_type in ('image','audio','video','document','blob')),
+  title           text,
+  description     text,
+  filename        text not null,
+  mime_type       text,
+  size_bytes      bigint,
+  storage_path    text not null,   -- relative path under uploads/ dir (local) or object key (cloud)
+  storage_url     text,            -- public URL once available
+  product_id      bigint references supplier_products (id) on delete set null,
+  status          text not null default 'active' check (status in ('active','deleted','pending')),
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+create index if not exists supplier_media_supplier_idx on supplier_media (supplier_id);
+create index if not exists supplier_media_product_idx  on supplier_media (product_id);
+create index if not exists supplier_media_type_idx     on supplier_media (media_type);

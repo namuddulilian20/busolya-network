@@ -86,7 +86,8 @@
         { href: 'index.html#network',    label: 'Network' },
         { href: 'index.html#membership', label: 'Membership' },
         { href: 'register.html', label: 'Register' },
-        { href: 'login.html',    label: 'Member login' }
+        { href: 'login.html',    label: 'Member login' },
+        { href: 'member-portal.html', label: 'Member portal' }
       ],
       headerBorder:  '#e6d5c8',
       navActiveBg:   '#8a2f24',
@@ -407,8 +408,8 @@
     var ftrAdmin       = document.getElementById('ftr-admin-link');
 
     if (!loggedIn) {
-      if (supplierBtn)    supplierBtn.style.display    = '';
-      if (loginBtn)       loginBtn.style.display       = '';
+      if (supplierBtn)    supplierBtn.style.display    = 'inline';
+      if (loginBtn)       loginBtn.style.display       = 'inline';
       if (userNameEl)     userNameEl.style.display     = 'none';
       if (logoutBtn)      logoutBtn.style.display      = 'none';
       if (adminBtn)       adminBtn.style.display       = 'none';
@@ -416,16 +417,16 @@
       if (ftrAdmin)       ftrAdmin.style.display       = 'none';
     } else {
       if (loginBtn)  loginBtn.style.display  = 'none';
-      if (logoutBtn) logoutBtn.style.display = '';
+      if (logoutBtn) logoutBtn.style.display = 'inline';
       if (userNameEl) {
-        userNameEl.style.display = '';
+        userNameEl.style.display = 'inline';
         userNameEl.textContent = (user && user.name ? user.name : (user && user.phone ? user.phone : 'User'));
       }
 
       /* supplier: show portal, hide admin */
       if (supplierRole) {
         if (supplierBtn)    supplierBtn.style.display    = 'none';
-        if (supplierPortal) supplierPortal.style.display = '';
+        if (supplierPortal) supplierPortal.style.display = 'inline';
         if (adminBtn)       adminBtn.style.display       = 'none';
       }
 
@@ -433,7 +434,7 @@
       if (adminRole) {
         if (supplierBtn)    supplierBtn.style.display    = 'none';
         if (supplierPortal) supplierPortal.style.display = 'none';
-        if (adminBtn)       adminBtn.style.display       = '';
+        if (adminBtn)       adminBtn.style.display       = 'inline';
         if (ftrAdmin)       ftrAdmin.style.display       = '';
       }
 
