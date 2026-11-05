@@ -3,163 +3,289 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bataka Agro Expo 2026 — 4 to 8 November | Busolya Agro Farmers Ltd</title>
-<meta name="description" content="Bataka Agro Expo, 4—8 November 2026: exhibition, nine learning subjects, business facilitation desk, Farm Aid clinic and the Busolya business directory. The annual fixture of the Busolya Agro Farmers network.">
+<title>Bataka Agro Expo 2026 — Shop the Exhibition | Busolya Agro Farmers Ltd</title>
+<meta name="description" content="Browse every stall at Bataka Agro Expo 2026. Farmers, agro-input dealers, food processors, health and crafts — all exhibitors in one place. Lwatamu Gardens, Kampala, 4–8 November 2026.">
+<link rel="canonical" href="https://bataka-agro-expo.onrender.com/">
 <link rel="icon" href="assets/mark.svg">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a', cream:'#fbf6ec', paper:'#fffdf8', leaf:'#2f7d32', leafdark:'#1f5523', seal:'#a8321e', gold:'#c68a2e', ink:'#2a1a10' }, fontFamily: { display:['Georgia','Times New Roman','serif'], body:['Segoe UI','system-ui','sans-serif'] } } } }
+tailwind.config = {
+  theme: { extend: {
+    colors: {
+      bark:'#4a2311', bark2:'#63301a', cream:'#fbf6ec', paper:'#fffdf8',
+      leaf:'#2f7d32', leafdark:'#1f5523', seal:'#a8321e',
+      gold:'#c68a2e', golddark:'#a06e1a', ink:'#2a1a10',
+      expo:'#0d2d1e', expomid:'#164430'
+    },
+    fontFamily: {
+      display:['Georgia','Times New Roman','serif'],
+      body:['Segoe UI','system-ui','sans-serif']
+    }
+  }}
+}
 </script>
+<style>
+/* ── Horizontal scroll strips ── */
+.stall-strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 1rem * (var(--cols) - 1)) / var(--cols));
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  --cols: 2;
+}
+.stall-strip::-webkit-scrollbar { display: none; }
+.stall-strip > * { scroll-snap-align: start; }
+
+@media (min-width: 640px)  { .stall-strip { --cols: 3; } }
+@media (min-width: 1024px) { .stall-strip { --cols: 5; } }
+
+/* ── Strip nav arrows ── */
+.strip-wrap { position: relative; }
+.arrow-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  z-index: 10; display: flex; align-items: center; justify-content: center;
+  width: 2.25rem; height: 2.25rem; border-radius: 50%;
+  background: rgba(255,255,255,.92); border: 1px solid #e2d6c2;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  cursor: pointer; transition: background .15s;
+}
+.arrow-btn:hover { background: #fff; }
+.arrow-btn.prev { left: -1.1rem; }
+.arrow-btn.next { right: -1.1rem; }
+@media (max-width: 639px) { .arrow-btn { display: none; } }
+
+/* ── Hero ticker ── */
+@keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.ticker-inner { animation: ticker 32s linear infinite; white-space: nowrap; }
+.ticker-inner:hover { animation-play-state: paused; }
+
+/* ── Stall header gradient ── */
+.stall-hd { background: linear-gradient(135deg, #164430 0%, #0d2d1e 100%); }
+.stall-hd-gold { background: linear-gradient(135deg, #7a4a0a 0%, #3d2205 100%); }
+.stall-hd-seal { background: linear-gradient(135deg, #8a1a10 0%, #3d0b05 100%); }
+
+/* ── Product card hover lift ── */
+.product-card {
+  transition: transform .2s, box-shadow .2s;
+}
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(74,35,17,.15);
+}
+
+/* ── Skeleton shimmer ── */
+@keyframes shimmer { 0%{background-position:-600px 0} 100%{background-position:600px 0} }
+.skeleton {
+  background: linear-gradient(90deg, #e8ddd0 25%, #f4ede5 50%, #e8ddd0 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: .75rem;
+}
+</style>
 </head>
 <body class="bg-cream font-body text-ink antialiased">
 
-<div class="bg-leafdark text-[#eaf3e4]">
-  <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-2 text-xs tracking-wide">
-    <p><span class="text-gold">●</span> Annual fixture · 4 to 8 November 2026</p>
-    <p class="hidden sm:block">An initiative of <a href="#" data-net="baf" class="underline hover:text-gold">Busolya Agro Farmers Ltd</a></p>
+<!-- ── Expo ticker bar ── -->
+<div class="overflow-hidden bg-expomid text-[#c8e8bc] py-2 text-[.72rem] font-bold uppercase tracking-[.18em]">
+  <div class="ticker-inner inline-flex gap-12 px-6">
+    <span>🟡 Bataka Agro Expo 2026</span>
+    <span>📍 Lwatamu Gardens, Mengo, Kampala</span>
+    <span>📅 4 – 8 November 2026</span>
+    <span>⏰ 8:00 AM – 6:00 PM daily</span>
+    <span>🎟 Adults UGX 5,000 · Kids UGX 3,000</span>
+    <span>📞 +256 200 911 567</span>
+    <span>🟡 Bataka Agro Expo 2026</span>
+    <span>📍 Lwatamu Gardens, Mengo, Kampala</span>
+    <span>📅 4 – 8 November 2026</span>
+    <span>⏰ 8:00 AM – 6:00 PM daily</span>
+    <span>🎟 Adults UGX 5,000 · Kids UGX 3,000</span>
+    <span>📞 +256 200 911 567</span>
   </div>
 </div>
 
+<!-- ── Site header ── -->
 <div id="header-placeholder"></div>
 
-<main>
-<section class="relative overflow-hidden bg-bark text-[#f6ecdd]">
-  <div class="absolute inset-0 opacity-[.14]" style="background-image:repeating-linear-gradient(45deg,#fff 0 1px,transparent 1px 14px)"></div>
-  <div class="relative mx-auto grid max-w-6xl items-center gap-10 px-5 py-14 md:grid-cols-[1.25fr_.75fr] md:py-20">
+<!-- ── Hero ── -->
+<section class="relative overflow-hidden bg-expo text-[#eaf3e4]"
+  style="background: radial-gradient(ellipse at 60% 0%, #164430 0%, #0d2d1e 55%, #040f09 100%)">
+  <!-- decorative diagonal lines -->
+  <div class="pointer-events-none absolute inset-0 opacity-10"
+    style="background-image:repeating-linear-gradient(55deg,#fff 0 1px,transparent 1px 18px)"></div>
+
+  <div class="relative mx-auto grid max-w-7xl items-center gap-8 px-5 py-12 md:grid-cols-[1.4fr_1fr] md:py-16">
     <div>
-      <p class="mb-4 inline-block rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[.7rem] uppercase tracking-[.16em] text-[#ffe9c7]">Bataka Agro Expo · 2026 edition</p>
-      <h1 class="font-display text-4xl font-bold leading-tight text-white sm:text-6xl">Five days where Buganda's farms do business.</h1>
-      <p class="mt-4 max-w-xl text-[#e8d9c4]">Come see what's growing: exhibitors with real stock, sessions you can use the same day, and a desk that matches what you need with who has it. Bring your list — we'll help you find it.</p>
-      <div class="mt-6 flex flex-wrap gap-3">
-        <a href="visit.html" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Log a lead / register</a>
-        <a href="programme.html" class="rounded-full border-2 border-[#f6ecdd]/70 px-6 py-3 text-sm font-bold text-[#f6ecdd] hover:bg-[#f6ecdd] hover:text-bark">See the programme</a>
+      <span class="mb-4 inline-block rounded-full border border-white/20 bg-white/8 px-4 py-1.5 text-[.68rem] font-bold uppercase tracking-[.18em] text-[#ffe9c7]">
+        ● Live exhibitor marketplace · Nov 2026
+      </span>
+      <h1 class="font-display text-4xl font-bold leading-tight text-white sm:text-5xl xl:text-6xl">
+        Shop every stall at<br>
+        <span class="text-gold">Bataka Agro Expo</span>
+      </h1>
+      <p class="mt-4 max-w-xl text-[#a8cfb0] text-base leading-relaxed">
+        Farmers, agro-input dealers, food processors, health services, crafts and more —
+        every registered exhibitor with their live product and price list, before the gates open and long after they close.
+      </p>
+      <div class="mt-7 flex flex-wrap items-center gap-3">
+        <a href="#marketplace" class="rounded-full bg-gold px-6 py-3 text-sm font-bold text-white shadow-lg hover:bg-golddark transition">
+          Browse stalls ↓
+        </a>
+        <a href="visit.html" class="rounded-full border-2 border-white/40 px-6 py-3 text-sm font-bold text-white hover:border-white hover:bg-white/10 transition">
+          Log a demand
+        </a>
+        <a href="expo-info.html" class="rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-[#a8cfb0] hover:text-white transition">
+          Expo programme →
+        </a>
       </div>
-      <p class="mt-5 text-sm text-[#c9b6a0]">Venue and gate details are confirmed with the host and published here before the gates open.</p>
     </div>
-    <div class="justify-self-center rounded-2xl border border-white/20 bg-white/10 p-7 text-center backdrop-blur">
-      <p class="font-display text-[.7rem] uppercase tracking-[.2em] text-[#ffe9c7]">Wednesday to Sunday</p>
-      <p class="mt-2 font-display text-5xl font-bold leading-none text-white">4<span class="text-gold">—</span>8</p>
-      <p class="mt-1 font-display text-2xl font-bold text-white">November</p>
-      <p class="mt-1 text-sm text-[#d9c8b4]">2026</p>
-      <div id="countdown" class="mt-5 grid grid-cols-4 gap-2 text-center">
-        <div class="rounded-lg bg-black/25 px-2 py-2"><span class="block font-display text-xl font-bold text-white" data-cd="d">—</span><span class="text-[.6rem] uppercase tracking-[.1em] text-[#c9b6a0]">days</span></div>
-        <div class="rounded-lg bg-black/25 px-2 py-2"><span class="block font-display text-xl font-bold text-white" data-cd="h">—</span><span class="text-[.6rem] uppercase tracking-[.1em] text-[#c9b6a0]">hrs</span></div>
-        <div class="rounded-lg bg-black/25 px-2 py-2"><span class="block font-display text-xl font-bold text-white" data-cd="m">—</span><span class="text-[.6rem] uppercase tracking-[.1em] text-[#c9b6a0]">min</span></div>
-        <div class="rounded-lg bg-black/25 px-2 py-2"><span class="block font-display text-xl font-bold text-white" data-cd="s">—</span><span class="text-[.6rem] uppercase tracking-[.1em] text-[#c9b6a0]">sec</span></div>
+
+    <!-- Countdown + live stats -->
+    <div class="grid gap-4">
+      <div class="rounded-2xl border border-white/15 bg-white/8 p-6 backdrop-blur-sm text-center">
+        <p class="font-display text-[.65rem] uppercase tracking-[.22em] text-[#ffe9c7] mb-3">Expo opens in</p>
+        <div id="countdown" class="grid grid-cols-4 gap-2">
+          <div class="rounded-xl bg-black/30 px-2 py-3">
+            <span class="block font-display text-2xl font-bold text-white leading-none" data-cd="d">—</span>
+            <span class="mt-1 block text-[.58rem] uppercase tracking-[.1em] text-[#a8cfb0]">days</span>
+          </div>
+          <div class="rounded-xl bg-black/30 px-2 py-3">
+            <span class="block font-display text-2xl font-bold text-white leading-none" data-cd="h">—</span>
+            <span class="mt-1 block text-[.58rem] uppercase tracking-[.1em] text-[#a8cfb0]">hrs</span>
+          </div>
+          <div class="rounded-xl bg-black/30 px-2 py-3">
+            <span class="block font-display text-2xl font-bold text-white leading-none" data-cd="m">—</span>
+            <span class="mt-1 block text-[.58rem] uppercase tracking-[.1em] text-[#a8cfb0]">min</span>
+          </div>
+          <div class="rounded-xl bg-black/30 px-2 py-3">
+            <span class="block font-display text-2xl font-bold text-white leading-none" data-cd="s">—</span>
+            <span class="mt-1 block text-[.58rem] uppercase tracking-[.1em] text-[#a8cfb0]">sec</span>
+          </div>
+        </div>
+        <p class="mt-3 text-xs text-[#6da87d]">Lwatamu Gardens, Mengo, Kampala</p>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div class="rounded-xl border border-white/12 bg-white/7 p-3 text-center backdrop-blur-sm">
+          <p class="font-display text-2xl font-bold text-gold" id="heroStalls">18</p>
+          <p class="text-[.65rem] uppercase tracking-[.1em] text-[#8dc49d] mt-0.5">Stalls</p>
+        </div>
+        <div class="rounded-xl border border-white/12 bg-white/7 p-3 text-center backdrop-blur-sm">
+          <p class="font-display text-2xl font-bold text-gold" id="heroProducts">—</p>
+          <p class="text-[.65rem] uppercase tracking-[.1em] text-[#8dc49d] mt-0.5">Products</p>
+        </div>
+        <div class="rounded-xl border border-white/12 bg-white/7 p-3 text-center backdrop-blur-sm">
+          <p class="font-display text-2xl font-bold text-gold" id="heroLeads">—</p>
+          <p class="text-[.65rem] uppercase tracking-[.1em] text-[#8dc49d] mt-0.5">Demand leads</p>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="px-5 py-12">
-  <div class="mx-auto max-w-6xl">
-    <p class="text-[.72rem] font-bold uppercase tracking-[.18em] text-seal">What happens on site</p>
-    <h2 class="mt-2 max-w-3xl font-display text-3xl font-bold text-bark">Exhibition, classroom and registry desk</h2>
-    <div class="mt-8 grid gap-5 md:grid-cols-3">
-      <article class="rounded-2xl border border-[#e2d6c2] bg-paper p-6">
-        <h3 class="font-display text-xl font-bold text-bark">The exhibition</h3>
-        <p class="mt-2 text-[.95rem]">Inputs, seed, feed, machinery, livestock services, processing, finance and crafts. Every stand is registered on the suppliers log before the gates open.</p>
-      </article>
-      <article class="rounded-2xl border border-[#e2d6c2] bg-paper p-6">
-        <h3 class="font-display text-xl font-bold text-bark">The classroom</h3>
-        <p class="mt-2 text-[.95rem]">Nine teaching subjects, anchored by Farm Aid: managing a farm and keeping a farm's accounts. Culture, land and credit are taught beside agronomy.</p>
-      </article>
-      <article class="rounded-2xl border border-[#e2d6c2] bg-paper p-6">
-        <h3 class="font-display text-xl font-bold text-bark">The registry desk</h3>
-        <p class="mt-2 text-[.95rem]">QR forms, printed objective forms at the information desk, and marshals logging at the stand. Every answer becomes a demand or supply record.</p>
-      </article>
+<!-- ── Category quick-filter ── -->
+<section class="border-b border-[#e2d6c2] bg-paper px-5 py-4">
+  <div class="mx-auto max-w-7xl">
+    <div class="flex gap-2 overflow-x-auto scrollbar-none pb-1" id="catFilter">
+      <button class="cat-btn active flex-shrink-0 rounded-full bg-bark px-4 py-2 text-[.75rem] font-bold text-white" data-cat="">All stalls</button>
     </div>
   </div>
 </section>
 
-<section class="border-y border-[#e2d6c2] bg-paper px-5 py-14">
-  <div class="mx-auto max-w-6xl">
-    <p class="text-[.72rem] font-bold uppercase tracking-[.18em] text-seal">Three ways in</p>
-    <h2 class="mt-2 font-display text-3xl font-bold text-bark">How a visitor gets captured</h2>
-    <div class="mt-8 grid gap-4 md:grid-cols-3">
-      <div class="rounded-xl border border-[#e2d6c2] border-t-4 border-t-leaf bg-cream p-5">
-        <strong class="mb-1 block text-bark">Scan the QR code</strong>
-        <span class="text-[.93rem]">Opens the contextualised questionnaire on your own phone. No app, no queue. Works on any smart phone with a camera.</span>
-      </div>
-      <div class="rounded-xl border border-[#e2d6c2] border-t-4 border-t-gold bg-cream p-5">
-        <strong class="mb-1 block text-bark">Fill the printed form</strong>
-        <span class="text-[.93rem]">Tick boxes, no writing required beyond a name and a number. Filled at the information desk and entered same day.</span>
-      </div>
-      <div class="rounded-xl border border-[#e2d6c2] border-t-4 border-t-seal bg-cream p-5">
-        <strong class="mb-1 block text-bark">Talk to the marshal</strong>
-        <span class="text-[.93rem]">Each exhibitor marshal logs the lead at the stand on the live site, so no order walks out of the gate unrecorded.</span>
-      </div>
-    </div>
-    <div class="mt-6 flex flex-wrap gap-3">
-      <a href="visit.html" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Open the questionnaire</a>
-      <a href="visit.html#print" class="rounded-full border-2 border-bark px-6 py-3 text-sm font-bold text-bark hover:bg-bark hover:text-white">Print the desk forms</a>
-    </div>
-  </div>
-</section>
+<!-- ── Marketplace ── -->
+<section id="marketplace" class="px-5 py-10">
+  <div class="mx-auto max-w-7xl">
 
-<section class="px-5 py-14">
-  <div class="mx-auto grid max-w-6xl gap-6 md:grid-cols-2">
-    <div class="rounded-2xl bg-leafdark p-7 text-[#eaf3e4]">
-      <p class="text-[.7rem] font-bold uppercase tracking-[.18em] text-[#ffe9c7]">Anchor subject</p>
-      <h3 class="mt-2 font-display text-2xl font-bold text-white">Farm Aid clinic</h3>
-      <p class="mt-2 text-[.95rem] text-[#cfe0c8]">How to prepare a manager, how to run a farm, how to keep a farm's accounts. Land holders bring a plot; farmers bring a record of what they have managed.</p>
-      <a href="#" data-net="baf" class="mt-4 inline-block rounded-full bg-white px-5 py-2.5 text-sm font-bold text-leafdark">Read about Farm Aid</a>
-    </div>
-    <div class="rounded-2xl bg-bark p-7 text-[#f2e6d5]">
-      <p class="text-[.7rem] font-bold uppercase tracking-[.18em] text-gold">Also on site</p>
-      <h3 class="mt-2 font-display text-2xl font-bold text-white">The directory stand</h3>
-      <p class="mt-2 text-[.95rem] text-[#d9c8b4]">Claim, correct or upgrade your listing in the Busolya print and online business directory while you are at the expo. Featured categories are sold at the stand.</p>
-      <a href="#" data-net="baf" class="mt-4 inline-block rounded-full border-2 border-white/70 px-5 py-2.5 text-sm font-bold text-white">Browse the directory</a>
-    </div>
-  </div>
-</section>
-
-<section class="border-t border-[#e2d6c2] bg-paper px-5 py-14">
-  <div class="mx-auto max-w-6xl">
-    <div class="flex flex-wrap items-end justify-between gap-4">
+    <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p class="text-[.72rem] font-bold uppercase tracking-[.18em] text-seal">On the floor</p>
-        <h2 class="mt-2 font-display text-3xl font-bold text-bark">Exhibitors registered so far</h2>
+        <p class="text-[.68rem] font-bold uppercase tracking-[.18em] text-seal">Live from the exhibition floor</p>
+        <h2 class="mt-1 font-display text-3xl font-bold text-bark">All exhibitor stalls</h2>
       </div>
-      <a href="exhibitors.html" class="rounded-full border-2 border-bark px-5 py-2.5 text-sm font-bold text-bark hover:bg-bark hover:text-white">All exhibitors</a>
+      <div class="flex items-center gap-3">
+        <input id="searchBox" type="search" placeholder="Search products or stalls…"
+          class="w-48 rounded-full border border-[#e2d6c2] bg-paper px-4 py-2 text-sm focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf sm:w-64">
+        <a href="exhibitors.html" class="rounded-full border-2 border-bark px-5 py-2.5 text-sm font-bold text-bark hover:bg-bark hover:text-white transition">
+          Exhibitor register
+        </a>
+        <a href="supplier-login.html" class="rounded-full bg-leaf px-5 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">
+          Manage my stall
+        </a>
+      </div>
     </div>
-    <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Kkabra Gold INRL</strong><span class="text-sm text-ink/60">Ssemirembe J. RON</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Happy Dur / Tasma-Organic</strong><span class="text-sm text-ink/60">Okwad stell</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Crocs Distributors</strong><span class="text-sm text-ink/60">Nehal Zubam</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Mukyunyu Umbrella Farm</strong><span class="text-sm text-ink/60">Mukyunyu</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Gava Organic</strong><span class="text-sm text-ink/60">Gava Philip</span></div>
-      <div class="rounded-lg border border-[#e2d6c2] bg-cream px-4 py-3"><strong class="block text-bark">Anika Overseas India</strong><span class="text-sm text-ink/60">Kabir Ahmad</span></div>
+
+    <!-- Skeleton while loading -->
+    <div id="stallSkeleton" class="space-y-10">
+      <div class="skeleton h-48 w-full"></div>
+      <div class="skeleton h-48 w-full"></div>
+      <div class="skeleton h-48 w-full"></div>
+    </div>
+
+    <!-- Live stall rows injected here -->
+    <div id="stallRows" class="hidden space-y-12"></div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="hidden py-20 text-center">
+      <p class="text-4xl mb-4">🛒</p>
+      <p class="font-display text-xl font-bold text-bark mb-2">No products found</p>
+      <p class="text-sm text-ink/55">Try a different search or browse all stalls.</p>
+      <button onclick="clearSearch()" class="mt-4 rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark">Clear search</button>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── CTA strip ── -->
+<section class="bg-expo py-16 px-5 text-center"
+  style="background:linear-gradient(135deg,#164430 0%,#0d2d1e 100%)">
+  <div class="mx-auto max-w-3xl">
+    <p class="text-[.7rem] font-bold uppercase tracking-[.2em] text-[#ffe9c7] mb-3">Are you exhibiting?</p>
+    <h2 class="font-display text-3xl font-bold text-white mb-3">Add your products. Reach buyers now.</h2>
+    <p class="text-[#a8cfb0] mb-7 max-w-xl mx-auto">Your stall page is live for the full expo period at no cost. Register, add your products and images, then share on WhatsApp.</p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="register.html" class="rounded-full bg-gold px-7 py-3.5 text-sm font-bold text-white shadow-xl hover:bg-golddark transition">
+        Register &amp; list products →
+      </a>
+      <a href="supplier-login.html" class="rounded-full border-2 border-white/50 px-7 py-3.5 text-sm font-bold text-white hover:bg-white/10 transition">
+        Already registered? Sign in
+      </a>
     </div>
   </div>
 </section>
 
-<section class="bg-bark px-5 py-16">
-  <div class="mx-auto max-w-3xl text-center">
-    <h2 class="font-display text-3xl font-bold text-white">Take a stand, or take a seat in the classroom.</h2>
-    <p class="mt-3 text-[#d9c8b4]">Exhibitors are registered before the gates open, and every stand includes a suppliers-log entry and a directory listing option.</p>
-    <div class="mt-6 flex flex-wrap justify-center gap-3">
-      <a href="visit.html" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Register interest</a>
-      <a href="programme.html" class="rounded-full border-2 border-white/70 px-6 py-3 text-sm font-bold text-white">Programme</a>
+<!-- ── Expo details strip ── -->
+<section class="border-t border-[#e2d6c2] bg-paper px-5 py-10">
+  <div class="mx-auto max-w-4xl">
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 text-center">
+      <div class="rounded-xl border border-[#e2d6c2] p-5">
+        <p class="text-2xl mb-2">📍</p>
+        <p class="font-semibold text-bark text-sm">Lwatamu Gardens</p>
+        <p class="text-xs text-ink/55 mt-1">Plot 1, Kabakanjagala Rd, Bulange, Mengo, Kampala</p>
+      </div>
+      <div class="rounded-xl border border-[#e2d6c2] p-5">
+        <p class="text-2xl mb-2">📅</p>
+        <p class="font-semibold text-bark text-sm">4 – 8 November 2026</p>
+        <p class="text-xs text-ink/55 mt-1">Wednesday to Sunday · 8 AM – 6 PM daily</p>
+      </div>
+      <div class="rounded-xl border border-[#e2d6c2] p-5">
+        <p class="text-2xl mb-2">🎟</p>
+        <p class="font-semibold text-bark text-sm">UGX 5,000 Adults</p>
+        <p class="text-xs text-ink/55 mt-1">UGX 3,000 Children · Free for exhibitors</p>
+      </div>
+      <div class="rounded-xl border border-[#e2d6c2] p-5">
+        <p class="text-2xl mb-2">📞</p>
+        <p class="font-semibold text-bark text-sm">+256 200 911 567</p>
+        <p class="text-xs text-ink/55 mt-1">+256 776 932 360 · +256 702 563 606</p>
+      </div>
+    </div>
+    <div class="mt-8 flex flex-wrap justify-center gap-3 text-sm">
+      <a href="expo-info.html" class="rounded-full border border-[#e2d6c2] px-5 py-2.5 font-semibold text-bark hover:bg-bark hover:text-white transition">Full expo info &amp; programme</a>
+      <a href="programme.html" class="rounded-full border border-[#e2d6c2] px-5 py-2.5 font-semibold text-bark hover:bg-bark hover:text-white transition">Sessions programme</a>
+      <a href="visit.html" class="rounded-full bg-leaf px-5 py-2.5 font-bold text-white hover:bg-leafdark transition">Log a demand lead</a>
     </div>
   </div>
 </section>
-
-<section class="bg-cream border-t border-[#e2d6c2] px-5 py-14">
-  <div class="mx-auto max-w-4xl text-center">
-    <h2 class="font-display text-3xl font-bold text-bark">Expo details</h2>
-    <p class="mt-3 text-ink/70 text-sm max-w-2xl mx-auto">Bataka Agro Expo 2026 — the annual fixture of the Busolya Agro Farmers network.</p>
-    <table class="mt-6 mx-auto text-left max-w-xl w-full text-sm border-collapse">
-      <tr><td class="px-3 py-2 border-b border-[#e2d6c2] font-semibold text-bark">Venue</td><td class="px-3 py-2 border-b border-[#e2d6c2] text-ink">Lwatamu Gardens, Plot 1, Kabakanjagala Rd, Bulange, Mengo, Kampala (U)</td></tr>
-      <tr><td class="px-3 py-2 border-b border-[#e2d6c2] font-semibold text-bark">Dates</td><td class="px-3 py-2 border-b border-[#e2d6c2] text-ink">4 – 8 November 2026, 8:00 AM – 6:00 PM daily</td></tr>
-      <tr><td class="px-3 py-2 border-b border-[#e2d6c2] font-semibold text-bark">Entrance</td><td class="px-3 py-2 border-b border-[#e2d6c2] text-ink">Adults UGX 5,000/= · Kids UGX 3,000/=</td></tr>
-      <tr><td class="px-3 py-2 border-b border-[#e2d6c2] font-semibold text-bark">Contact</td><td class="px-3 py-2 border-b border-[#e2d6c2] text-ink">+256 200 911 567 · +256 776 932 360 · +256 702 563 606</td></tr>
-      <tr><td class="px-3 py-2 border-b border-[#e2d6c2] font-semibold text-bark">Organiser</td><td class="px-3 py-2 border-b border-[#e2d6c2] text-ink">Busolya Agro Farmers Ltd · Buganda, Uganda</td></tr>
-    </table>
-  </div>
-</section>
-
-</main>
 
 <div id="footer-placeholder"></div>
 
@@ -167,11 +293,18 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 <script src="../shared/components.js"></script>
 <script>
 (function () {
+'use strict';
+
+var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+  ? '' : 'https://busolya-api.onrender.com';
+
+/* ── Countdown ──────────────────────────────────────────────────── */
+(function () {
   var start = new Date('2026-11-04T08:00:00+03:00').getTime();
-  var end = new Date('2026-11-08T18:00:00+03:00').getTime();
-  var box = document.getElementById('countdown');
+  var end   = new Date('2026-11-08T18:00:00+03:00').getTime();
+  var box   = document.getElementById('countdown');
   if (!box) return;
-  var cells = {
+  var cd = {
     d: box.querySelector('[data-cd="d"]'),
     h: box.querySelector('[data-cd="h"]'),
     m: box.querySelector('[data-cd="m"]'),
@@ -179,19 +312,306 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   };
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function tick() {
-    var now = Date.now();
-    if (now > end) {
-      cells.d.textContent = '0'; cells.h.textContent = '00'; cells.m.textContent = '00'; cells.s.textContent = '00';
-      return;
-    }
-    var diff = Math.max(0, start - now);
-    cells.d.textContent = Math.floor(diff / 86400000);
-    cells.h.textContent = pad(Math.floor(diff / 3600000) % 24);
-    cells.m.textContent = pad(Math.floor(diff / 60000) % 60);
-    cells.s.textContent = pad(Math.floor(diff / 1000) % 60);
+    var now  = Date.now();
+    if (now >= end) { cd.d.textContent='0'; cd.h.textContent='00'; cd.m.textContent='00'; cd.s.textContent='00'; return; }
+    if (now >= start) { cd.d.textContent='LIVE'; cd.h.textContent=''; cd.m.textContent=''; cd.s.textContent=''; return; }
+    var diff = start - now;
+    cd.d.textContent = Math.floor(diff / 86400000);
+    cd.h.textContent = pad(Math.floor(diff / 3600000) % 24);
+    cd.m.textContent = pad(Math.floor(diff / 60000) % 60);
+    cd.s.textContent = pad(Math.floor(diff / 1000) % 60);
   }
-  tick();
-  setInterval(tick, 1000);
+  tick(); setInterval(tick, 1000);
+})();
+
+/* ── Catalogue data ─────────────────────────────────────────────── */
+// The 18 registered exhibitors (from exhibitors.html register).
+// When an exhibitor logs in and adds products, those appear live via API.
+// For exhibitors with no API products yet, we show a "contact for stock" card.
+var STALLS = [
+  { id:  1, biz: 'Kkabra Gold INRL',                    ex: 'Ssemirembe J. RON',  cat: 'Mining & Minerals' },
+  { id:  2, biz: 'Happy Dur / Tasma-Organic',            ex: 'Okwad Stell',         cat: 'Organic Produce' },
+  { id:  3, biz: 'Zukula Catering Services',             ex: 'Namuddu Zikula',      cat: 'Food & Catering' },
+  { id:  4, biz: 'Crocs Distributors',                   ex: 'Nehal Zubam',         cat: 'Distribution' },
+  { id:  5, biz: 'Mukyunyu Umbrella Farm',               ex: 'Mukyunyu',            cat: 'Farming' },
+  { id:  6, biz: 'Sky Dental Care and Dental Services',  ex: 'Mbabazi Maliza',      cat: 'Health Services' },
+  { id:  7, biz: 'Kkata Agro Agri Chemicals & Supplies', ex: 'Kimbowa James',       cat: 'Agro Inputs' },
+  { id:  8, biz: 'Global Fitness International',         ex: 'Ali Rehan',           cat: 'Health & Fitness' },
+  { id:  9, biz: 'Muyinzi Tasubwa',                      ex: 'Muyizi Tasubwa',      cat: 'Farming' },
+  { id: 10, biz: 'Jeus Loves You Art and Crafts',        ex: 'Liz Bakyayita',       cat: 'Arts & Crafts' },
+  { id: 11, biz: 'Indian Neelambari (Herbal)',            ex: 'Krishna Kumri',       cat: 'Herbal & Health' },
+  { id: 12, biz: 'Abida Naisargi',                       ex: 'Abida',               cat: 'General Trade' },
+  { id: 13, biz: 'Anika Overseas India',                 ex: 'Kabir Ahmad',         cat: 'Import & Export' },
+  { id: 14, biz: 'Jojo Catering and Ice Cream',          ex: 'Nankunda Dhoreen',    cat: 'Food & Catering' },
+  { id: 15, biz: "God's Favour",                         ex: 'Kabugo Rosemary',     cat: 'General Trade' },
+  { id: 16, biz: 'Samuel Mbogo',                         ex: 'Samuel Mbogo',        cat: 'General Trade' },
+  { id: 17, biz: 'Good Samaritan Hoima',                 ex: 'Kabugo Davis',        cat: 'Health Services' },
+  { id: 18, biz: 'Gava Organic',                         ex: 'Gava Philip',         cat: 'Organic Produce' }
+];
+
+/* ── Category pills ─────────────────────────────────────────────── */
+var cats = {};
+STALLS.forEach(function (s) { cats[s.cat] = (cats[s.cat] || 0) + 1; });
+var catBar = document.getElementById('catFilter');
+Object.keys(cats).sort().forEach(function (cat) {
+  var btn = document.createElement('button');
+  btn.className = 'cat-btn flex-shrink-0 rounded-full border border-[#e2d6c2] bg-paper px-4 py-2 text-[.75rem] font-semibold text-bark hover:bg-bark hover:text-white transition';
+  btn.setAttribute('data-cat', cat);
+  btn.textContent = cat + ' (' + cats[cat] + ')';
+  catBar.appendChild(btn);
+});
+catBar.addEventListener('click', function (e) {
+  var btn = e.target.closest('.cat-btn');
+  if (!btn) return;
+  catBar.querySelectorAll('.cat-btn').forEach(function (b) {
+    b.className = b.className.replace('bg-bark text-white', 'border-[#e2d6c2] bg-paper text-bark');
+    b.classList.remove('active');
+  });
+  btn.className = btn.className.replace('border-[#e2d6c2] bg-paper text-bark', 'bg-bark text-white');
+  btn.classList.add('active');
+  filterStalls();
+});
+
+/* ── Search ─────────────────────────────────────────────────────── */
+document.getElementById('searchBox').addEventListener('input', filterStalls);
+function clearSearch() {
+  document.getElementById('searchBox').value = '';
+  filterStalls();
+}
+
+var _stallData = {};   // stallId -> { products: [] }
+var _loaded    = false;
+
+function filterStalls() {
+  var term = document.getElementById('searchBox').value.trim().toLowerCase();
+  var cat  = (catBar.querySelector('.cat-btn.active') || {}).getAttribute('data-cat') || '';
+  var rows = document.getElementById('stallRows');
+  var empty = document.getElementById('emptyState');
+  var anyVisible = false;
+
+  rows.querySelectorAll('.stall-block').forEach(function (block) {
+    var stallId  = Number(block.getAttribute('data-stall'));
+    var stallObj = STALLS.find(function (s) { return s.id === stallId; });
+    if (!stallObj) return;
+
+    var matchCat = !cat || stallObj.cat === cat;
+    var data     = _stallData[stallId];
+    var products = (data && data.products) || [];
+
+    // Match term against stall name or any product
+    var matchTerm = !term
+      || stallObj.biz.toLowerCase().indexOf(term) > -1
+      || products.some(function (p) {
+           return (p.title + ' ' + (p.description || '') + ' ' + (p.category || ''))
+                    .toLowerCase().indexOf(term) > -1;
+         });
+
+    var show = matchCat && matchTerm;
+    block.style.display = show ? '' : 'none';
+    if (show) anyVisible = true;
+
+    // If searching, highlight matching product cards only
+    if (show && term) {
+      block.querySelectorAll('.product-card').forEach(function (card) {
+        var text = card.textContent.toLowerCase();
+        card.style.opacity = text.indexOf(term) > -1 ? '1' : '0.4';
+      });
+    } else {
+      block.querySelectorAll('.product-card').forEach(function (c) { c.style.opacity = '1'; });
+    }
+  });
+
+  empty.classList.toggle('hidden', anyVisible || !_loaded);
+}
+
+/* ── Build stall block HTML ─────────────────────────────────────── */
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmt(n) { return Number(n || 0).toLocaleString('en-UG'); }
+
+// Header palette cycles
+var HDCLASSES = ['stall-hd', 'stall-hd-gold', 'stall-hd-seal'];
+
+function buildProductCard(p, stallId, biz) {
+  var hasImg  = p.storage_url || p.image_url;
+  var imgHtml = hasImg
+    ? '<img src="' + esc(hasImg) + '" alt="' + esc(p.title) + '" class="h-36 w-full object-cover" loading="lazy">'
+    : '<div class="flex h-36 w-full items-center justify-center bg-[#e6efe0] text-4xl">🌱</div>';
+
+  return '<a href="stall.html?id=' + stallId + '&biz=' + encodeURIComponent(biz) + '&ex=' + encodeURIComponent(biz) + '#product-' + p.id + '"' +
+    ' class="product-card flex flex-col rounded-2xl border border-[#e2d6c2] bg-paper overflow-hidden cursor-pointer no-underline">' +
+    '<div class="overflow-hidden">' + imgHtml + '</div>' +
+    '<div class="flex flex-col flex-1 p-3">' +
+      '<p class="font-semibold text-bark text-sm leading-snug line-clamp-2">' + esc(p.title) + '</p>' +
+      (p.category ? '<p class="mt-0.5 text-[.65rem] text-ink/50 uppercase tracking-[.08em]">' + esc(p.category) + '</p>' : '') +
+      '<div class="mt-auto pt-2 flex items-end justify-between gap-1">' +
+        (p.price ? '<p class="font-bold text-leaf text-sm">UGX ' + fmt(p.price) + (p.unit ? '<span class="font-normal text-ink/50 text-[.65rem]"> / ' + esc(p.unit) + '</span>' : '') + '</p>' : '<p class="text-[.7rem] text-ink/40 italic">Ask for price</p>') +
+        (p.quantity_stock ? '<span class="rounded bg-[#e6efe0] px-1.5 py-0.5 text-[.6rem] font-semibold text-leafdark">' + fmt(p.quantity_stock) + ' ' + esc(p.unit || 'in stock') + '</span>' : '') +
+      '</div>' +
+    '</div>' +
+  '</a>';
+}
+
+function buildContactCard(stallId, biz) {
+  return '<a href="stall.html?id=' + stallId + '&biz=' + encodeURIComponent(biz) + '&ex=' + encodeURIComponent(biz) + '"' +
+    ' class="product-card flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#e2d6c2] bg-cream p-6 text-center cursor-pointer no-underline min-h-[160px]">' +
+    '<span class="text-3xl mb-2">📋</span>' +
+    '<p class="text-sm font-semibold text-bark">View stall</p>' +
+    '<p class="text-xs text-ink/50 mt-1">Log a demand or contact this exhibitor</p>' +
+  '</a>';
+}
+
+function buildStallBlock(stall, products, idx) {
+  var stallId  = stall.id;
+  var biz      = stall.biz;
+  var hdClass  = HDCLASSES[idx % HDCLASSES.length];
+  var stallUrl = 'stall.html?id=' + stallId + '&biz=' + encodeURIComponent(biz) + '&ex=' + encodeURIComponent(stall.ex);
+
+  // Decide what to show: up to 5 products, or a contact card if none
+  var cards = products.length
+    ? products.slice(0, 10).map(function (p) { return buildProductCard(p, stallId, biz); }).join('')
+    : buildContactCard(stallId, biz) + buildContactCard(stallId, biz);
+
+  var productCount = products.length
+    ? '<span class="rounded-full bg-white/20 px-2.5 py-1 text-[.7rem] font-bold">' + products.length + ' listing' + (products.length > 1 ? 's' : '') + '</span>'
+    : '<span class="rounded-full bg-white/15 px-2.5 py-1 text-[.7rem] italic">No listings yet</span>';
+
+  return '<div class="stall-block rounded-2xl overflow-hidden border border-[#e2d6c2] shadow-sm" data-stall="' + stallId + '">' +
+    // Header
+    '<div class="' + hdClass + ' px-5 py-4 flex flex-wrap items-center justify-between gap-3">' +
+      '<div>' +
+        '<div class="flex items-center gap-3">' +
+          '<div class="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 font-display text-lg font-bold text-white shrink-0">' +
+            esc(biz.charAt(0).toUpperCase()) +
+          '</div>' +
+          '<div>' +
+            '<a href="' + stallUrl + '" class="font-display text-xl font-bold text-white hover:underline">' + esc(biz) + '</a>' +
+            '<p class="text-[.7rem] text-white/65">' + esc(stall.ex) + ' · ' + esc(stall.cat) + '</p>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="flex items-center gap-2">' +
+        productCount +
+        '<a href="' + stallUrl + '" class="rounded-full bg-white/20 hover:bg-white/30 px-4 py-1.5 text-[.72rem] font-bold text-white transition">Visit stall →</a>' +
+        '<button onclick="shareStall(' + stallId + ',\'' + esc(biz).replace(/'/g,"\\'") + '\')" class="rounded-full border border-white/25 px-3 py-1.5 text-[.68rem] font-semibold text-white/80 hover:text-white hover:border-white/60 transition">Share</button>' +
+      '</div>' +
+    '</div>' +
+    // Strip with arrows
+    '<div class="strip-wrap px-2 py-4 bg-paper">' +
+      '<button class="arrow-btn prev" aria-label="scroll left" onclick="scrollStrip(this,-1)">&#8249;</button>' +
+      '<div class="stall-strip" id="strip-' + stallId + '">' +
+        cards +
+      '</div>' +
+      '<button class="arrow-btn next" aria-label="scroll right" onclick="scrollStrip(this,1)">&#8250;</button>' +
+    '</div>' +
+  '</div>';
+}
+
+/* ── Strip scroll ───────────────────────────────────────────────── */
+function scrollStrip(arrowEl, dir) {
+  var strip = arrowEl.parentElement.querySelector('.stall-strip');
+  if (!strip) return;
+  var card = strip.firstElementChild;
+  if (!card) return;
+  var step = card.getBoundingClientRect().width + 16;
+  strip.scrollBy({ left: dir * step * 2, behavior: 'smooth' });
+}
+
+/* ── Share a stall ──────────────────────────────────────────────── */
+function shareStall(stallId, biz) {
+  var url  = location.origin + '/bae/stall.html?id=' + stallId + '&biz=' + encodeURIComponent(biz) + '&ex=' + encodeURIComponent(biz);
+  var text = biz + '\nShop online at Bataka Agro Expo 2026\n' + url;
+  if (navigator.share) {
+    navigator.share({ title: biz, text: text, url: url }).catch(function(){});
+  } else {
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+  }
+}
+
+/* ── Render all stalls ──────────────────────────────────────────── */
+function renderStalls(productsByStall) {
+  var rows      = document.getElementById('stallRows');
+  var skeleton  = document.getElementById('stallSkeleton');
+  var heroProds = document.getElementById('heroProducts');
+  var heroLeads = document.getElementById('heroLeads');
+
+  var totalProds = 0;
+  STALLS.forEach(function (s) {
+    var prods = (productsByStall[s.id] || []);
+    totalProds += prods.length;
+  });
+
+  rows.innerHTML = '';
+  STALLS.forEach(function (stall, idx) {
+    var prods = productsByStall[stall.id] || [];
+    rows.insertAdjacentHTML('beforeend', buildStallBlock(stall, prods, idx));
+  });
+
+  skeleton.classList.add('hidden');
+  rows.classList.remove('hidden');
+  _loaded = true;
+
+  if (heroProds) heroProds.textContent = totalProds || '—';
+
+  // Load demand count separately
+  fetch(API + '/api/stats')
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.stats && heroLeads) heroLeads.textContent = d.stats.demand || 0;
+    }).catch(function () {});
+
+  filterStalls();
+}
+
+/* ── Fetch products for all stalls ─────────────────────────────── */
+function loadMarketplace() {
+  // Fetch all products in one call then group by supplier_id
+  fetch(API + '/api/suppliers/products')
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var all = d.products || [];
+      var byStall = {};
+      all.forEach(function (p) {
+        var sid = Number(p.supplier_id);
+        if (!byStall[sid]) byStall[sid] = [];
+        byStall[sid].push(p);
+      });
+
+      // Also attempt to load media thumbnails for each product (best-effort)
+      // We merge images into products that have matching product_id in media
+      fetch(API + '/api/media')
+        .then(function (r2) { return r2.json(); })
+        .then(function (md) {
+          var mediaByProduct = {};
+          (md.media || []).forEach(function (m) {
+            if (m.media_type === 'image' && m.product_id) {
+              if (!mediaByProduct[m.product_id]) mediaByProduct[m.product_id] = m.storage_url;
+            }
+          });
+          // Attach first image to each product
+          Object.keys(byStall).forEach(function (sid) {
+            byStall[sid].forEach(function (p) {
+              if (mediaByProduct[p.id]) p.storage_url = mediaByProduct[p.id];
+            });
+          });
+          _stallData = byStall;
+          renderStalls(byStall);
+        })
+        .catch(function () {
+          _stallData = byStall;
+          renderStalls(byStall);
+        });
+    })
+    .catch(function () {
+      // API unavailable — render stalls with no products (contact cards)
+      _stallData = {};
+      renderStalls({});
+    });
+}
+
+loadMarketplace();
+
 })();
 </script>
 </body>
