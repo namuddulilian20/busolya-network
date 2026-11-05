@@ -1,9 +1,9 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-site="bae">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Questionnaires ‚Äî Bataka Agro Expo 2026</title>
+<title>Questionnaires ó Bataka Agro Expo 2026</title>
 <meta name="description" content="Three short questionnaires for the Bataka Agro Expo: demand for visitors and buyers, supply for suppliers and service providers, and business linkages for exhibitors. Answers reach the registry desk directly.">
 <link rel="icon" href="assets/mark.svg">
 <script src="assets/busolya.js"></script>
@@ -16,8 +16,8 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
 <div class="bg-leafdark text-[#eaf3e4]">
   <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-2 text-xs tracking-wide">
-    <p><span class="text-gold">‚óè</span> Bataka Agro Expo ¬∑ 4 to 8 November 2026</p>
-    <p class="hidden sm:block">Three questionnaires ‚Äî demand, supply, linkage</p>
+    <p><span class="text-gold">?</span> Bataka Agro Expo ∑ 4 to 8 November 2026</p>
+    <p class="hidden sm:block">Three questionnaires ó demand, supply, linkage</p>
   </div>
 </div>
 
@@ -129,7 +129,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
   function load() {
     if (cache[kind]) { render(cache[kind]); return; }
-    questionsEl.innerHTML = '<p class="text-sm text-ink/55">Loading the questions‚Ä¶</p>';
+    questionsEl.innerHTML = '<p class="text-sm text-ink/55">Loading the questionsÖ</p>';
     window.BUSOLYA.get('/api/questions/' + kind).then(function (res) {
       cache[kind] = res.questions;
       render(res.questions);
@@ -146,7 +146,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
       var opts = (q.options || []).map(function (o) {
         return '<option value="' + escapeHtml(o) + '">' + escapeHtml(o) + '</option>';
       }).join('');
-      return '<label class="block" for="' + id + '">' + head + '<select id="' + id + '" class="' + cls + '"><option value="">Choose‚Ä¶</option>' + opts + '</select></label>';
+      return '<label class="block" for="' + id + '">' + head + '<select id="' + id + '" class="' + cls + '"><option value="">ChooseÖ</option>' + opts + '</select></label>';
     }
     if (q.type === 'yesno') {
       return '<fieldset class="block"><legend class="text-sm font-semibold text-bark">' + escapeHtml(q.prompt) + '</legend>' +
@@ -201,12 +201,12 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
     if (!name || !phone) { say('Name and phone are required so the desk can follow up.', false); return; }
     if (!document.getElementById('f-consent').checked) { say('Tick the consent box before sending.', false); return; }
     var got = collect();
-    if (got.missing.length) { say('Please answer: ' + got.missing.slice(0, 3).join(' ¬∑ '), false); return; }
+    if (got.missing.length) { say('Please answer: ' + got.missing.slice(0, 3).join(' ∑ '), false); return; }
 
     var listing = String(got.answers.listed || '').toLowerCase() === 'yes';
     var button = form.querySelector('button[type="submit"]');
     button.disabled = true;
-    button.textContent = 'Sending‚Ä¶';
+    button.textContent = 'SendingÖ';
 
     window.BUSOLYA.post('/api/submissions', {
       kind: kind,
@@ -238,7 +238,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 })();
 </script>
 <script src="assets/network.js"></script>
-<script src="../shared/components.js"></script>
+<script src="assets/components.js"></script>
 </body>
 </html>
 

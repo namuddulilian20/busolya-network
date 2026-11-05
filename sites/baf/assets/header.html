@@ -1,0 +1,36 @@
+<!-- Shared header fragment — used only in local/same-origin dev.
+     In production (separate Render origins) components.js builds
+     the header inline from SITE_CONFIG and does not fetch this file.
+     Keep this in sync with buildHeaderHTML() in components.js -->
+<header class="sticky top-0 z-40 border-b bg-[#fffdf8]/92 backdrop-blur" id="hdr-root">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-5 py-2.5">
+    <a href="index.html" class="flex shrink-0 items-center gap-3" id="hdr-home">
+      <img src="assets/logo.jpg" alt="" class="h-12 w-12 rounded-full ring-2" id="hdr-logo">
+      <span class="leading-tight">
+        <span class="block font-display text-[1.05rem] font-bold" id="hdr-title">Busolya Network</span>
+        <span class="block text-[.66rem] uppercase tracking-[.18em] opacity-55" id="hdr-subtitle">Buganda, Uganda</span>
+      </span>
+    </a>
+    <button id="hdr-burger" aria-label="Open menu" aria-expanded="false" aria-controls="hdr-nav"
+      class="ml-auto flex md:hidden flex-col gap-1.5 px-2 py-2 rounded">
+      <span class="block h-0.5 w-5 bg-current rounded"></span>
+      <span class="block h-0.5 w-5 bg-current rounded"></span>
+      <span class="block h-0.5 w-5 bg-current rounded"></span>
+    </button>
+    <nav id="hdr-nav" class="hidden w-full order-last md:flex md:w-auto md:order-none md:ml-auto" role="navigation">
+      <ul class="flex flex-wrap items-center gap-1" id="hdr-nav-list">
+        <!-- filled by components.js per site -->
+      </ul>
+    </nav>
+    <div class="hidden md:flex items-center gap-2 shrink-0" id="hdr-auth">
+      <a href="supplier-login.html" id="hdr-supplier-btn" class="rounded-full px-3 py-1.5 text-xs font-bold border transition-colors">Supplier login</a>
+      <a href="login.html" id="hdr-login-btn" class="rounded-full px-3 py-1.5 text-xs font-semibold transition-colors">Sign in</a>
+      <span id="hdr-user-name" class="hidden rounded-full px-3 py-1.5 text-xs font-semibold"></span>
+      <a href="supplier-portal.html" id="hdr-supplier-portal" class="hidden rounded-full px-3 py-1.5 text-xs font-bold text-white transition-colors">My portal</a>
+      <a href="admin.html" id="hdr-admin-btn" class="hidden rounded-full px-3 py-1.5 text-xs font-bold text-white transition-colors">Admin</a>
+      <button onclick="window.BusolyaAuth&&window.BusolyaAuth.logout()" id="hdr-logout-btn"
+        class="hidden rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors">Sign out</button>
+    </div>
+    <a href="#" id="hdr-cta" class="hidden rounded-full px-5 py-2.5 text-sm font-bold text-white md:inline-block">Join</a>
+  </div>
+</header>
