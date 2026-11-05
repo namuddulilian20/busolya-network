@@ -55,10 +55,82 @@ async function query(text, params) {
 async function migrate() {
   if (!isLocal) {
     const sql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-    await pgPool.query(sql);
+    // Run each statement individually so that one "already exists" error
+    // (e.g. an index or column on a legacy database) does not roll back
+    // the entire migration. We split on semicolons that end a statement
+    // (ignoring semicolons inside $$ dollar-quoted PL/pgSQL blocks).
+    const statements = splitSql(sql);
+    for (const stmt of statements) {
+      const trimmed = stmt.trim();
+      if (!trimmed) continue;
+      try {
+        await pgPool.query(trimmed);
+      } catch (err) {
+        // "already exists" errors are safe to ignore (idempotent schema)
+        const safe = /already exists|duplicate (column|index|constraint|table|object)/i.test(err.message);
+        if (!safe) throw err;
+        // Log suppressed errors in non-production for visibility
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[migrate] suppressed:', err.message.slice(0, 120));
+        }
+      }
+    }
     return;
   }
   return adapter.migrate();
+}
+
+/**
+ * Split a SQL string into individual statements, respecting:
+ *  - $$ dollar-quoted blocks (PL/pgSQL DO $$ ... $$)
+ *  - single-quoted string literals
+ *  - -- line comments
+ */
+function splitSql(sql) {
+  const stmts = [];
+  let current = '';
+  let inDollarQuote = false;
+  let inSingleQuote = false;
+  let i = 0;
+
+  while (i < sql.length) {
+    const ch = sql[i];
+    const remaining = sql.slice(i);
+
+    // Toggle dollar-quote on $$ marker
+    if (!inSingleQuote && remaining.startsWith('$$')) {
+      inDollarQuote = !inDollarQuote;
+      current += '$$';
+      i += 2;
+      continue;
+    }
+
+    // Toggle single-quote ('' escape)
+    if (!inDollarQuote && ch === "'") {
+      inSingleQuote = !inSingleQuote;
+      current += ch; i++; continue;
+    }
+
+    // Skip line comments outside quotes
+    if (!inDollarQuote && !inSingleQuote && ch === '-' && sql[i+1] === '-') {
+      const end = sql.indexOf('\n', i);
+      i = end === -1 ? sql.length : end + 1;
+      continue;
+    }
+
+    // Statement separator
+    if (!inDollarQuote && !inSingleQuote && ch === ';') {
+      stmts.push(current.trim());
+      current = '';
+      i++;
+      continue;
+    }
+
+    current += ch;
+    i++;
+  }
+  if (current.trim()) stmts.push(current.trim());
+  return stmts;
 }
 
 const pool = isLocal ? null : pgPool;

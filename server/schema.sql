@@ -193,10 +193,11 @@ create table if not exists participants (
   updated_at    timestamptz not null default now()
 );
 create index if not exists participants_phone_idx on participants (phone);
-create index if not exists participants_email_idx on participants (email);
-create index if not exists participants_role_idx on participants (role);
+create index if not exists participants_role_idx  on participants (role);
 
--- Add email column to existing installations
+-- Add email, updated_at columns to existing installations (idempotent).
+-- The email index is created inside the guard so it only runs after the
+-- column exists — prevents "column does not exist" on a legacy database.
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -204,7 +205,19 @@ BEGIN
     WHERE table_name = 'participants' AND column_name = 'email'
   ) THEN
     ALTER TABLE participants ADD COLUMN email text unique;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'participants' AND column_name = 'updated_at'
+  ) THEN
     ALTER TABLE participants ADD COLUMN updated_at timestamptz not null default now();
+  END IF;
+  -- Create email index if it doesn't exist (may fail silently if already there)
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE tablename = 'participants' AND indexname = 'participants_email_idx'
+  ) THEN
+    CREATE UNIQUE INDEX participants_email_idx ON participants (email);
   END IF;
 END $$;
 create table if not exists users (
