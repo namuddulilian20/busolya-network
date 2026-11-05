@@ -441,6 +441,29 @@ These are the items to be produced for distribution at the expo and through soci
 
 Free Postgres expires 90 days after creation. Export `/admin/export/backup.json` before then, recreate the database and redeploy.
 
+### Checking what is deployed
+
+Render does not show the live commit on the public site, so check it two ways.
+
+**In the dashboard:** open the service, and read the deploy row at the top of the
+page (status plus short commit), or open the **Deploys** tab, which lists every
+deploy with its commit message and time. The site being reachable says nothing
+about which build it is running.
+
+**From the command line:** `scripts/deploy-status.js` compares each service's
+live deploy with `origin/main` and prints `OK`, `BEHIND`, `MISSING`, or the
+status of a build still running:
+
+```powershell
+$env:RENDER_API_KEY = 'rnd_...'     # Render -> Account Settings -> API Keys
+node scripts/deploy-status.js
+```
+
+The key is read from the environment only; nothing is written to disk. Exit code
+is `0` when all four services are on the branch tip and `1` otherwise, so the
+same script can gate a release check. A service that is connected, healthy and
+serving traffic can still be several commits behind — that is the `BEHIND` row.
+
 Custom domains: Render → Settings → Custom Domains (per service).
 
 ### Troubleshooting: "site can't be reached" on `*.onrender.com`
