@@ -140,7 +140,9 @@ function deleteJsonl(sql, params) {
 function applyWhere(docs, clause, params) {
   return docs.filter((d) =>
     clause.split(/\s+and\s+/i).every((cond) => {
-      const c = cond.trim();
+      /* Drop a leading table alias ("en.locale = $1" -> "locale = $1"); the
+         adapter stores flat documents, so the alias carries no meaning. */
+      const c = cond.trim().replace(/^\w+\./, '');
 
       // col = $N
       const eq = c.match(/^(\w+)\s*=\s*\$(\d+)$/);
@@ -211,6 +213,25 @@ async function migrate() {
 
 // ---------- seedIfEmpty ----------
 
+/*
+ * A collection is safe to seed when it is empty AND every line in it could be
+ * read. If lines were skipped as corrupt (usually a TEE encryption key
+ * mismatch), seeding would rewrite the file and destroy records that a
+ * correct key could still recover, so seeding is refused instead.
+ */
+function canSeed(coll) {
+  if (coll.count() > 0) return false;
+  const skipped = coll.skippedLines();
+  if (skipped > 0) {
+    console.error(
+      `[jsonl/adapter] ${coll.name}: ${skipped} unreadable line(s) - refusing to reseed. ` +
+      'The TEE_ENCRYPTION_KEY / SESSION_SECRET differs from the key the data was written with.'
+    );
+    return false;
+  }
+  return true;
+}
+
 async function seedIfEmpty() {
   const seed        = require('../seed-data');
   const crypto      = require('crypto');
@@ -218,7 +239,7 @@ async function seedIfEmpty() {
   const collections = allCollections();
 
   const subjColl = collections.subjects;
-  if (subjColl.count() === 0) {
+  if (canSeed(subjColl)) {
     (seed.SUBJECTS || []).forEach((s) =>
       subjColl.insert({ code: s.code, title: s.title, summary: s.summary,
                         outline: s.outline, level: s.level, active: true })
@@ -226,7 +247,7 @@ async function seedIfEmpty() {
   }
 
   const qColl = collections.questions;
-  if (qColl.count() === 0) {
+  if (canSeed(qColl)) {
     Object.keys(seed.QUESTIONS || {}).forEach((kind) => {
       (seed.QUESTIONS[kind] || []).forEach((q, i) =>
         qColl.insert({ kind, position: i + 1, field: q.field, prompt: q.prompt,
@@ -237,7 +258,7 @@ async function seedIfEmpty() {
   }
 
   const layerColl = collections.governance_layers;
-  if (layerColl.count() === 0) {
+  if (canSeed(layerColl)) {
     (seed.LAYERS || []).forEach((l) =>
       layerColl.insert({ code: l.code, name: l.name, kind: l.kind,
                          parent_code: l.parent, description: l.description, sort: l.sort })
@@ -245,7 +266,7 @@ async function seedIfEmpty() {
   }
 
   const netColl = collections.networks;
-  if (netColl.count() === 0) {
+  if (canSeed(netColl)) {
     (seed.NETWORKS || []).forEach((n) =>
       netColl.insert({ kind: n.kind, name: n.name, model: n.model,
                        description: n.description, status: 'active' })
@@ -253,7 +274,7 @@ async function seedIfEmpty() {
   }
 
   const settingsColl = collections.settings;
-  if (settingsColl.count() === 0) {
+  if (canSeed(settingsColl)) {
     settingsColl.insert({
       key:   'register_status',
       value: { clan_register: 'working register, pending verification',
@@ -262,7 +283,7 @@ async function seedIfEmpty() {
   }
 
   const partColl = collections.participants;
-  if (partColl.count() === 0) {
+  if (canSeed(partColl)) {
     const staff = [
       { phone: '+256700000001', name: 'Alice Nakato',     district: 'Mengo' },
       { phone: '+256700000002', name: 'Bob Kato',         district: 'Mengo' },
@@ -277,6 +298,62 @@ async function seedIfEmpty() {
                         password_hash: hashPwd('BafStaff2026!'),
                         password_is_phone: false, district: u.district })
     );
+  }
+
+  /* Curriculum: subjects, topics and notes. Each row is keyed so re-running the
+     seed fills in new content without duplicating what is already stored. */
+  const topicColl = collections.education_topics;
+  const noteColl  = collections.education_notes;
+
+  /* Never rewrite a curriculum file that has lines we could not read: doing so
+     would throw away records that the right TEE key could still decrypt. */
+  const unreadable = [subjColl, topicColl, noteColl].filter((c) => c.skippedLines() > 0);
+  if (unreadable.length) {
+    console.error('[jsonl/adapter] curriculum seed skipped: unreadable data in ' +
+      unreadable.map((c) => c.name).join(', ') +
+      ' (TEE key mismatch - fix the key instead of overwriting the files)');
+  } else {
+    const subjectByCode = new Map(subjColl.all().map((s) => [String(s.code), s.id]));
+
+    for (const s of seed.SUBJECTS || []) {
+      if (!subjectByCode.has(String(s.code))) {
+        const rec = subjColl.insert({ code: s.code, title: s.title, summary: s.summary,
+                                       outline: s.outline, level: s.level, active: true });
+        subjectByCode.set(String(s.code), rec.id);
+      }
+    }
+
+    const allTopics = [
+      ...(seed.FARM_AID_TOPICS || []),
+      ...(seed.ALL_TOPICS      || [])
+    ];
+    for (const t of allTopics) {
+      const subjectId = subjectByCode.get(String(t.subject_code));
+      if (!subjectId) continue;
+      if (topicColl.findOne({ subject_id: subjectId, code: t.code })) continue;
+      topicColl.insert({ subject_id: subjectId, code: t.code, title: t.title,
+                         summary: t.summary, level: t.level, sort_order: t.sort_order,
+                         active: true });
+    }
+
+    const topicByCode = new Map(topicColl.all().map((t) => [t.code, t.id]));
+    const covered = new Set();
+    const allNotes = [
+      ...(seed.FARM_AID_NOTES_EN  || []),
+      ...(seed.FARM_AID_NOTES_LUG || []),
+      ...(seed.ALL_NOTES_EN        || [])
+    ];
+    for (const n of allNotes) {
+      const key = n.topic_code + '|' + n.locale;
+      if (covered.has(key)) continue;
+      covered.add(key);
+      const topicId = topicByCode.get(n.topic_code);
+      if (!topicId) continue;
+      if (noteColl.findOne({ topic_id: topicId, locale: n.locale })) continue;
+      noteColl.insert({ topic_id: topicId, title: n.title, content: n.content,
+                        locale: n.locale, format: n.format, presentation: false,
+                        price_ugx: n.price_ugx, active: true });
+    }
   }
 
   console.log('[jsonl/adapter] seed complete —', dataDir());

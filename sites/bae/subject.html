@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-site="bae">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subject - Bataka Agro Expo 2026</title>
+<meta name="description" content="Topics and notes for each of the nine teaching subjects at the Bataka Agro Expo 2026, 4-8 November 2026.">
+<link rel="icon" href="assets/mark.svg">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a', cream:'#fbf6ec', paper:'#fffdf8', leaf:'#2f7d32', leafdark:'#1f5523', seal:'#a8321e', gold:'#c68a2e', ink:'#2a1a10' }, fontFamily: { display:['Georgia','Times New Roman','serif'], body:['Segoe UI','system-ui','sans-serif'] } } } }
+</script>
+</head>
+<body class="bg-cream font-body text-ink antialiased">
+
+<div class="bg-leafdark text-[#eaf3e4]">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-2 text-xs tracking-wide">
+    <p><span class="text-gold">●</span> Annual fixture — 4 to 8 November 2026</p>
+    <p class="hidden sm:block">An initiative of <a href="#" data-net="baf" class="underline hover:text-gold">Busolya Agro Farmers Ltd</a></p>
+  </div>
+</div>
+
+<div id="header-placeholder"></div>
+
+<main>
+<section class="bg-bark px-5 py-12 text-[#f6ecdd]">
+  <div class="mx-auto max-w-6xl">
+    <nav class="text-xs font-semibold uppercase tracking-[.14em] text-[#d9c8b4]">
+      <a href="programme.html" class="hover:text-gold">Programme</a>
+      <span class="mx-2 opacity-50">/</span>
+      <span id="crumbSubject">Subject</span>
+    </nav>
+    <p class="mt-4 text-[.72rem] font-bold uppercase tracking-[.18em] text-gold" id="subjectCode">Subject</p>
+    <h1 class="mt-2 font-display text-4xl font-bold text-white" id="subjectTitle">Loading subject…</h1>
+    <p class="mt-3 max-w-2xl text-[#e8d9c4]" id="subjectSummary"></p>
+    <ul class="mt-4 grid gap-2 text-sm text-[#e8d9c4] sm:grid-cols-2" id="subjectOutline"></ul>
+  </div>
+</section>
+
+<section class="px-5 py-12">
+  <div class="mx-auto max-w-6xl">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-[.72rem] font-bold uppercase tracking-[.18em] text-seal">The classroom</p>
+        <h2 class="mt-1 font-display text-2xl font-bold text-bark">Topics in this subject</h2>
+        <p class="mt-2 max-w-2xl text-sm text-ink/70">Open a topic for its notes. English notes cover every topic; Luganda presentations cover the Farm Aid topics.</p>
+      </div>
+      <a href="programme.html" class="rounded-full border-2 border-bark px-5 py-2.5 text-sm font-bold text-bark hover:bg-bark hover:text-white transition">All subjects</a>
+    </div>
+
+    <div class="mt-8 grid gap-4 md:grid-cols-2" id="topicList">
+      <div class="rounded-xl border border-[#e2d6c2] bg-paper p-5 text-sm text-ink/40 animate-pulse">Loading topics…</div>
+    </div>
+
+    <div class="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#e2d6c2] pt-6">
+      <a id="prevSubject" href="programme.html" class="rounded-full border border-[#e2d6c2] px-5 py-2.5 text-sm font-semibold text-bark hover:bg-bark hover:text-white transition">← Previous subject</a>
+      <a href="programme.html" class="text-sm font-semibold text-leafdark underline">Programme</a>
+      <a id="nextSubject" href="programme.html" class="rounded-full border border-[#e2d6c2] px-5 py-2.5 text-sm font-semibold text-bark hover:bg-bark hover:text-white transition">Next subject →</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<div id="footer-placeholder"></div>
+
+<script src="assets/network.js"></script>
+<script src="assets/components.js"></script>
+<script>
+(function () {
+  'use strict';
+  var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+    ? '' : 'https://busolya-api.onrender.com';
+
+  var code = (new URLSearchParams(location.search).get('code') || '01').replace(/[^0-9]/g, '') || '01';
+
+  function esc (s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  var subjects = [];
+  var notesByTopicId = {};
+
+  function countNotes (notes) {
+    (notes || []).forEach(function (n) {
+      notesByTopicId[n.topic_id] = (notesByTopicId[n.topic_id] || 0) + 1;
+    });
+  }
+
+  ['en', 'lug'].forEach(function (loc) {
+    fetch(API + '/api/education/notes?locale=' + loc)
+      .then(function (r) { return r.json(); })
+      .then(function (d) { countNotes(d.notes); renderTopics(); })
+      .catch(function () {});
+  });
+
+  fetch(API + '/api/subjects')
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      subjects = d.subjects || [];
+      var s = subjects.filter(function (x) { return String(x.code) === code; })[0] || subjects[0];
+      if (!s) return;
+      document.title = s.title + ' - Bataka Agro Expo 2026';
+      document.getElementById('subjectCode').textContent = 'Subject ' + s.code;
+      document.getElementById('subjectTitle').textContent = s.title;
+      document.getElementById('subjectSummary').textContent = s.summary || '';
+      document.getElementById('crumbSubject').textContent = s.title;
+      var outline = Array.isArray(s.outline) ? s.outline : [];
+      document.getElementById('subjectOutline').innerHTML = outline.map(function (o) {
+        return '<li class="flex gap-2"><span class="text-gold">✓</span><span>' + esc(o) + '</span></li>';
+      }).join('');
+
+      var i = subjects.indexOf(s);
+      var prev = subjects[i - 1];
+      var next = subjects[i + 1];
+      if (prev) {
+        var p = document.getElementById('prevSubject');
+        p.href = 'subject.html?code=' + prev.code;
+        p.textContent = '← ' + prev.title;
+      }
+      if (next) {
+        var n = document.getElementById('nextSubject');
+        n.href = 'subject.html?code=' + next.code;
+        n.textContent = next.title + ' →';
+      }
+      renderTopics();
+    })
+    .catch(function () {
+      document.getElementById('subjectTitle').textContent = 'Could not load the subject';
+    });
+
+  var topics = [];
+  fetch(API + '/api/education/topics')
+    .then(function (r) { return r.json(); })
+    .then(function (d) { topics = d.topics || []; renderTopics(); })
+    .catch(function () {});
+
+  function renderTopics () {
+    var subject = subjects.filter(function (s) { return String(s.code) === code; })[0];
+    var list = topics.filter(function (t) {
+      return subject ? String(t.subject_id) === String(subject.id)
+                     : String(t.subject_code) === code;
+    });
+    var el = document.getElementById('topicList');
+    if (!topics.length) return;
+    if (!list.length) {
+      el.innerHTML = '<p class="text-sm text-ink/50 md:col-span-2">No topics published for this subject yet.</p>';
+      return;
+    }
+    el.innerHTML = list.map(function (t) {
+      var n = notesByTopicId[t.id] || 0;
+      return '<a href="topic.html?code=' + encodeURIComponent(t.code) + '" class="group rounded-xl border border-[#e2d6c2] bg-paper p-5 hover:border-leaf hover:bg-[#f0f7ec] transition">' +
+        '<div class="flex items-start justify-between gap-3">' +
+          '<p class="text-[.68rem] font-bold uppercase tracking-[.12em] text-seal">' + esc(t.code) + '</p>' +
+          '<span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-[.65rem] font-bold text-leafdark">' + (n ? n + ' note' + (n > 1 ? 's' : '') : 'no notes yet') + '</span>' +
+        '</div>' +
+        '<h3 class="mt-2 font-display text-lg font-bold text-bark group-hover:text-leafdark">' + esc(t.title) + '</h3>' +
+        '<p class="mt-1 text-sm text-ink/70">' + esc(t.summary || '') + '</p>' +
+        '<p class="mt-3 text-xs font-bold text-leafdark">' + (n ? 'Read the topic &amp; notes →' : 'Open topic →') + '</p>' +
+      '</a>';
+    }).join('');
+  }
+})();
+</script>
+</body>
+</html>

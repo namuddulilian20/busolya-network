@@ -226,9 +226,14 @@
         '<ul class="flex flex-wrap items-center gap-1" id="hdr-nav-list">' + navItems + '</ul>' +
       '</nav>' +
 
-      /* Cross-site network links in mobile nav */
+      /* Account + network links in the mobile menu */
       '<div class="md:hidden border-t border-[#e2d6c2]/40 mt-3 pt-3 space-y-1 text-xs">' +
-        '<span class="font-bold uppercase tracking-[.14em] text-ink/40 pl-1 block mb-1">Network</span>' +
+        '<span class="font-bold uppercase tracking-[.14em] text-ink/40 pl-1 block mb-1">Account</span>' +
+        '<a href="login.html" class="block hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Sign in</a>' +
+        '<a href="supplier-login.html" class="block hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Supplier login</a>' +
+        '<a href="admin.html" class="block font-bold hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Admin portal</a>' +
+        '<button type="button" onclick="window.BusolyaAuth&&window.BusolyaAuth.logout()" class="block w-full text-left hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Sign out</button>' +
+        '<span class="font-bold uppercase tracking-[.14em] text-ink/40 pl-1 block mb-1 pt-2">Network</span>' +
         '<a href="https://busolya-agro-farmers.onrender.com" data-net="baf" class="block hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Busolya Farmers</a>' +
         '<a href="https://bataka-agro-expo.onrender.com" data-net="bae" class="block hover:bg-[#fae8e5] px-2 py-1 rounded transition-colors">Bataka Expo</a>' +
         '<a href="https://abataka-mutindo-sacco.onrender.com" data-net="sacco" class="block hover:bg-[#fbe9e7] px-2 py-1 rounded transition-colors">Mutindo SACCO</a>' +
@@ -271,9 +276,9 @@
           'My portal' +
         '</a>' +
 
-        /* Admin link — shown to admin / employee */
-        '<a href="admin.html" id="hdr-admin-btn" ' +
-          'class="hidden rounded-full px-3 py-1.5 text-xs font-bold text-white transition-colors" ' +
+        /* Admin link — always visible; admin.html has its own password gate */
+        '<a href="admin.html" id="hdr-admin-btn" title="Admin portal" ' +
+          'class="rounded-full px-3 py-1.5 text-xs font-bold text-white transition-colors" ' +
           'style="background:' + cfg.adminBg + '">' +
           'Admin' +
         '</a>' +
@@ -301,7 +306,8 @@
   function buildFooterHTML () {
     var exploreLinks = cfg.nav.map(function (item) {
       return '<li><a class="hover:text-gold transition-colors" href="' + item.href + '">' + item.label + '</a></li>';
-    }).join('');
+    }).join('') +
+      '<li><a class="hover:text-gold transition-colors" id="ftr-admin-link" href="admin.html">Admin portal</a></li>';
 
     return '<footer style="background:' + cfg.footerBg + ';color:' + cfg.footerText + '">' +
       '<div class="mx-auto grid max-w-6xl gap-8 px-5 py-12 md:grid-cols-4">' +
@@ -339,7 +345,6 @@
           '<li><a class="hover:text-gold transition-colors" href="login.html">Member sign in</a></li>' +
           '<li><a class="hover:text-gold transition-colors" href="supplier-login.html">Supplier login</a></li>' +
           '<li><a class="hover:text-gold transition-colors" href="register.html">Register</a></li>' +
-          '<li><a class="hover:text-gold transition-colors" id="ftr-admin-link" href="admin.html">Admin dashboard</a></li>' +
           '<li><a class="hover:text-gold transition-colors" href="' + cfg.footerContactHref + '">' + cfg.footerContactLabel + '</a></li>' +
         '</ul>' +
       '</div>' +
@@ -407,14 +412,17 @@
     var supplierPortal = document.getElementById('hdr-supplier-portal');
     var ftrAdmin       = document.getElementById('ftr-admin-link');
 
+    /* The admin entry points stay visible at all times; admin.html asks for
+       the ADMIN_PASSWORD itself, so hiding the link only hid the way in. */
+    if (adminBtn) adminBtn.style.display = 'inline';
+    if (ftrAdmin) ftrAdmin.style.display = '';
+
     if (!loggedIn) {
       if (supplierBtn)    supplierBtn.style.display    = 'inline';
       if (loginBtn)       loginBtn.style.display       = 'inline';
       if (userNameEl)     userNameEl.style.display     = 'none';
       if (logoutBtn)      logoutBtn.style.display      = 'none';
-      if (adminBtn)       adminBtn.style.display       = 'none';
       if (supplierPortal) supplierPortal.style.display = 'none';
-      if (ftrAdmin)       ftrAdmin.style.display       = 'none';
     } else {
       if (loginBtn)  loginBtn.style.display  = 'none';
       if (logoutBtn) logoutBtn.style.display = 'inline';
@@ -423,27 +431,22 @@
         userNameEl.textContent = (user && user.name ? user.name : (user && user.phone ? user.phone : 'User'));
       }
 
-      /* supplier: show portal, hide admin */
+      /* supplier: show their portal */
       if (supplierRole) {
         if (supplierBtn)    supplierBtn.style.display    = 'none';
         if (supplierPortal) supplierPortal.style.display = 'inline';
-        if (adminBtn)       adminBtn.style.display       = 'none';
       }
 
-      /* admin / employee: show admin, hide supplier links */
+      /* admin / employee: hide the supplier entry points */
       if (adminRole) {
         if (supplierBtn)    supplierBtn.style.display    = 'none';
         if (supplierPortal) supplierPortal.style.display = 'none';
-        if (adminBtn)       adminBtn.style.display       = 'inline';
-        if (ftrAdmin)       ftrAdmin.style.display       = '';
       }
 
       /* member / customer: just signed-in state */
       if (!adminRole && !supplierRole) {
         if (supplierBtn)    supplierBtn.style.display    = 'none';
         if (supplierPortal) supplierPortal.style.display = 'none';
-        if (adminBtn)       adminBtn.style.display       = 'none';
-        if (ftrAdmin)       ftrAdmin.style.display       = 'none';
       }
     }
   }

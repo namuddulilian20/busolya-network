@@ -31,17 +31,29 @@ class Collection {
     this.name = name;
     this._cache = null;
     this._dirty = false;
+    this._skipped = 0;
   }
 
   _load() {
     if (this._cache === null) {
       const result = readLines(this.name);
       this._cache = result.docs;
-      if (result.skipped > 0 && process.env.NODE_ENV !== 'production') {
-        console.warn(`[store:${this.name}] skipped ${result.skipped} corrupt line(s) on load`);
+      this._skipped = result.skipped || 0;
+      if (this._skipped > 0 && process.env.NODE_ENV !== 'production') {
+        console.warn(`[store:${this.name}] skipped ${this._skipped} corrupt line(s) on load`);
       }
     }
     return this._cache;
+  }
+
+  /*
+   * Number of lines that could not be decrypted or verified on load.
+   * Exposed so seedIfEmpty() can refuse to overwrite a collection whose
+   * contents are unreadable (normally a TEE encryption key mismatch).
+   */
+  skippedLines() {
+    this._load();
+    return this._skipped;
   }
 
   _save(docs) {

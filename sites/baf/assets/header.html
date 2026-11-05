@@ -22,12 +22,19 @@
         <!-- filled by components.js per site -->
       </ul>
     </nav>
+    <div class="md:hidden border-t border-[#e2d6c2]/40 mt-3 pt-3 space-y-1 text-xs w-full order-last">
+      <span class="font-bold uppercase tracking-[.14em] text-ink/40 pl-1 block mb-1">Account</span>
+      <a href="login.html" class="block hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Sign in</a>
+      <a href="supplier-login.html" class="block hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Supplier login</a>
+      <a href="admin.html" class="block font-bold hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Admin portal</a>
+      <button type="button" onclick="window.BusolyaAuth&&window.BusolyaAuth.logout()" class="block w-full text-left hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Sign out</button>
+    </div>
     <div class="hidden md:flex items-center gap-2 shrink-0" id="hdr-auth">
       <a href="supplier-login.html" id="hdr-supplier-btn" class="rounded-full px-3 py-1.5 text-xs font-bold border transition-colors">Supplier login</a>
       <a href="login.html" id="hdr-login-btn" class="rounded-full px-3 py-1.5 text-xs font-semibold transition-colors">Sign in</a>
       <span id="hdr-user-name" class="hidden rounded-full px-3 py-1.5 text-xs font-semibold"></span>
       <a href="supplier-portal.html" id="hdr-supplier-portal" class="hidden rounded-full px-3 py-1.5 text-xs font-bold text-white transition-colors">My portal</a>
-      <a href="admin.html" id="hdr-admin-btn" class="hidden rounded-full px-3 py-1.5 text-xs font-bold text-white transition-colors">Admin</a>
+      <a href="admin.html" id="hdr-admin-btn" title="Admin portal" class="rounded-full px-3 py-1.5 text-xs font-bold text-white transition-colors">Admin</a>
       <button onclick="window.BusolyaAuth&&window.BusolyaAuth.logout()" id="hdr-logout-btn"
         class="hidden rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors">Sign out</button>
     </div>

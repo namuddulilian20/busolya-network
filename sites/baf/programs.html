@@ -158,9 +158,10 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
     <!-- Topics and notes for selected subject -->
     <div class="mt-10" id="topicsSection" style="display:none">
-      <div class="mb-4 flex items-center justify-between">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h3 class="font-display text-xl font-bold text-bark" id="topicsTitle">Topics</h3>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <a id="subjectPageLink" href="#" class="rounded-full border border-leaf px-3 py-1.5 text-xs font-bold text-leafdark hover:bg-[#e6efe0]">Open subject page →</a>
           <button onclick="setLocale('en')" id="btnEn" class="rounded-full bg-bark px-3 py-1.5 text-xs font-bold text-white">English notes</button>
           <button onclick="setLocale('lug')" id="btnLug" class="rounded-full border border-bark px-3 py-1.5 text-xs font-bold text-bark">Luganda pres.</button>
         </div>
@@ -185,6 +186,11 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   var allTopics = [];
   var allNotes  = { en: [], lug: [] };
   var selectedSubjectId = null;
+  var selectedSubjectCode = '';
+  var allSubjects = [];
+
+  /* The expo site owns the full subject and topic pages. */
+  var BAE = ((window.NETWORK && window.NETWORK.bae) || 'https://bataka-agro-expo.onrender.com').replace(/\/$/, '');
 
   /* ── Farm Aid roles ──────────────────────────────────── */
   fetch(API + '/api/farm-aid/roles')
@@ -219,11 +225,12 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   fetch(API + '/api/subjects')
     .then(function (r) { return r.json(); })
     .then(function (d) {
-      var subjects = d.subjects || [];
+      allSubjects = d.subjects || [];
+      var subjects = allSubjects;
       var el = document.getElementById('subjectCards');
       if (!subjects.length) { el.innerHTML = '<p class="text-sm text-ink/40">No subjects loaded yet.</p>'; return; }
       el.innerHTML = subjects.map(function (s) {
-        return '<button onclick="selectSubject(' + s.id + ',\'' + s.title.replace(/'/g,"\\'",'g') + '\')" ' +
+        return '<button onclick="selectSubject(' + s.id + ')" ' +
           'class="text-left rounded-xl border border-[#e2d6c2] bg-cream p-5 hover:border-leaf hover:bg-[#f0f7ec] transition subject-btn" ' +
           'data-subj-id="' + s.id + '">' +
           '<p class="text-[.68rem] font-bold uppercase tracking-[.12em] text-seal">Subject ' + s.code + '</p>' +
@@ -250,9 +257,18 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
       .catch(function () {});
   });
 
-  window.selectSubject = function (subjectId, title) {
+  window.selectSubject = function (subjectId) {
+    var subject = allSubjects.filter(function (s) { return String(s.id) === String(subjectId); })[0] || {};
     selectedSubjectId = subjectId;
-    document.getElementById('topicsTitle').textContent = title;
+    selectedSubjectCode = subject.code || '';
+    document.getElementById('topicsTitle').textContent = subject.title || 'Topics';
+    var link = document.getElementById('subjectPageLink');
+    if (selectedSubjectCode) {
+      link.href = BAE + '/subject.html?code=' + encodeURIComponent(selectedSubjectCode);
+      link.style.display = '';
+    } else {
+      link.style.display = 'none';
+    }
     document.getElementById('topicsSection').style.display = '';
     document.getElementById('topicsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
     renderTopics();
@@ -297,6 +313,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
         '<h4 class="mt-1 font-display text-lg font-bold text-bark">' + escHtml(t.title) + '</h4>' +
         '<p class="mt-1 text-sm text-ink/70">' + escHtml(t.summary || '') + '</p>' +
         notesHtml +
+        '<a href="' + BAE + '/topic.html?code=' + encodeURIComponent(t.code) + '" class="mt-3 inline-block text-xs font-bold text-leafdark underline">Open topic page &amp; notes →</a>' +
         '</div>';
     }).join('');
   }

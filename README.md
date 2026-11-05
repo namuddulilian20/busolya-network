@@ -35,12 +35,21 @@ The server serves all three sites at:
 ```
 DATABASE_URL=postgresql://postgres:postgres123@localhost:5432/busolya
 SESSION_SECRET=any-long-random-string
+TEE_ENCRYPTION_KEY=another-long-random-string
 ADMIN_PASSWORD=choose-one
 NODE_ENV=development
 PORT=10000
 ```
 
 On first boot the server runs `schema.sql` (idempotent) and seeds all reference data automatically.
+
+Local mode (`DATABASE_URL` unset or pointing at localhost) stores records in
+`server/data/Data/*.jsonl`, encrypted with AES-256-GCM. `TEE_ENCRYPTION_KEY`
+(falling back to `SESSION_SECRET`) derives that key: **keep it stable**. If it
+changes, existing lines fail the integrity check, and the server refuses to
+reseed those collections rather than overwrite data it cannot read. Recover by
+restoring the previous key; only delete `server/data/Data` when the local data
+is disposable.
 
 ---
 

@@ -272,54 +272,73 @@ async function seedIfEmpty() {
     }
   }
 
-  // Education topics — all subjects (idempotent)
-  const existingTopics = await query('select count(*)::int as c from education_topics');
-  if (Number(existingTopics.rows[0].c || 0) === 0) {
-    const subjectMap = new Map();
+  /* Curriculum content is seeded row-by-row, not only when the table is empty,
+     so a database created before a subject, topic or note existed still picks
+     it up on the next deploy. Each insert is keyed and idempotent. */
+  const subjectMap = new Map();
+  {
     const subjRes = await query('select id, code from subjects');
-    for (const s of subjRes.rows) subjectMap.set(s.code, s.id);
-
-    const allTopics = [
-      ...(seed.FARM_AID_TOPICS || []),
-      ...(seed.ALL_TOPICS      || [])
-    ];
-    for (const t of allTopics) {
-      const subjectId = subjectMap.get(t.subject_code);
-      if (subjectId) {
-        await query(
-          `insert into education_topics
-             (subject_id, code, title, summary, level, sort_order)
-           values ($1,$2,$3,$4,$5,$6)
-           on conflict (subject_id, code) do nothing`,
-          [subjectId, t.code, t.title, t.summary, t.level, t.sort_order]
-        );
-      }
+    for (const s of subjRes.rows) subjectMap.set(String(s.code), s.id);
+  }
+  for (const s of seed.SUBJECTS || []) {
+    if (!subjectMap.has(String(s.code))) {
+      const created = await query(
+        `insert into subjects (code, title, summary, outline, level)
+         values ($1,$2,$3,$4::jsonb,$5)
+         on conflict (code) do nothing returning id`,
+        [s.code, s.title, s.summary, JSON.stringify(s.outline), s.level]
+      );
+      if (created.rows.length) subjectMap.set(String(s.code), created.rows[0].id);
     }
   }
 
-  // Education notes — EN and LUG (idempotent)
-  const existingNotes = await query('select count(*)::int as c from education_notes');
-  if (Number(existingNotes.rows[0].c || 0) === 0) {
-    const topicMap = new Map();
+  const allTopics = [
+    ...(seed.FARM_AID_TOPICS || []),
+    ...(seed.ALL_TOPICS      || [])
+  ];
+  for (const t of allTopics) {
+    const subjectId = subjectMap.get(String(t.subject_code));
+    if (!subjectId) continue;
+    await query(
+      `insert into education_topics
+         (subject_id, code, title, summary, level, sort_order)
+       values ($1,$2,$3,$4,$5,$6)
+       on conflict (subject_id, code) do nothing`,
+      [subjectId, t.code, t.title, t.summary, t.level, t.sort_order]
+    );
+  }
+
+  const topicMap = new Map();
+  {
     const topicRes = await query('select id, code from education_topics');
     for (const t of topicRes.rows) topicMap.set(t.code, t.id);
+  }
 
-    const allNotes = [
-      ...(seed.FARM_AID_NOTES_EN  || []),
-      ...(seed.FARM_AID_NOTES_LUG || []),
-      ...(seed.ALL_NOTES_EN        || [])
-    ];
-    for (const n of allNotes) {
-      const topicId = topicMap.get(n.topic_code);
-      if (topicId) {
-        await query(
-          `insert into education_notes
-             (topic_id, title, content, locale, format, price_ugx)
-           values ($1,$2,$3,$4,$5,$6) on conflict do nothing`,
-          [topicId, n.title, n.content, n.locale, n.format, n.price_ugx]
-        );
-      }
-    }
+  /* One note per (topic, locale). The Farm Aid lists come first, so the
+     ALL_NOTES_EN duplicates of the same topics are skipped. */
+  const covered = new Set();
+  const allNotes = [
+    ...(seed.FARM_AID_NOTES_EN  || []),
+    ...(seed.FARM_AID_NOTES_LUG || []),
+    ...(seed.ALL_NOTES_EN        || [])
+  ];
+  for (const n of allNotes) {
+    const key = n.topic_code + '|' + n.locale;
+    if (covered.has(key)) continue;
+    covered.add(key);
+    const topicId = topicMap.get(n.topic_code);
+    if (!topicId) continue;
+    const exists = await query(
+      'select id from education_notes where topic_id = $1 and locale = $2 and title = $3 limit 1',
+      [topicId, n.locale, n.title]
+    );
+    if (exists.rows.length) continue;
+    await query(
+      `insert into education_notes
+         (topic_id, title, content, locale, format, price_ugx)
+       values ($1,$2,$3,$4,$5,$6)`,
+      [topicId, n.title, n.content, n.locale, n.format, n.price_ugx]
+    );
   }
 }
 

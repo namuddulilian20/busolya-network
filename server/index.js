@@ -1349,7 +1349,8 @@ app.delete('/api/suppliers/products/:id', requireSupplier, rateLimit, async (req
 
 app.get('/api/education/topics', async (req, res, next) => {
   try {
-    const r = await db.query(`select et.id, et.code, et.title, et.summary, et.level, et.sort_order, s.title as subject_title
+    const r = await db.query(`select et.id, et.code, et.title, et.summary, et.level, et.sort_order,
+        et.subject_id, s.code as subject_code, s.title as subject_title
       from education_topics et join subjects s on s.id = et.subject_id order by s.code, et.sort_order`);
     return res.json({ ok: true, topics: r.rows });
   } catch (err) { next(err); }
