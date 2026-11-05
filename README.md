@@ -434,6 +434,22 @@ Free Postgres expires 90 days after creation. Export `/admin/export/backup.json`
 
 Custom domains: Render → Settings → Custom Domains (per service).
 
+### Troubleshooting: "site can't be reached" on `*.onrender.com`
+
+A local network whose DNS blocks or fails to forward `onrender.com` returns
+`NXDOMAIN` for every service name, which looks exactly like a deployment outage.
+Check before redeploying:
+
+```powershell
+nslookup busolya-api.onrender.com 1.1.1.1     # should return 216.24.57.16
+curl.exe -sS https://busolya-api.onrender.com/api/health
+```
+
+If public DNS resolves but the default resolver does not, the client or its
+router is returning NXDOMAIN — set the device or router DNS to `1.1.1.1` and
+`8.8.8.8`. The first request after idle can take 20–50 s on Render's free plan
+while the service cold-starts.
+
 ---
 
 ## Still to confirm
