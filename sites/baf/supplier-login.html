@@ -32,6 +32,12 @@ tailwind.config = {
       <p class="mt-1 text-sm text-ink/60">Add and manage your products and services.</p>
     </div>
 
+    <!-- Phone-as-password hint -->
+    <div class="mb-4 rounded-lg border border-leaf/25 bg-[#f2f8ef] px-4 py-3 text-xs text-leafdark">
+      First time? Leave the password blank — your phone number is your initial password.
+      You can set a personal password any time from your portal.
+    </div>
+
     <form id="supLoginForm" novalidate class="space-y-4">
       <div>
         <label class="mb-1 block text-sm font-semibold text-bark">Phone number or email</label>
@@ -40,10 +46,13 @@ tailwind.config = {
           placeholder="+256 700 000 000">
       </div>
       <div>
-        <label class="mb-1 block text-sm font-semibold text-bark">Password</label>
-        <input id="supPassword" type="password" required autocomplete="current-password"
+        <label class="mb-1 block text-sm font-semibold text-bark">
+          Password
+          <span class="ml-1 font-normal text-ink/45">(leave blank to use your phone number)</span>
+        </label>
+        <input id="supPassword" type="password" autocomplete="current-password"
           class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
-          placeholder="••••••••">
+          placeholder="Your password or leave blank">
       </div>
       <button type="submit"
         class="w-full rounded-full bg-bark px-5 py-3 text-sm font-bold text-white hover:bg-[#3a1a0c] transition">
@@ -83,7 +92,7 @@ tailwind.config = {
     e.preventDefault();
     var loginId  = document.getElementById('supLoginId').value.trim();
     var password = document.getElementById('supPassword').value;
-    if (!loginId || !password) { showMsg('Please fill in all fields.', 'err'); return; }
+    if (!loginId) { showMsg('Please enter your phone number or email.', 'err'); return; }
 
     fetch(API + '/api/auth/login', {
       method: 'POST',
@@ -93,10 +102,8 @@ tailwind.config = {
     })
     .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
     .then(function (r) {
-      if (!r.ok) { showMsg(r.data.error || 'Invalid credentials.', 'err'); return; }
-      if (r.data.role !== 'supplier') {
-        showMsg('This portal is for suppliers. Use the member sign-in instead.', 'err'); return;
-      }
+      if (!r.ok) { showMsg(r.data.error || 'Sign in failed.', 'err'); return; }
+      if (r.data.hint) showMsg(r.data.hint, 'ok');
       window.BusolyaAuth.login({ id: r.data.id, phone: r.data.phone, name: r.data.name, role: r.data.role }, 'supplier-portal.html');
     })
     .catch(function () { showMsg('Could not reach the server.', 'err'); });

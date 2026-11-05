@@ -273,7 +273,9 @@ create index if not exists supplier_products_category_idx on supplier_products (
 create index if not exists supplier_products_available_idx on supplier_products (available);
 
 -- ---------- demand log stock linkage ----------
-create table if not exists demand_stock (
+-- ---------- visitor request / demand stock linkage ----------
+-- Code references visitor_requests_stock; this is the canonical name.
+create table if not exists visitor_requests_stock (
   id             bigserial primary key,
   product_id     bigint references supplier_products (id) on delete set null,
   submission_id  bigint references submissions (id) on delete set null,
@@ -282,8 +284,8 @@ create table if not exists demand_stock (
                  check (status in ('pending','fulfilled','cancelled')),
   created_at     timestamptz not null default now()
 );
-create index if not exists demand_stock_product_idx on demand_stock (product_id);
-create index if not exists demand_stock_status_idx on demand_stock (status);
+create index if not exists visitor_requests_stock_product_idx on visitor_requests_stock (product_id);
+create index if not exists visitor_requests_stock_status_idx  on visitor_requests_stock (status);
 
 -- ---------- education topics & notes ----------
 create table if not exists education_topics (

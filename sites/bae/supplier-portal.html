@@ -543,7 +543,7 @@ tailwind.config = {
 
   /* ── Demand ──────────────────────────────────────────────────── */
   function loadDemand() {
-    fetch(API + '/api/demand/stock?supplier_id=' + me.id, { credentials: 'include' })
+    fetch(API + '/api/visitor-requests/stock?supplier_id=' + me.id, { credentials: 'include' })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         var list = document.getElementById('demandList');
@@ -567,7 +567,7 @@ tailwind.config = {
   }
   function linkDemand(productId, submissionId) {
     if (!confirm('Link this product to the demand submission?')) return;
-    fetch(API + '/api/demand/stock', {
+    fetch(API + '/api/visitor-requests/stock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
