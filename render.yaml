@@ -1,6 +1,10 @@
 # Busolya network — static sites + API + database on Render.
 # One repo, one blueprint. A push to the connected branch redeploys the
 # services whose files changed.
+#
+# IMPORTANT: after changing render.yaml, sync the blueprint in the Render
+# dashboard (Settings > Blueprint > Sync) so existing services pick up
+# the new config. New services are created automatically.
 
 databases:
   - name: busolya-db
@@ -10,7 +14,7 @@ databases:
     region: frankfurt
 
 services:
-  # ---- backend: demand log, supply log, linkages, directory, education ----
+  # ---- backend ----
   - type: web
     name: busolya-api
     runtime: node
@@ -35,21 +39,17 @@ services:
       - key: NODE_VERSION
         value: "20"
 
-  # ---- public sites (plain HTML — no build step required) ----
-  # buildCommand uses "echo ok" as a no-op so Render's build pipeline succeeds.
-  # The routes rewrite block serves index.html for any path that has no matching
-  # file, so direct URL hits and reloads work correctly.
+  # ---- public sites (plain HTML — multi-page, no SPA rewrite needed) ----
+  # No buildCommand: Render serves the files directly from staticPublishPath.
+  # No routes rewrite: every page is a real .html file; rewriting /* to
+  #   /index.html would break all other pages (register.html, login.html,
+  #   product.html, stall.html, etc.).
 
   - type: web
     name: busolya-agro-farmers
     runtime: static
-    buildCommand: echo ok
     staticPublishPath: ./sites/baf
     autoDeploy: true
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
     headers:
       - path: /assets/*
         name: Cache-Control
@@ -61,13 +61,8 @@ services:
   - type: web
     name: bataka-agro-expo
     runtime: static
-    buildCommand: echo ok
     staticPublishPath: ./sites/bae
     autoDeploy: true
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
     headers:
       - path: /assets/*
         name: Cache-Control
@@ -79,13 +74,8 @@ services:
   - type: web
     name: abataka-mutindo-sacco
     runtime: static
-    buildCommand: echo ok
     staticPublishPath: ./sites/mutindo
     autoDeploy: true
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
     headers:
       - path: /assets/*
         name: Cache-Control
