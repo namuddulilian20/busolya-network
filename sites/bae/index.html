@@ -606,7 +606,7 @@ function applyStallNames() {
     if (row.business) { byId[sid] = row; byName[normName(row.business)] = row; }
   });
   STALLS.forEach(function (s) {
-    var row = (byStall[s.id] && byStall[s.id].products.length) ? byId[s.id] : null;
+    var row = (byId[s.id] && byId[s.id].products.length) ? byId[s.id] : null;
     if (!row) row = byName[normName(s.biz)];
     if (!row) return;
     if (row.business) s.biz = row.business;
