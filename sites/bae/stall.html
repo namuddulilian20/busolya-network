@@ -25,7 +25,7 @@
       <p id="stallExhibitor" class="mt-1 text-sm text-ink/60">Exhibitor</p>
     </div>
     <div class="flex items-center gap-3">
-      <a href="visit.html" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Log interest / demand</a>
+      <a href="visit.html" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Make a request</a>
       <a href="exhibitors.html" class="rounded-full border-2 border-bark px-6 py-3 text-sm font-bold text-bark hover:bg-bark hover:text-white">Back to register</a>
       <a href="supplier-login.html" class="rounded-full bg-bark px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Manage this stall</a>
       <div class="flex items-center gap-2">
@@ -88,8 +88,8 @@
   </section>
 
   <section class="rounded-2xl border border-[#e2d6c2] bg-paper p-7">
-    <h2 class="font-display text-xl font-bold text-bark mb-4">Log demand for this stall</h2>
-    <p class="mt-1 text-sm text-ink/60 mb-4">Tell this supplier what you need. Your entry lands in their demand log and the platform demand log.</p>
+    <h2 class="font-display text-xl font-bold text-bark mb-4">Send a request to this stall</h2>
+    <p class="mt-1 text-sm text-ink/60 mb-4">Tell this supplier what you need. Your request is recorded for them and for the platform desk.</p>
     <form id="demandForm" class="grid gap-4 sm:grid-cols-2">
       <div class="sm:col-span-2"><label class="block text-sm font-semibold text-bark" for="d-name">Your name *</label><input id="d-name" required class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20"></div>
       <div><label class="block text-sm font-semibold text-bark" for="d-phone">Phone *</label><input id="d-phone" required type="tel" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20"></div>
@@ -99,7 +99,7 @@
       <div class="sm:col-span-2"><label class="block text-sm font-semibold text-bark" for="d-budget">Budget (UGX)</label><input id="d-budget" type="number" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20" placeholder="e.g. 250000"></div>
       <div class="sm:col-span-2"><label class="block text-sm font-semibold text-bark" for="d-when">When needed</label><select id="d-when" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20"><option>Now</option><option>This week</option><option>This month</option><option>Next season</option></select></div>
       <div class="sm:col-span-2"><label class="block text-sm font-semibold text-bark" for="d-credit">Need credit?</label><select id="d-credit" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20"><option>No</option><option>Yes</option></select></div>
-      <div class="sm:col-span-2"><button type="submit" class="rounded-full bg-bark px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Log demand</button></div>
+      <div class="sm:col-span-2"><button type="submit" class="rounded-full bg-bark px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Send my request</button></div>
     </form>
     <p id="demandMsg" class="hidden mt-3 rounded-lg px-4 py-3 text-sm"></p>
   </section>
@@ -201,10 +201,10 @@
     .then(function (r) { return r.json(); })
     .then(function (d) {
       if (d.ok || d.ref) {
-        showDemandMsg('Demand logged for ' + (stallBiz || 'this stall') + '. Reference: ' + (d.ref || 'saved'), 'ok');
+        showDemandMsg('Request sent to ' + (stallBiz || 'this stall') + '. Reference: ' + (d.ref || 'saved'), 'ok');
         document.getElementById('demandForm').reset();
       } else {
-        showDemandMsg(d.error || 'Could not log demand. Try again.', 'err');
+        showDemandMsg(d.error || 'Could not send your request. Try again.', 'err');
       }
     })
     .catch(function () { showDemandMsg('Server error. Try again.', 'err'); });

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Questionnaires — Bataka Agro Expo 2026</title>
-<meta name="description" content="Three short questionnaires for the Bataka Agro Expo: demand for visitors and buyers, supply for suppliers and service providers, and business linkages for exhibitors. Answers reach the registry desk directly.">
+<title>Make a request â€” Bataka Agro Expo 2026</title>
+<meta name="description" content="Make a request as a visitor to the Bataka Agro Expo: tell the registry desk what you need, and suppliers or service providers can register what they offer. Answers reach the desk directly.">
 <link rel="icon" href="assets/mark.svg">
 <script src="assets/busolya.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -16,8 +16,8 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
 <div class="bg-leafdark text-[#eaf3e4]">
   <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-2 text-xs tracking-wide">
-    <p><span class="text-gold">?</span> Bataka Agro Expo · 4 to 8 November 2026</p>
-    <p class="hidden sm:block">Three questionnaires — demand, supply, linkage</p>
+    <p><span class="text-gold">â€¢</span> Bataka Agro Expo â€” 4 to 8 November 2026</p>
+    <p class="hidden sm:block">Three short forms â€” visitor request, supply, linkage</p>
   </div>
 </div>
 
@@ -25,8 +25,8 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
 <main class="mx-auto max-w-4xl px-5 py-10">
   <p class="text-[.68rem] font-bold uppercase tracking-[.18em] text-seal">The registry desk</p>
-  <h1 class="mt-2 font-display text-3xl font-bold text-bark sm:text-4xl">Three short questionnaires</h1>
-  <p class="mt-3 max-w-2xl text-ink/75">Five to seven questions each, asked once, answered in a minute. Visitor answers become the demand log; supplier answers become the suppliers log; exhibitor answers become the linkage board that the desk works during the expo.</p>
+  <h1 class="mt-2 font-display text-3xl font-bold text-bark sm:text-4xl">Make a request</h1>
+  <p class="mt-3 max-w-2xl text-ink/75">Five to seven questions, asked once, answered in a minute. If you came to buy or need something, use the visitor request form. Suppliers register what they offer, and exhibitors propose a partnership. Every answer reaches the registry desk.</p>
 
   <div class="mt-6 flex flex-wrap gap-2" id="tabs">
     <button type="button" class="tab rounded-full bg-bark px-5 py-2.5 text-sm font-bold text-white" data-kind="demand">I came to buy</button>
@@ -70,8 +70,8 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
   <section class="mt-10 grid gap-4 sm:grid-cols-3">
     <div class="rounded-xl border border-[#e2d6c2] bg-paper p-5">
-      <h3 class="font-display font-bold text-bark">Demand log</h3>
-      <p class="mt-1 text-sm text-ink/70">What buyers actually asked for, by product, volume and timing. The desk matches it against the suppliers log.</p>
+      <h3 class="font-display font-bold text-bark">Visitor requests</h3>
+      <p class="mt-1 text-sm text-ink/70">What visitors asked for, by product, volume and timing. The desk matches each request against the suppliers log.</p>
     </div>
     <div class="rounded-xl border border-[#e2d6c2] bg-paper p-5">
       <h3 class="font-display font-bold text-bark">Suppliers log</h3>
@@ -98,7 +98,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
     linkage: 'What partnership are you looking for?'
   };
   var notes = {
-    demand: 'Visitor questions feed the demand log.',
+    demand: 'Your answers become a visitor request at the desk.',
     supply: 'Supplier questions feed the suppliers log and the directory.',
     linkage: 'Exhibitor questions feed the linkage board.'
   };
@@ -129,7 +129,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
   function load() {
     if (cache[kind]) { render(cache[kind]); return; }
-    questionsEl.innerHTML = '<p class="text-sm text-ink/55">Loading the questions…</p>';
+    questionsEl.innerHTML = '<p class="text-sm text-ink/55">Loading the questionsï¿½</p>';
     window.BUSOLYA.get('/api/questions/' + kind).then(function (res) {
       cache[kind] = res.questions;
       render(res.questions);
@@ -146,7 +146,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
       var opts = (q.options || []).map(function (o) {
         return '<option value="' + escapeHtml(o) + '">' + escapeHtml(o) + '</option>';
       }).join('');
-      return '<label class="block" for="' + id + '">' + head + '<select id="' + id + '" class="' + cls + '"><option value="">Choose…</option>' + opts + '</select></label>';
+      return '<label class="block" for="' + id + '">' + head + '<select id="' + id + '" class="' + cls + '"><option value="">Chooseï¿½</option>' + opts + '</select></label>';
     }
     if (q.type === 'yesno') {
       return '<fieldset class="block"><legend class="text-sm font-semibold text-bark">' + escapeHtml(q.prompt) + '</legend>' +
@@ -201,12 +201,12 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
     if (!name || !phone) { say('Name and phone are required so the desk can follow up.', false); return; }
     if (!document.getElementById('f-consent').checked) { say('Tick the consent box before sending.', false); return; }
     var got = collect();
-    if (got.missing.length) { say('Please answer: ' + got.missing.slice(0, 3).join(' · '), false); return; }
+    if (got.missing.length) { say('Please answer: ' + got.missing.slice(0, 3).join(' ï¿½ '), false); return; }
 
     var listing = String(got.answers.listed || '').toLowerCase() === 'yes';
     var button = form.querySelector('button[type="submit"]');
     button.disabled = true;
-    button.textContent = 'Sending…';
+    button.textContent = 'Sendingï¿½';
 
     window.BUSOLYA.post('/api/submissions', {
       kind: kind,
