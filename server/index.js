@@ -819,6 +819,27 @@ app.get('/api/stall-directory', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /api/exhibitors — public: all registered exhibitors/stores with product count.
+// Active = has at least one available product. Pending = registered but no products yet.
+app.get('/api/exhibitors', async (req, res, next) => {
+  try {
+    const r = await db.query(`
+      select p.id,
+             coalesce(s.business, p.org, p.name)  as business,
+             coalesce(s.contact, p.name)          as contact,
+             coalesce(s.category, p.org)          as category,
+             coalesce(s.district, p.district)     as district,
+             (select count(*)::int from supplier_products sp
+              where sp.supplier_id = p.id and sp.available) as listings
+      from participants p
+      left join suppliers s on s.phone = p.phone
+      where s.id is not null
+      order by p.id
+    `);
+    return res.json({ ok: true, exhibitors: r.rows });
+  } catch (err) { next(err); }
+});
+
 // POST /api/supplier/product — logged-in supplier adds a product/service (becomes a supply lead)
 app.post('/api/supplier/product', requireSupplier, rateLimit, async (req, res, next) => {
   try {
