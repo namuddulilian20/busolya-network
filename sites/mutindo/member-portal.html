@@ -186,7 +186,7 @@
 
   function loadTransactions() {
     fetch(API + '/api/sacco/transactions', { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         var list = document.getElementById('txList');
         var none = document.getElementById('noTx');
@@ -201,7 +201,7 @@
 
   function loadGuarantors() {
     fetch(API + '/api/sacco/guarantors', { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         var list = document.getElementById('guarList');
         var none = document.getElementById('noGuar');
@@ -227,7 +227,7 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
       body: JSON.stringify({ member_id: me.id, type: 'deposit', amount: amount, narr: narr, reference: 'WEB-DEP' })
     })
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) {
       if (d.ok) { show('depMsg', 'Deposit recorded.', 'ok'); document.getElementById('depositForm').reset(); loadTransactions(); loadMember(); }
       else show('depMsg', d.error || 'Deposit failed.', 'err');
@@ -244,7 +244,7 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
       body: JSON.stringify({ member_id: me.id, type: type, amount: amount, narr: narr, reference: 'WEB-WD' })
     })
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) {
       if (d.ok) { show('wdMsg', type + ' recorded.', 'ok'); document.getElementById('withdrawForm').reset(); loadTransactions(); loadMember(); }
       else show('wdMsg', d.error || 'Request failed.', 'err');

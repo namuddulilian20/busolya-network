@@ -437,7 +437,7 @@ tailwind.config = {
 
   function loadProducts() {
     fetch(API + '/api/suppliers/products?supplier_id=' + me.id, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         renderProducts(d.products || []);
         var sel = document.getElementById('mProduct');
@@ -518,7 +518,7 @@ tailwind.config = {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       credentials: 'include', body: JSON.stringify({ product_id: Number(productId), quantity, unit_price: unitPrice, notes })
     })
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) {
       if (!d.ok) { showMsg(msgEl, d.error || 'Could not create purchase order.', 'err'); return; }
       showMsg(msgEl, 'Purchase order created! Order #'+d.po.id, 'ok');
@@ -530,7 +530,7 @@ tailwind.config = {
 
   function loadPurchaseOrders() {
     fetch(API + '/api/purchase-orders?supplier_id=' + me.id, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         var list = document.getElementById('poList');
         var none = document.getElementById('noPo');
@@ -556,7 +556,7 @@ tailwind.config = {
   /* ── Inventory summary ──────────────────────────────────────────── */
   function loadInventorySummary() {
     fetch(API + '/api/inventory-summary?supplier_id=' + me.id, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         var summary = d.summary || [];
         var invDiv = document.getElementById('invSummary');
@@ -589,7 +589,7 @@ tailwind.config = {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       credentials: 'include', body: JSON.stringify({ product_id: Number(productId), threshold })
     })
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) {
       if (!d.ok) { showMsg(msgEl, d.error || 'Could not save alert.', 'err'); return; }
       showMsg(msgEl, 'Low-stock alert saved for ' + d.alert.product_title + ' (threshold: ' + d.alert.threshold + ')', 'ok');
@@ -601,7 +601,7 @@ tailwind.config = {
 
   function loadLowStockAlerts() {
     fetch(API + '/api/low-stock-alerts?supplier_id=' + me.id, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         var list = document.getElementById('alertList');
         var none = document.getElementById('noAlert');
@@ -620,7 +620,7 @@ tailwind.config = {
   /* ── Media upload ──────────────────────────────────────────────── */
   function loadMedia() {
     fetch(API + '/api/media', { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         var grid = document.getElementById('mediaGrid');
         var none = document.getElementById('noMedia');
@@ -709,7 +709,7 @@ tailwind.config = {
   /* ── Directory ───────────────────────────────────────────────── */
   function loadDirectory() {
     fetch(API + '/api/directory?q=' + encodeURIComponent(me.phone || ''))
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         var el = document.getElementById('dirEntry');
         var e  = (d.entries || [])[0];
@@ -725,7 +725,7 @@ tailwind.config = {
   /* ── Visitor requests ────────────────────────────────────────── */
   function loadVisitorRequests() {
     fetch(API + '/api/visitor-requests/stock?supplier_id=' + me.id, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         var list = document.getElementById('visitorRequestList');
         var none = document.getElementById('noVisitorRequests');
@@ -753,7 +753,7 @@ tailwind.config = {
       credentials: 'include',
       body: JSON.stringify({ product_id: productId, submission_id: Number(submissionId) || null, quantity: 1 })
     })
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) { if (d.ok) loadVisitorRequests(); else alert(d.error || 'Could not link.'); })
     .catch(function () { alert('Server error.'); });
   }
@@ -791,7 +791,7 @@ tailwind.config = {
   /* ── Stats ───────────────────────────────────────────────────── */
   function loadStats() {
     fetch(API + '/api/stats')
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) { if (d.stats) document.getElementById('statDir').textContent = d.stats.directory || 0; })
       .catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
   }

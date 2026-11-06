@@ -194,7 +194,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
   /* ── Farm Aid roles ──────────────────────────────────── */
   fetch(API + '/api/farm-aid/roles')
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) {
       var el = document.getElementById('farmAidRoles');
       var roles = d.roles || [];
@@ -223,7 +223,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
   /* ── Education subjects ───────────────────────────────── */
   fetch(API + '/api/subjects')
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) {
       allSubjects = d.subjects || [];
       var subjects = allSubjects;
@@ -245,14 +245,14 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
   /* ── Load topics ─────────────────────────────────────── */
   fetch(API + '/api/education/topics')
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) { allTopics = d.topics || []; })
     .catch(function (err) { console.error('FETCH ERROR in sites\baf\programs.html:', err); });
 
   /* ── Load notes for both locales ─────────────────────── */
   ['en','lug'].forEach(function (loc) {
     fetch(API + '/api/education/notes?locale=' + loc)
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) { allNotes[loc] = d.notes || []; })
       .catch(function (err) { console.error('FETCH ERROR in sites\baf\programs.html:', err); });
   });
@@ -328,7 +328,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ note_id: noteId, amount_ugx: 5000 })
-    }).then(function (r) { return r.json(); })
+    }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) {
       if (d.already_shared) { btn.textContent = 'Already shared ✓'; return; }
       btn.textContent = 'Shared ✓';

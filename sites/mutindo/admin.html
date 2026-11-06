@@ -341,18 +341,18 @@ tailwind.config = {
 
   /* ── Load stats ──────────────────────────────────────────── */
   function loadStats() {
-    authedFetch(API + '/api/users').then(function (r) { return r.json(); }).then(function (d) {
+    authedFetch(API + '/api/users').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       document.getElementById('sUsers').textContent = (d.users || []).length;
     }).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\admin.html:', err); });
-    authedFetch(API + '/api/sacco/members').then(function (r) { return r.json(); }).then(function (d) {
+    authedFetch(API + '/api/sacco/members').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       var m = d.members || [];
       document.getElementById('sSacco').textContent = m.length;
       document.getElementById('sUsers').textContent = m.length; // will be overwritten by actual user count
     }).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\admin.html:', err); });
-    authedFetch(API + '/api/farm-aid/reports').then(function (r) { return r.json(); }).then(function (d) {
+    authedFetch(API + '/api/farm-aid/reports').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       document.getElementById('sFarm').textContent = (d.reports || []).length;
     }).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\admin.html:', err); });
-    fetch(API + '/api/stats').then(function (r) { return r.json(); }).then(function (d) {
+    fetch(API + '/api/stats').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       if (d.stats) {
         document.getElementById('sDemand').textContent   = d.stats.demand || 0;
         document.getElementById('sSuppliers').textContent = d.stats.suppliers || 0;
@@ -365,7 +365,7 @@ tailwind.config = {
   /* ── Users ───────────────────────────────────────────────── */
   function loadUsers(role) {
     var url = API + '/api/users' + (role ? '?role=' + role : '');
-    authedFetch(url).then(function (r) { return r.json(); }).then(function (d) {
+    authedFetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       var tbody = document.getElementById('usersTableBody');
       tbody.innerHTML = '';
       (d.users || []).forEach(function (u) {
@@ -415,7 +415,7 @@ tailwind.config = {
 
   /* ── SACCO ───────────────────────────────────────────────── */
   function loadSacco() {
-    authedFetch(API + '/api/sacco/members').then(function (r) { return r.json(); }).then(function (d) {
+    authedFetch(API + '/api/sacco/members').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       var members = d.members || [];
       var tbody = document.getElementById('saccoTableBody');
       tbody.innerHTML = '';
@@ -477,7 +477,7 @@ tailwind.config = {
 
   /* ── Farm Aid ────────────────────────────────────────────── */
   function loadFarmAid() {
-    authedFetch(API + '/api/farm-aid/roles').then(function (r) { return r.json(); }).then(function (d) {
+    authedFetch(API + '/api/farm-aid/roles').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       var tbody = document.getElementById('farmRolesBody');
       tbody.innerHTML = '';
       (d.roles || []).forEach(function (r) {
@@ -490,7 +490,7 @@ tailwind.config = {
         tbody.appendChild(tr);
       });
     }).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\admin.html:', err); });
-    authedFetch(API + '/api/farm-aid/reports').then(function (r) { return r.json(); }).then(function (d) {
+    authedFetch(API + '/api/farm-aid/reports').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       var tbody = document.getElementById('faReportsBody');
       tbody.innerHTML = '';
       var rpts = d.reports || [];
@@ -553,7 +553,7 @@ tailwind.config = {
 
   /* ── Education ────────────────────────────────────────────── */
   function loadEducation() {
-    fetch(API + '/api/subjects').then(function (r) { return r.json(); }).then(function (d) {
+    fetch(API + '/api/subjects').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       var ul = document.getElementById('subjectsList');
       ul.innerHTML = '';
       (d.subjects || []).forEach(function (s) {
@@ -563,7 +563,7 @@ tailwind.config = {
         ul.appendChild(li);
       });
     }).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\admin.html:', err); });
-    fetch(API + '/api/education/topics').then(function (r) { return r.json(); }).then(function (d) {
+    fetch(API + '/api/education/topics').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       var ul = document.getElementById('topicsList');
       ul.innerHTML = '';
       (d.topics || []).forEach(function (t) {
@@ -577,7 +577,7 @@ tailwind.config = {
   loadEducation();
 
   window.loadNotes = function (locale) {
-    fetch(API + '/api/education/notes?locale=' + locale).then(function (r) { return r.json(); }).then(function (d) {
+    fetch(API + '/api/education/notes?locale=' + locale).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       var ul = document.getElementById('notesList');
       ul.innerHTML = '';
       (d.notes || []).forEach(function (n) {
@@ -592,7 +592,7 @@ tailwind.config = {
 
   /* ── Supplier products ────────────────────────────────────── */
   function loadProducts() {
-    fetch(API + '/api/suppliers/products').then(function (r) { return r.json(); }).then(function (d) {
+    fetch(API + '/api/suppliers/products').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       var tbody = document.getElementById('productsTableBody');
       tbody.innerHTML = '';
       (d.products || []).forEach(function (p) {

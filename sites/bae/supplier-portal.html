@@ -422,7 +422,7 @@ tailwind.config = {
 
   function loadProducts() {
     fetch(API + '/api/suppliers/products?supplier_id=' + me.id, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         renderProducts(d.products || []);
         // Populate product select on media tab
@@ -474,7 +474,7 @@ tailwind.config = {
   /* ── Media upload ────────────────────────────────────────────── */
   function loadMedia() {
     fetch(API + '/api/media', { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         var grid = document.getElementById('mediaGrid');
         var none = document.getElementById('noMedia');
@@ -570,7 +570,7 @@ tailwind.config = {
   /* ── Directory ───────────────────────────────────────────────── */
   function loadDirectory() {
     fetch(API + '/api/directory?q=' + encodeURIComponent(me.phone || ''))
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         var el = document.getElementById('dirEntry');
         var entries = d.entries || [];
@@ -591,7 +591,7 @@ tailwind.config = {
   /* ── Stall profile (company / stall name) ────────────────────── */
   function loadProfile() {
     fetch(API + '/api/supplier/profile', { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         if (!d.ok) return;
         var s = d.supplier || {};
@@ -620,7 +620,7 @@ tailwind.config = {
         district: document.getElementById('pDistrict').value.trim()
       })
     })
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) {
       btn.disabled = false;
       if (d.ok) {
@@ -646,7 +646,7 @@ tailwind.config = {
   /* ── Demand ──────────────────────────────────────────────────── */
   function loadDemand() {
     fetch(API + '/api/visitor-requests/stock?supplier_id=' + me.id, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         var list = document.getElementById('demandList');
         var none = document.getElementById('noDemand');
@@ -675,7 +675,7 @@ tailwind.config = {
       credentials: 'include',
       body: JSON.stringify({ product_id: productId, submission_id: Number(submissionId) || null, quantity: 1 })
     })
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) { if (d.ok) loadDemand(); else alert(d.error || 'Could not link.'); })
     .catch(function () { alert('Server error.'); });
   }
@@ -717,7 +717,7 @@ tailwind.config = {
   /* ── Stats ───────────────────────────────────────────────────── */
   function loadStats() {
     fetch(API + '/api/stats')
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
         if (d.stats) document.getElementById('statDir').textContent = d.stats.directory || 0;
       }).catch(function (err) { console.error('FETCH ERROR in sites\bae\supplier-portal.html:', err); });

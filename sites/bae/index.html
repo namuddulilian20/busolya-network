@@ -607,7 +607,7 @@ function renderStalls(productsByStall) {
 
   // Load demand count separately
   fetch(API + '/api/stats')
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) {
       if (d.stats && heroLeads) heroLeads.textContent = d.stats.demand || 0;
     }).catch(function (err) { console.error('FETCH ERROR in sites\bae\index.html:', err); });

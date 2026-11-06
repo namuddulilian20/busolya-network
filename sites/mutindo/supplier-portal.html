@@ -282,7 +282,7 @@ function renderProducts(products){
 
 function loadProducts(){
   fetch(API+'/api/suppliers/products?supplier_id='+me.id,{credentials:'include'})
-    .then(function(r){return r.json();})
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function(d){
       renderProducts(d.products||[]);
       var sel=document.getElementById('mProduct');
@@ -313,7 +313,7 @@ document.getElementById('addProductForm').addEventListener('submit',function(e){
 
 function loadMedia(){
   fetch(API+'/api/media',{credentials:'include'})
-    .then(function(r){return r.json();})
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function(d){
       var grid=document.getElementById('mediaGrid'),none=document.getElementById('noMedia'),items=d.media||[];
       document.getElementById('statMedia').textContent=items.filter(function(m){return m.media_type==='image';}).length;
@@ -356,7 +356,7 @@ document.getElementById('uploadForm').addEventListener('submit',function(e){
 
 function loadDirectory(){
   fetch(API+'/api/directory?q='+encodeURIComponent(me.phone||''))
-    .then(function(r){return r.json();})
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function(d){
       var el=document.getElementById('dirEntry'),e=(d.entries||[])[0];
       if(!e){el.innerHTML='<p class="text-ink/50">No directory entry found. Adding a product creates one.</p>';return;}
@@ -367,7 +367,7 @@ function loadDirectory(){
 
 function loadVisitorRequests(){
   fetch(API+'/api/visitor-requests/stock?supplier_id='+me.id,{credentials:'include'})
-    .then(function(r){return r.json();})
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function(d){
       var list=document.getElementById('visitorRequestList'),none=document.getElementById('noVisitorRequests'),stock=d.stock||[];
       document.getElementById('statDemand').textContent=stock.length;
@@ -381,7 +381,7 @@ function loadVisitorRequests(){
 window.linkVR=function(pid,sid){
   if(!confirm('Link this product to the visitor request?'))return;
   fetch(API+'/api/visitor-requests/stock',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({product_id:pid,submission_id:Number(sid)||null,quantity:1})})
-    .then(function(r){return r.json();}).then(function(d){if(d.ok)loadVisitorRequests();else alert(d.error||'Could not link.');}).catch(function(){alert('Server error.');});
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function(d){if(d.ok)loadVisitorRequests();else alert(d.error||'Could not link.');}).catch(function(){alert('Server error.');});
 };
 
 (function(){
@@ -396,7 +396,7 @@ window.linkVR=function(pid,sid){
   });
 })();
 
-function loadStats(){fetch(API+'/api/stats').then(function(r){return r.json();}).then(function(d){if(d.stats)document.getElementById('statDir').textContent=d.stats.directory||0;}).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\supplier-portal.html:', err); });}
+function loadStats(){fetch(API+'/api/stats').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function(d){if(d.stats)document.getElementById('statDir').textContent=d.stats.directory||0;}).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\supplier-portal.html:', err); });}
 
 function shareStore(pl){var n=(me&&me.name)||'Supplier',u=location.origin+'/mutindo/index.html#store-'+me.id,t=n+'\nAbataka Mutindo SACCO · '+u;
   if(pl==='wa')window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');

@@ -135,7 +135,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ note_id: id, amount_ugx: 5000 })
-        }).then(function (r) { return r.json(); })
+        }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
           .then(function (d) {
             if (!d.ok) throw new Error('share failed');
             card.querySelector('.js-preview').classList.add('hidden');
@@ -152,7 +152,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   }
 
   fetch(API + '/api/education/topics')
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) {
       topics = d.topics || [];
       var t = topics.filter(function (x) { return x.code === code; })[0];
@@ -171,7 +171,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
       var crumb = document.getElementById('crumbSubject');
 
       return fetch(API + '/api/subjects')
-        .then(function (r) { return r.json(); })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
         .then(function (sd) {
           var subj = (sd.subjects || []).filter(function (s) { return String(s.id) === String(t.subject_id); })[0] || {};
           crumb.textContent = subj.title || t.subject_title || 'Subjects';
@@ -200,7 +200,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
           return Promise.all(['en', 'lug'].map(function (loc) {
             return fetch(API + '/api/education/notes?locale=' + loc)
-              .then(function (r) { return r.json(); })
+              .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
               .then(function (nd) { return nd.notes || []; })
               .catch(function () { return []; });
           })).then(function (lists) {

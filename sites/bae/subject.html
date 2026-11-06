@@ -88,13 +88,13 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
   ['en', 'lug'].forEach(function (loc) {
     fetch(API + '/api/education/notes?locale=' + loc)
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) { countNotes(d.notes); renderTopics(); })
       .catch(function (err) { console.error('FETCH ERROR in sites\bae\subject.html:', err); });
   });
 
   fetch(API + '/api/subjects')
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) {
       subjects = d.subjects || [];
       var s = subjects.filter(function (x) { return String(x.code) === code; })[0] || subjects[0];
@@ -130,7 +130,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
   var topics = [];
   fetch(API + '/api/education/topics')
-    .then(function (r) { return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function (d) { topics = d.topics || []; renderTopics(); })
     .catch(function (err) { console.error('FETCH ERROR in sites\bae\subject.html:', err); });
 

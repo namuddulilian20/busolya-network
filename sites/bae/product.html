@@ -441,7 +441,7 @@ function renderProduct(product, media) {
 function loadMoreFromStall(supplierId, excludeId) {
   if (!supplierId) return;
   fetch(API + '/api/suppliers/products?supplier_id=' + supplierId)
-    .then(function(r){ return r.json(); })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
     .then(function(d){
       var products = (d.products || []).filter(function(p){ return p.id !== excludeId; }).slice(0,5);
       var grid = document.getElementById('moreGrid');
@@ -464,7 +464,7 @@ function loadMoreFromStall(supplierId, excludeId) {
       // Lazy-load thumbnails for more products
       products.forEach(function(p){
         fetch(API + '/api/products/' + p.id + '/media')
-          .then(function(r){ return r.json(); })
+          .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
           .then(function(d){
             var imgs = (d.media||[]).filter(function(m){return m.media_type==='image';});
             if (!imgs.length) return;
