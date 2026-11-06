@@ -90,7 +90,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
     fetch(API + '/api/education/notes?locale=' + loc)
       .then(function (r) { return r.json(); })
       .then(function (d) { countNotes(d.notes); renderTopics(); })
-      .catch(function () {});
+      .catch(function (err) { console.error('FETCH ERROR in sites\bae\subject.html:', err); });
   });
 
   fetch(API + '/api/subjects')
@@ -132,7 +132,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
   fetch(API + '/api/education/topics')
     .then(function (r) { return r.json(); })
     .then(function (d) { topics = d.topics || []; renderTopics(); })
-    .catch(function () {});
+    .catch(function (err) { console.error('FETCH ERROR in sites\bae\subject.html:', err); });
 
   function renderTopics () {
     var subject = subjects.filter(function (s) { return String(s.code) === code; })[0];

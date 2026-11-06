@@ -92,7 +92,7 @@
           document.getElementById('statCompartment').textContent = r0.compartment;
           document.getElementById('statLocation').textContent = r0.location_level + ' · ' + r0.location_name;
         }
-      }).catch(function () {});
+      }).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\farm-aid-portal.html:', err); });
   }
   function loadReports() {
     fetch(API + '/api/farm-aid/reports', { credentials: 'include' })
@@ -114,7 +114,7 @@
             '<p class="text-xs text-ink/40 mt-2">' + fmtDate(r.submitted_at) + ' · Status: ' + esc(r.status) + '</p>' +
             '</div>';
         }).join('');
-      }).catch(function () {});
+      }).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\farm-aid-portal.html:', err); });
   }
   document.getElementById('faReportForm').addEventListener('submit', function (e) {
     e.preventDefault();

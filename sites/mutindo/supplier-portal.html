@@ -288,7 +288,7 @@ function loadProducts(){
       var sel=document.getElementById('mProduct');
       sel.innerHTML='<option value="">— All products / general store —</option>';
       (d.products||[]).forEach(function(p){var o=document.createElement('option');o.value=p.id;o.textContent=p.title;sel.appendChild(o);});
-    }).catch(function(){});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\supplier-portal.html:', err); });
 }
 
 document.getElementById('addProductForm').addEventListener('submit',function(e){
@@ -333,7 +333,7 @@ function loadMedia(){
             .then(function(){loadMedia();}).catch(function(){alert('Could not remove.');});
         });
       });
-    }).catch(function(){});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\supplier-portal.html:', err); });
 }
 
 document.getElementById('uploadForm').addEventListener('submit',function(e){
@@ -362,7 +362,7 @@ function loadDirectory(){
       if(!e){el.innerHTML='<p class="text-ink/50">No directory entry found. Adding a product creates one.</p>';return;}
       function row(l,v){return '<dt class="text-ink/50">'+l+'</dt><dd class="text-bark">'+esc(v||'—')+'</dd>';}
       el.innerHTML='<dl class="grid grid-cols-[120px_1fr] gap-x-4 gap-y-2 text-sm">'+row('Business',e.name)+row('Sector',e.sector)+row('District',e.district)+row('Phone',e.phone)+row('Email',e.email)+'<dt class="text-ink/50">Verified</dt><dd>'+(e.verified?'✓ Verified':'Pending')+'</dd></dl>';
-    }).catch(function(){});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\supplier-portal.html:', err); });
 }
 
 function loadVisitorRequests(){
@@ -376,7 +376,7 @@ function loadVisitorRequests(){
       list.innerHTML=stock.map(function(s){
         return '<div class="border border-[#e2d6c2] rounded-xl p-4 flex flex-wrap items-start justify-between gap-3"><div class="flex-1 min-w-0"><p class="font-semibold text-bark">'+esc(s.product_title||'Product')+'</p><p class="text-xs text-ink/55">'+esc(s.category||'')+' · '+esc(s.district||'—')+'</p><p class="mt-1 text-sm text-ink/70"><strong>Visitor:</strong> '+esc(s.demand_name||'—')+'</p><p class="text-xs text-ink/55">Phone: '+esc(s.demand_phone||'—')+'</p></div><button onclick="linkVR('+s.product_id+','+(s.submission_id||0)+')" class="rounded border border-[#e2d6c2] px-3 py-1.5 text-xs font-semibold text-bark hover:bg-[#f4e8d6] transition">Link</button></div>';
       }).join('');
-    }).catch(function(){});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\supplier-portal.html:', err); });
 }
 window.linkVR=function(pid,sid){
   if(!confirm('Link this product to the visitor request?'))return;
@@ -396,7 +396,7 @@ window.linkVR=function(pid,sid){
   });
 })();
 
-function loadStats(){fetch(API+'/api/stats').then(function(r){return r.json();}).then(function(d){if(d.stats)document.getElementById('statDir').textContent=d.stats.directory||0;}).catch(function(){});}
+function loadStats(){fetch(API+'/api/stats').then(function(r){return r.json();}).then(function(d){if(d.stats)document.getElementById('statDir').textContent=d.stats.directory||0;}).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\supplier-portal.html:', err); });}
 
 function shareStore(pl){var n=(me&&me.name)||'Supplier',u=location.origin+'/mutindo/index.html#store-'+me.id,t=n+'\nAbataka Mutindo SACCO · '+u;
   if(pl==='wa')window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');

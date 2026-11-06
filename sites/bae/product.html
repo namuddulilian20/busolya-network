@@ -471,9 +471,9 @@ function loadMoreFromStall(supplierId, excludeId) {
             var el = document.getElementById('more-thumb-' + p.id);
             if (!el) return;
             el.innerHTML = '<img src="'+esc(imgs[0].storage_url)+'" alt="" class="h-full w-full object-cover">';
-          }).catch(function(){});
+          }).catch(function (err) { console.error('FETCH ERROR in sites\bae\product.html:', err); });
       });
-    }).catch(function(){});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\bae\product.html:', err); });
 }
 
 /* ── Demand form ── */
@@ -526,7 +526,7 @@ function doShare(platform) {
     navigator.clipboard.writeText(url).then(function(){
       var btn = document.getElementById('copyBtn');
       if(btn){btn.textContent='Copied!'; setTimeout(function(){btn.textContent='Copy link';},2000);}
-    }).catch(function(){});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\bae\product.html:', err); });
   }
 }
 

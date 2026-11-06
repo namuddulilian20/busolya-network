@@ -343,22 +343,22 @@ tailwind.config = {
   function loadStats() {
     authedFetch(API + '/api/users').then(function (r) { return r.json(); }).then(function (d) {
       document.getElementById('sUsers').textContent = (d.users || []).length;
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\baf\admin.html:', err); });
     authedFetch(API + '/api/sacco/members').then(function (r) { return r.json(); }).then(function (d) {
       var m = d.members || [];
       document.getElementById('sSacco').textContent = m.length;
       document.getElementById('sUsers').textContent = m.length; // will be overwritten by actual user count
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\baf\admin.html:', err); });
     authedFetch(API + '/api/farm-aid/reports').then(function (r) { return r.json(); }).then(function (d) {
       document.getElementById('sFarm').textContent = (d.reports || []).length;
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\baf\admin.html:', err); });
     fetch(API + '/api/stats').then(function (r) { return r.json(); }).then(function (d) {
       if (d.stats) {
         document.getElementById('sDemand').textContent   = d.stats.demand || 0;
         document.getElementById('sSuppliers').textContent = d.stats.suppliers || 0;
         document.getElementById('sDir').textContent      = d.stats.directory || 0;
       }
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\baf\admin.html:', err); });
   }
   loadStats();
 
@@ -380,7 +380,7 @@ tailwind.config = {
         tbody.appendChild(tr);
       });
       document.getElementById('sUsers').textContent = (d.users || []).length;
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\baf\admin.html:', err); });
   }
   loadUsers();
 
@@ -438,7 +438,7 @@ tailwind.config = {
       document.getElementById('smShares').textContent  = fmt(totalShares);
       document.getElementById('smSavings').textContent = fmt(totalSavings);
       document.getElementById('sSacco').textContent    = members.length;
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\baf\admin.html:', err); });
   }
   loadSacco();
 
@@ -485,7 +485,7 @@ tailwind.config = {
           '<td class="px-3 py-2">' + esc(r.location_name) + (r.district ? ', ' + esc(r.district) : '') + '</td>';
         tbody.appendChild(tr);
       });
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\baf\admin.html:', err); });
     authedFetch(API + '/api/farm-aid/reports').then(function (r) { return r.json(); }).then(function (d) {
       var tbody = document.getElementById('faReportsBody');
       tbody.innerHTML = '';
@@ -502,7 +502,7 @@ tailwind.config = {
           '<td class="px-3 py-2 text-ink/50">' + fmtDate(r.submitted_at) + '</td>';
         tbody.appendChild(tr);
       });
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\baf\admin.html:', err); });
   }
   loadFarmAid();
 
@@ -547,7 +547,7 @@ tailwind.config = {
         li.textContent = s.code + ' — ' + s.title;
         ul.appendChild(li);
       });
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\baf\admin.html:', err); });
     fetch(API + '/api/education/topics').then(function (r) { return r.json(); }).then(function (d) {
       var ul = document.getElementById('topicsList');
       ul.innerHTML = '';
@@ -557,7 +557,7 @@ tailwind.config = {
         li.textContent = t.code + ' — ' + t.title;
         ul.appendChild(li);
       });
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\baf\admin.html:', err); });
   }
   loadEducation();
 
@@ -571,7 +571,7 @@ tailwind.config = {
         li.textContent = n.topic_code + ' — ' + n.title + ' [' + n.locale + '] UGX ' + fmt(n.price_ugx);
         ul.appendChild(li);
       });
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\baf\admin.html:', err); });
   };
   window.loadNotes('en');
 
@@ -590,7 +590,7 @@ tailwind.config = {
           '<td class="px-4 py-3">' + esc(p.district) + '</td>';
         tbody.appendChild(tr);
       });
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\baf\admin.html:', err); });
   }
   loadProducts();
 

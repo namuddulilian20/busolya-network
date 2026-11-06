@@ -470,7 +470,7 @@ tailwind.config = {
             alertSel.appendChild(opt);
           });
         }
-      }).catch(function () {});
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
   }
 
   /* ── Add product form ────────────────────────────────────────── */
@@ -550,7 +550,7 @@ tailwind.config = {
             (o.delivered_at ? '<div class="text-[.65rem] text-ink/30">Delivered: ' + fmt(o.delivered_at) + '</div>' : '') +
           '</div>';
         }).join('');
-      }).catch(function () {});
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
   }
 
   /* ── Inventory summary ──────────────────────────────────────────── */
@@ -575,7 +575,7 @@ tailwind.config = {
             '</div>' +
           '</div>';
         }).join('');
-      }).catch(function () {});
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
   }
 
   /* ── Low-stock alerts form ────────────────────────────────────────── */
@@ -614,7 +614,7 @@ tailwind.config = {
             '<div class="text-xs text-ink/55">Threshold: ' + fmt(a.threshold) + ' units — <span class="alert-status' + (a.active ? '' : ' text-seal') + '">' + (a.active ? 'active' : 'inactive') + '</span></div>' +
           '</div>';
         }).join('');
-      }).catch(function () {});
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
   }
 
   /* ── Media upload ──────────────────────────────────────────────── */
@@ -650,7 +650,7 @@ tailwind.config = {
             }).then(function () { loadMedia(); }).catch(function () { alert('Could not remove.'); });
           });
         });
-      }).catch(function () {});
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
   }
 
   document.getElementById('uploadForm').addEventListener('submit', function (e) {
@@ -719,7 +719,7 @@ tailwind.config = {
           row('Business', e.name) + row('Sector', e.sector) + row('District', e.district) +
           row('Phone', e.phone) + row('Email', e.email) +
           '<dt class="text-ink/50">Verified</dt><dd>' + (e.verified ? '✓ Verified' : 'Pending verification') + '</dd></dl>';
-      }).catch(function () {});
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
   }
 
   /* ── Visitor requests ────────────────────────────────────────── */
@@ -744,7 +744,7 @@ tailwind.config = {
             '<button onclick="linkVisitorRequest(' + s.product_id + ',' + (s.submission_id || 0) + ')" class="rounded border border-[#e2d6c2] px-3 py-1.5 text-xs font-semibold text-bark hover:bg-[#f4e8d6] transition">Link product</button>' +
           '</div>';
         }).join('');
-      }).catch(function () {});
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
   }
   function linkVisitorRequest(productId, submissionId) {
     if (!confirm('Link this product to the visitor request?')) return;
@@ -793,7 +793,7 @@ tailwind.config = {
     fetch(API + '/api/stats')
       .then(function (r) { return r.json(); })
       .then(function (d) { if (d.stats) document.getElementById('statDir').textContent = d.stats.directory || 0; })
-      .catch(function () {});
+      .catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
   }
 
   /* ── Share ───────────────────────────────────────────────────── */

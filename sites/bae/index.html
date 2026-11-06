@@ -508,7 +508,7 @@ function shareStall(stallId, biz) {
   var url  = location.origin + '/bae/stall.html?id=' + stallId + '&biz=' + encodeURIComponent(biz) + '&ex=' + encodeURIComponent(biz);
   var text = biz + '\nShop online at Bataka Agro Expo 2026\n' + url;
   if (navigator.share) {
-    navigator.share({ title: biz, text: text, url: url }).catch(function(){});
+    navigator.share({ title: biz, text: text, url: url }).catch(function (err) { console.error('FETCH ERROR in sites\bae\index.html:', err); });
   } else {
     window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
   }
@@ -584,7 +584,7 @@ function renderStalls(productsByStall) {
     .then(function (r) { return r.json(); })
     .then(function (d) {
       if (d.stats && heroLeads) heroLeads.textContent = d.stats.demand || 0;
-    }).catch(function () {});
+    }).catch(function (err) { console.error('FETCH ERROR in sites\bae\index.html:', err); });
 
   filterStalls();
 }
