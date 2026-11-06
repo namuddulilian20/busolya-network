@@ -284,7 +284,7 @@ from supplier_products sp
 join participants p on p.id = sp.supplier_id
 left join (
   select product_id, sum(quantity) as ordered_qty from purchase_orders where status in ('pending','confirmed','shipped') group by product_id
-) po on po.product_id = sp.id);
+) po on po.product_id = sp.id;
 
 -- ---------- demand log stock linkage ----------
 -- ---------- visitor request / demand stock linkage ----------
