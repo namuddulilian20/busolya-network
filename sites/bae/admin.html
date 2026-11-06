@@ -411,7 +411,7 @@ tailwind.config = {
 
   /* ── Auth guard ─────────────────────────────────────────── */
   if (!window.BusolyaAuth || !window.BusolyaAuth.isAuthenticated()) {
-    location.href = 'login.html'; return;
+    location.href = '/admin/login'; return;
   }
   var me = window.BusolyaAuth.getUser();
   if (me && me.role !== 'admin' && me.role !== 'employee') {
