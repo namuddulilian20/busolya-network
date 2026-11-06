@@ -28,7 +28,9 @@
         { href: 'programs.html',  label: 'Programs' },
         { href: 'directory.html', label: 'Directory' },
         { href: 'blog.html',      label: 'Blog' },
-        { href: 'contact.html',   label: 'Contact' }
+        { href: 'contact.html',   label: 'Contact' },
+        /* visitor requests live on the expo site — one form, one inbox */
+        { href: '#', net: 'bae', path: 'questions.html', label: 'Make a request' }
       ],
       /* colour tokens applied inline */
       headerBorder:  '#e2d6c2',
@@ -56,7 +58,7 @@
         { href: 'index.html',      label: 'Home' },
         { href: 'programme.html',  label: 'Programme' },
         { href: 'exhibitors.html', label: 'Exhibitors' },
-        { href: 'questions.html',  label: 'Demand log' },
+        { href: 'questions.html',  label: 'Make a request' },
         { href: 'visit.html',      label: 'Visit' },
         { href: 'register.html',   label: 'Register' }
       ],
@@ -87,7 +89,9 @@
         { href: 'index.html#membership', label: 'Membership' },
         { href: 'register.html', label: 'Register' },
         { href: 'login.html',    label: 'Member login' },
-        { href: 'member-portal.html', label: 'Member portal' }
+        { href: 'member-portal.html', label: 'Member portal' },
+        /* visitor requests live on the expo site — one form, one inbox */
+        { href: '#', net: 'bae', path: 'questions.html', label: 'Make a request' }
       ],
       headerBorder:  '#e6d5c8',
       navActiveBg:   '#8a2f24',
@@ -104,6 +108,32 @@
   };
 
   var cfg = SITE_CONFIG[SITE_KEY] || SITE_CONFIG.baf;
+
+  /* ── Cross-site nav links ────────────────────────────────── */
+  /* A nav item may carry net + path instead of href, e.g. the BAF and
+     SACCO "Make a request" entries that open the expo's request form.
+     The absolute URL is the production fallback; wireNetwork() rewrites
+     it to the same-origin path when running locally. */
+  var NET_DEFAULT = {
+    baf:   'https://busolya-agro-farmers.onrender.com',
+    bae:   'https://bataka-agro-expo.onrender.com',
+    sacco: 'https://abataka-mutindo-sacco.onrender.com'
+  };
+
+  function navHref (item) {
+    if (!item.net) return item.href;
+    var base = NET_DEFAULT[item.net] || '';
+    return base + (item.path ? '/' + String(item.path).replace(/^\//, '') : '');
+  }
+
+  function navNetAttrs (item) {
+    if (!item.net) return '';
+    return ' data-net="' + item.net + '" data-net-path="' + (item.path || '') + '"';
+  }
+
+  function navActiveHref (item) {
+    return (item.path || item.href || '').split('#')[0];
+  }
 
   /* ── Auth helpers ────────────────────────────────────────── */
   function isAuthenticated () {
@@ -192,13 +222,13 @@
   /* ── Build header HTML inline (used in production) ──────── */
   function buildHeaderHTML () {
     var navItems = cfg.nav.map(function (item) {
-      var active = location.pathname.endsWith(item.href.split('#')[0]);
+      var active = location.pathname.endsWith(navActiveHref(item));
       var style = active
         ? 'background:' + cfg.navActiveBg + ';color:' + cfg.navActiveText
         : '';
       var hover = 'data-hbg="' + cfg.navHoverBg + '" data-htxt="' + cfg.navHoverText + '"';
       return '<li><a class="rounded-full px-3 py-2 text-sm font-semibold transition-colors" ' +
-             'style="' + style + '" ' + hover + ' href="' + item.href + '">' + item.label + '</a></li>';
+             'style="' + style + '" ' + hover + navNetAttrs(item) + ' href="' + navHref(item) + '">' + item.label + '</a></li>';
     }).join('');
 
     return '<header class="sticky top-0 z-40 border-b bg-[#fffdf8]/92 backdrop-blur" style="border-color:' + cfg.headerBorder + '">' +
@@ -305,7 +335,7 @@
   /* ── Build footer HTML inline ────────────────────────────── */
   function buildFooterHTML () {
     var exploreLinks = cfg.nav.map(function (item) {
-      return '<li><a class="hover:text-gold transition-colors" href="' + item.href + '">' + item.label + '</a></li>';
+      return '<li><a class="hover:text-gold transition-colors"' + navNetAttrs(item) + ' href="' + navHref(item) + '">' + item.label + '</a></li>';
     }).join('') +
       '<li><a class="hover:text-gold transition-colors" id="ftr-admin-link" href="admin.html">Admin portal</a></li>';
 
@@ -463,8 +493,12 @@
     if (local) { NET.baf = '/baf/'; NET.bae = '/bae/'; NET.sacco = '/mutindo/'; }
 
     document.querySelectorAll('[data-net]').forEach(function (a) {
-      var key = a.getAttribute('data-net');
-      if (NET[key]) a.setAttribute('href', NET[key]);
+      var key  = a.getAttribute('data-net');
+      var path = a.getAttribute('data-net-path');
+      if (!NET[key]) return;
+      a.setAttribute('href', path
+        ? NET[key].replace(/\/$/, '') + '/' + String(path).replace(/^\//, '')
+        : NET[key]);
     });
   }
 
@@ -476,20 +510,173 @@
     ]);
   }
 
+  /* ── Fill the dev-mode fragments from SITE_CONFIG ────────── */
+  /* header.html / footer.html are site-agnostic shells. Everything that
+     differs per site is applied here, so local pages get the same nav,
+     logo, title and CTA as the inlined production markup. */
+  function fillFromConfig () {
+    var list = document.getElementById('hdr-nav-list');
+    if (list && !list.children.length) {
+      list.innerHTML = cfg.nav.map(function (item) {
+        return '<li><a class="rounded-full px-3 py-2 text-sm font-semibold transition-colors" ' +
+          'data-hbg="' + cfg.navHoverBg + '" data-htxt="' + cfg.navHoverText + '"' + navNetAttrs(item) +
+          ' href="' + navHref(item) + '">' + item.label + '</a></li>';
+      }).join('');
+    }
+
+    var title = document.getElementById('hdr-title');
+    if (title) title.innerHTML = cfg.title;
+    var subtitle = document.getElementById('hdr-subtitle');
+    if (subtitle) subtitle.textContent = cfg.subtitle;
+
+    var logo = document.getElementById('hdr-logo');
+    if (logo) {
+      logo.src = cfg.logo;
+      logo.alt = cfg.logoAlt;
+      logo.style.setProperty('--tw-ring-color', cfg.navActiveBg);
+    }
+
+    var cta = document.getElementById('hdr-cta');
+    if (cta) {
+      cta.textContent = cfg.cta;
+      cta.href = cfg.ctaHref;
+      cta.style.background = cfg.ctaBg;
+    }
+
+    var ftrLogo = document.getElementById('ftr-logo');
+    if (ftrLogo) { ftrLogo.src = cfg.logo; ftrLogo.alt = ''; }
+    var ftrBrand = document.getElementById('ftr-brand');
+    if (ftrBrand) ftrBrand.textContent = cfg.title;
+    var ftrCopy = document.getElementById('ftr-copy');
+    if (ftrCopy) ftrCopy.textContent = '\u00A9 2026 ' + cfg.title;
+
+    var explore = document.getElementById('ftr-explore');
+    if (explore && !explore.querySelector('[data-ftr-nav]')) {
+      explore.insertAdjacentHTML('afterbegin', cfg.nav.map(function (item) {
+        return '<li data-ftr-nav><a class="hover:text-gold transition-colors"' + navNetAttrs(item) +
+          ' href="' + navHref(item) + '">' + item.label + '</a></li>';
+      }).join(''));
+    }
+  }
+
   /* ── Inject into placeholders ────────────────────────────── */
   function inject (headerHTML, footerHTML) {
     var hPh = document.getElementById('header-placeholder');
     var fPh = document.getElementById('footer-placeholder');
     if (hPh) hPh.innerHTML = headerHTML;
     if (fPh) fPh.innerHTML = footerHTML;
+    fillFromConfig();
     wireHamburger();
     wireNavHover(document.getElementById('hdr-nav'));
     wireNetwork();
     applyAuthState();
   }
 
+  /* ── Embossed visual treatment ───────────────────────────── */
+  /* Glossy panels and buttons in the Tmall style: vertical gradient,
+     an inner top-left highlight, a shade at the bottom edge and a soft
+     outer shadow — built from each site's own palette. */
+  function hexMix (hex, target, pct) {
+    var h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+    var t = target === 'w' ? [255, 255, 255] : [26, 13, 6];
+    var out = '#';
+    for (var i = 0; i < 3; i++) {
+      var v = parseInt(h.substr(i * 2, 2), 16);
+      var m = Math.round(v + (t[i] - v) * pct / 100);
+      out += m.toString(16).padStart(2, '0');
+    }
+    return out;
+  }
+
+  function applyEmboss () {
+    if (document.getElementById('bsl-emboss')) return;
+    var gold = cfg.supplierBg;
+    /* Tailwind palettes are configured identically on every page,
+       so key the gradients on the class token itself. */
+    var COLORS = {
+      'bg-leaf':     '#2f7d32',
+      'bg-leafdark': '#1f5523',
+      'bg-bark':     '#4a2311',
+      'bg-bark2':    '#63301a',
+      'bg-seal':     '#a8321e',
+      'bg-gold':     '#c68a2e',
+      'bg-maroon':   '#8a2f24',
+      'bg-maroon2':  '#5e1f18'
+    };
+
+    var btnSel = [], btnUp = {}, btnDn = {}, sec = [], dark = [];
+    Object.keys(COLORS).forEach(function (token) {
+      var c = COLORS[token];
+      btnUp[token] = hexMix(c, 'w', 16);
+      btnDn[token] = hexMix(c, 'd', 28);
+      var sel = 'a[class~="' + token + '"], button[class~="' + token + '"]';
+      btnSel.push(sel);
+      if (COLORS[token] === c) sec.push('[class~="' + token + '"]');
+      dark.push(sel);
+    });
+
+    var parts = [];
+    btnSel.forEach(function (sel) {
+      var token = sel.match(/\[class~="([^"]+)"\]/)[1];
+      parts.push(sel + ' { background-image: linear-gradient(160deg, ' +
+        btnUp[token] + ' 0%, ' + COLORS[token] + ' 45%, ' + btnDn[token] + ' 100%) !important; }');
+    });
+
+    var css = [
+      '/* Busolya embossed layer - injected by components.js */',
+      parts.join('\n'),
+      dark.join(',\n') + ' {',
+      '  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 1px 0 0 rgba(255,255,255,.12),',
+      '              inset 0 -2px 3px rgba(0,0,0,.22), 0 6px 14px -6px rgba(26,13,6,.45);',
+      '  text-shadow: 0 1px 0 rgba(0,0,0,.18);',
+      '  border: 1px solid rgba(0,0,0,.14) !important;',
+      '  transform: translateY(0); transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;',
+      '}',
+      dark.join(':hover,\n') + ':hover {',
+      '  transform: translateY(-1px); filter: brightness(1.06);',
+      '  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -2px 3px rgba(0,0,0,.18), 0 9px 20px -6px rgba(26,13,6,.5);',
+      '}',
+      dark.join(':active,\n') + ':active {',
+      '  transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,.35);',
+      '}',
+
+      /* cards and paper panels: raised paper with a highlighted rim */
+      '[class~="bg-paper"] {',
+      '  background-image: linear-gradient(165deg, #fffdfa 0%, #fffdf8 60%, ' + hexMix('#fffdf8', 'd', 4) + ' 100%);',
+      '  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), inset 0 0 0 1px rgba(255,255,255,.4),',
+      '              0 1px 2px rgba(26,13,6,.06), 0 10px 26px -14px rgba(26,13,6,.28);',
+      '}',
+
+      /* dark section canvases: rich gradient with a warm glow */
+      sec.join(',\n') + ' {',
+      '  background-image: radial-gradient(1100px 320px at 15% -12%, rgba(198,138,46,.28), transparent 60%),',
+      '                    radial-gradient(900px 260px at 90% 110%, rgba(255,255,255,.10), transparent 55%) !important;',
+      '  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 -18px 40px -20px rgba(0,0,0,.45);',
+      '}',
+
+      /* header: cream sheen, brand gradient strip on top, soft drop */
+      '#hdr-root {',
+      '  background-image: linear-gradient(178deg, rgba(255,255,255,.9), rgba(255,253,248,.65) 60%, rgba(226,214,194,.35)) !important;',
+      '  box-shadow: 0 8px 22px -14px rgba(26,13,6,.35) !important;',
+      '}',
+      '#hdr-root::before {',
+      '  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;',
+      '  background: linear-gradient(90deg, ' + cfg.ctaBg + ', ' + gold + ', ' + hexMix(cfg.adminBg, 'd', 30) + ');',
+      '  box-shadow: 0 1px 2px rgba(26,13,6,.25);',
+      '  z-index: 10;',
+      '}'
+    ].join('\n');
+
+    var st = document.createElement('style');
+    st.id = 'bsl-emboss';
+    st.textContent = css;
+    document.head.appendChild(st);
+  }
+
   /* ── Initialise ──────────────────────────────────────────── */
   function init () {
+    applyEmboss();
     var prefix = sharedPrefix();
 
     if (prefix) {
