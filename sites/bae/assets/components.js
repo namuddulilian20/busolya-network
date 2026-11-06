@@ -260,7 +260,7 @@
       '<div class="md:hidden border-t border-[#e2d6c2]/40 mt-3 pt-3 space-y-1 text-xs">' +
         '<span class="font-bold uppercase tracking-[.14em] text-ink/40 pl-1 block mb-1">Account</span>' +
         '<a href="login.html" class="block hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Sign in</a>' +
-        '<a href="supplier-login.html" class="block hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Supplier login</a>' +
+        '<a href="exhibitor-login.html" class="block hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Exhibitor login</a>' +
         '<a href="admin.html" class="block font-bold hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Admin portal</a>' +
         '<button type="button" onclick="window.BusolyaAuth&&window.BusolyaAuth.logout()" class="block w-full text-left hover:bg-[#e6efe0] px-2 py-1 rounded transition-colors">Sign out</button>' +
         '<span class="font-bold uppercase tracking-[.14em] text-ink/40 pl-1 block mb-1 pt-2">Network</span>' +
@@ -280,11 +280,11 @@
       /* Auth cluster */
       '<div class="hidden md:flex items-center gap-2 shrink-0" id="hdr-auth">' +
 
-        /* Supplier login — always visible when not signed in as supplier */
-        '<a href="supplier-login.html" id="hdr-supplier-btn" ' +
+        /* Exhibitor login — always visible when not signed in as exhibitor */
+        '<a href="exhibitor-login.html" id="hdr-supplier-btn" ' +
           'class="rounded-full px-3 py-1.5 text-xs font-bold border transition-colors" ' +
           'style="color:' + cfg.supplierBg + ';border-color:' + cfg.supplierBg + '">' +
-          'Supplier login' +
+          'Exhibitor login' +
         '</a>' +
 
         /* Member login — always visible when not signed in */
@@ -299,8 +299,8 @@
           'style="background:' + cfg.navHoverBg + ';color:' + cfg.navActiveBg + '">' +
         '</span>' +
 
-        /* Supplier portal link — shown when supplier is signed in */
-        '<a href="supplier-portal.html" id="hdr-supplier-portal" ' +
+        /* Exhibitor portal link — shown when exhibitor is signed in */
+        '<a href="exhibitor-portal.html" id="hdr-supplier-portal" ' +
           'class="hidden rounded-full px-3 py-1.5 text-xs font-bold text-white transition-colors" ' +
           'style="background:' + cfg.supplierBg + '">' +
           'My portal' +
@@ -373,7 +373,7 @@
         '<h4 class="text-[.68rem] font-bold uppercase tracking-[.16em] text-white">Portals</h4>' +
         '<ul class="mt-3 space-y-2 text-sm">' +
           '<li><a class="hover:text-gold transition-colors" href="login.html">Member sign in</a></li>' +
-          '<li><a class="hover:text-gold transition-colors" href="supplier-login.html">Supplier login</a></li>' +
+          '<li><a class="hover:text-gold transition-colors" href="exhibitor-login.html">Exhibitor login</a></li>' +
           '<li><a class="hover:text-gold transition-colors" href="register.html">Register</a></li>' +
           '<li><a class="hover:text-gold transition-colors" href="' + cfg.footerContactHref + '">' + cfg.footerContactLabel + '</a></li>' +
         '</ul>' +

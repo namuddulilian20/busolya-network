@@ -318,7 +318,7 @@ tailwind.config = {
 
   /* ── Auth guard ──────────────────────────────────────────────── */
   if (!window.BusolyaAuth || !window.BusolyaAuth.isAuthenticated()) {
-    location.href = 'supplier-login.html';
+    location.href = 'exhibitor-login.html';
     return;
   }
   var me = window.BusolyaAuth.getUser();
