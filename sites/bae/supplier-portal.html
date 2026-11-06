@@ -98,9 +98,21 @@ tailwind.config = {
           </div>
           <div>
             <label class="mb-1 block text-sm font-semibold text-bark">Category</label>
-            <input id="pCategory" type="text"
-              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
-              placeholder="e.g. Agro inputs">
+            <select id="pCategory" required>
+              <option value="">— Select category —</option>
+              <option value="Mining & Minerals">Mining & Minerals</option>
+              <option value="Organic Produce">Organic Produce</option>
+              <option value="Food & Catering">Food & Catering</option>
+              <option value="Distribution">Distribution</option>
+              <option value="Farming">Farming</option>
+              <option value="Health Services">Health Services</option>
+              <option value="Agro Inputs">Agro Inputs</option>
+              <option value="Health & Fitness">Health & Fitness</option>
+              <option value="Arts & Crafts">Arts & Crafts</option>
+              <option value="Herbal & Health">Herbal & Health</option>
+              <option value="General Trade">General Trade</option>
+              <option value="Import & Export">Import & Export</option>
+            </select>
           </div>
           <div>
             <label class="mb-1 block text-sm font-semibold text-bark">Unit of sale</label>
