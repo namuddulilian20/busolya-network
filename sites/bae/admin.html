@@ -60,6 +60,14 @@ tailwind.config = {
     <button class="tab-off px-4 py-3" data-tab="farmaid">Farm Aid</button>
     <button class="tab-off px-4 py-3" data-tab="education">Education</button>
     <button class="tab-off px-4 py-3" data-tab="products">Exhibitor listings</button>
+    <button class="tab-off px-4 py-3" data-tab="visitors">Visitors</button>
+    <button class="tab-off px-4 py-3" data-tab="suppliers">Suppliers</button>
+    <button class="tab-off px-4 py-3" data-tab="contacts">Messages</button>
+    <button class="tab-off px-4 py-3" data-tab="directory">Directory</button>
+    <button class="tab-off px-4 py-3" data-tab="questions">Questions</button>
+    <button class="tab-off px-4 py-3" data-tab="subjects">Subjects</button>
+    <button class="tab-off px-4 py-3" data-tab="governance">Governance</button>
+    <button class="tab-off px-4 py-3" data-tab="networks">Networks</button>
   </div>
 
   <!-- ── Users tab ─────────────────────────────────────────── -->
@@ -285,6 +293,110 @@ tailwind.config = {
     </div>
   </div>
 
+  <!-- ── Visitors tab ───────────────────────────────────────── -->
+  <div id="tab-visitors" class="tab-panel hidden">
+    <h2 class="mb-4 font-display text-xl font-bold text-bark">Visitors</h2>
+    <div class="overflow-x-auto rounded-xl border border-[#e2d6c2]">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
+        <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+          <tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Phone</th><th class="px-4 py-3">District</th><th class="px-4 py-3">Role</th><th class="px-4 py-3">Organisation</th><th class="px-4 py-3">Visits</th><th class="px-4 py-3">Last seen</th></tr>
+        </thead>
+        <tbody id="visitorsTableBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Suppliers tab ──────────────────────────────────────── -->
+  <div id="tab-suppliers" class="tab-panel hidden">
+    <h2 class="mb-4 font-display text-xl font-bold text-bark">Suppliers &amp; service providers</h2>
+    <div class="overflow-x-auto rounded-xl border border-[#e2d6c2]">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
+        <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+          <tr><th class="px-4 py-3">Business</th><th class="px-4 py-3">Contact</th><th class="px-4 py-3">Phone</th><th class="px-4 py-3">Category</th><th class="px-4 py-3">District</th><th class="px-4 py-3">Status</th></tr>
+        </thead>
+        <tbody id="suppliersTableBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Messages tab ───────────────────────────────────────── -->
+  <div id="tab-contacts" class="tab-panel hidden">
+    <h2 class="mb-4 font-display text-xl font-bold text-bark">Messages</h2>
+    <div class="overflow-x-auto rounded-xl border border-[#e2d6c2]">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
+        <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+          <tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Phone</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Organisation</th><th class="px-4 py-3">Message</th><th class="px-4 py-3">Received</th></tr>
+        </thead>
+        <tbody id="contactsTableBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Directory tab ──────────────────────────────────────── -->
+  <div id="tab-directory" class="tab-panel hidden">
+    <h2 class="mb-4 font-display text-xl font-bold text-bark">Directory</h2>
+    <div class="overflow-x-auto rounded-xl border border-[#e2d6c2]">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
+        <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+          <tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Sector</th><th class="px-4 py-3">Description</th><th class="px-4 py-3">Phone</th><th class="px-4 py-3">District</th><th class="px-4 py-3">Verified</th></tr>
+        </thead>
+        <tbody id="directoryTableBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Questions tab ──────────────────────────────────────── -->
+  <div id="tab-questions" class="tab-panel hidden">
+    <h2 class="mb-4 font-display text-xl font-bold text-bark">Questions</h2>
+    <div class="overflow-x-auto rounded-xl border border-[#e2d6c2]">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
+        <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+          <tr><th class="px-4 py-3">Kind</th><th class="px-4 py-3">Field</th><th class="px-4 py-3">Prompt</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">Required</th><th class="px-4 py-3">Active</th></tr>
+        </thead>
+        <tbody id="questionsTableBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Subjects tab ───────────────────────────────────────── -->
+  <div id="tab-subjects" class="tab-panel hidden">
+    <h2 class="mb-4 font-display text-xl font-bold text-bark">Subjects</h2>
+    <div class="overflow-x-auto rounded-xl border border-[#e2d6c2]">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
+        <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+          <tr><th class="px-4 py-3">Code</th><th class="px-4 py-3">Title</th><th class="px-4 py-3">Level</th><th class="px-4 py-3">Active</th></tr>
+        </thead>
+        <tbody id="subjectsTableBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Governance tab ─────────────────────────────────────── -->
+  <div id="tab-governance" class="tab-panel hidden">
+    <h2 class="mb-4 font-display text-xl font-bold text-bark">Governance layers</h2>
+    <div class="overflow-x-auto rounded-xl border border-[#e2d6c2]">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
+        <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+          <tr><th class="px-4 py-3">Code</th><th class="px-4 py-3">Name</th><th class="px-4 py-3">Compartment</th><th class="px-4 py-3">Location level</th><th class="px-4 py-3">Location name</th><th class="px-4 py-3">District</th></tr>
+        </thead>
+        <tbody id="governanceTableBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Networks tab ───────────────────────────────────────── -->
+  <div id="tab-networks" class="tab-panel hidden">
+    <h2 class="mb-4 font-display text-xl font-bold text-bark">Networks</h2>
+    <div class="overflow-x-auto rounded-xl border border-[#e2d6c2]">
+      <table class="w-full min-w-[640px] border-collapse text-sm">
+        <thead class="bg-bark text-left text-[.7rem] uppercase tracking-[.09em] text-[#f6ecdd]">
+          <tr><th class="px-4 py-3">Name</th><th class="px-4 py-3">Description</th><th class="px-4 py-3">District</th><th class="px-4 py-3">Created</th></tr>
+        </thead>
+        <tbody id="networksTableBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
+      </table>
+    </div>
+  </div>
+
 </main>
 
 <div id="footer-placeholder"></div>
@@ -317,8 +429,88 @@ tailwind.config = {
       panels.forEach(function (p) { p.classList.add('hidden'); });
       tab.className = 'tab-on px-4 py-3';
       document.getElementById('tab-' + tab.getAttribute('data-tab')).classList.remove('hidden');
+      var dt = tab.getAttribute('data-tab');
+      if (dt === 'visitors') loadVisitors();
+      if (dt === 'suppliers') loadSuppliers();
+      if (dt === 'contacts') loadContacts();
+      if (dt === 'directory') loadDirectory();
+      if (dt === 'questions') loadQuestions();
+      if (dt === 'subjects') loadSubjects();
+      if (dt === 'governance') loadGovernance();
+      if (dt === 'networks') loadNetworks();
     });
   });
+
+  /* ── Generic table renderer ──────────────────────────────── */
+  function renderTable(tbodyId, rows, cols) {
+    var tbody = document.getElementById(tbodyId);
+    tbody.innerHTML = '';
+    (rows || []).forEach(function (r) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = cols.map(function (c) {
+        var v = c.get ? c.get(r) : r[c.key];
+        return '<td class="px-4 py-3 text-ink/90">' + esc(v) + '</td>';
+      }).join('');
+      tbody.appendChild(tr);
+    });
+  }
+
+  function loadVisitors() {
+    authedFetch(API + '/admin/visitors').then(function (r) { return r.text(); }).then(function (html) {
+      document.getElementById('visitorsTableBody').innerHTML = '';
+      var m = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/);
+      if (m) document.getElementById('visitorsTableBody').innerHTML = m[1];
+    }).catch(function (err) { console.error('FETCH ERROR visitors:', err); });
+  }
+  function loadSuppliers() {
+    authedFetch(API + '/admin/suppliers').then(function (r) { return r.text(); }).then(function (html) {
+      document.getElementById('suppliersTableBody').innerHTML = '';
+      var m = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/);
+      if (m) document.getElementById('suppliersTableBody').innerHTML = m[1];
+    }).catch(function (err) { console.error('FETCH ERROR suppliers:', err); });
+  }
+  function loadContacts() {
+    authedFetch(API + '/admin/contacts').then(function (r) { return r.text(); }).then(function (html) {
+      document.getElementById('contactsTableBody').innerHTML = '';
+      var m = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/);
+      if (m) document.getElementById('contactsTableBody').innerHTML = m[1];
+    }).catch(function (err) { console.error('FETCH ERROR contacts:', err); });
+  }
+  function loadDirectory() {
+    authedFetch(API + '/admin/directory').then(function (r) { return r.text(); }).then(function (html) {
+      document.getElementById('directoryTableBody').innerHTML = '';
+      var m = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/);
+      if (m) document.getElementById('directoryTableBody').innerHTML = m[1];
+    }).catch(function (err) { console.error('FETCH ERROR directory:', err); });
+  }
+  function loadQuestions() {
+    authedFetch(API + '/admin/questions').then(function (r) { return r.text(); }).then(function (html) {
+      document.getElementById('questionsTableBody').innerHTML = '';
+      var m = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/);
+      if (m) document.getElementById('questionsTableBody').innerHTML = m[1];
+    }).catch(function (err) { console.error('FETCH ERROR questions:', err); });
+  }
+  function loadSubjects() {
+    authedFetch(API + '/admin/subjects').then(function (r) { return r.text(); }).then(function (html) {
+      document.getElementById('subjectsTableBody').innerHTML = '';
+      var m = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/);
+      if (m) document.getElementById('subjectsTableBody').innerHTML = m[1];
+    }).catch(function (err) { console.error('FETCH ERROR subjects:', err); });
+  }
+  function loadGovernance() {
+    authedFetch(API + '/admin/governance').then(function (r) { return r.text(); }).then(function (html) {
+      document.getElementById('governanceTableBody').innerHTML = '';
+      var m = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/);
+      if (m) document.getElementById('governanceTableBody').innerHTML = m[1];
+    }).catch(function (err) { console.error('FETCH ERROR governance:', err); });
+  }
+  function loadNetworks() {
+    authedFetch(API + '/admin/networks').then(function (r) { return r.text(); }).then(function (html) {
+      document.getElementById('networksTableBody').innerHTML = '';
+      var m = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/);
+      if (m) document.getElementById('networksTableBody').innerHTML = m[1];
+    }).catch(function (err) { console.error('FETCH ERROR networks:', err); });
+  }
 
   /* ── Helpers ─────────────────────────────────────────────── */
   function fmt(n) { return Number(n || 0).toLocaleString(); }
