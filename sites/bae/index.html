@@ -620,13 +620,17 @@ function loadMarketplace() {
   fetch(API + '/api/stall-directory')
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (d) { _stallDir = (d && d.ok && d.stalls) ? d.stalls : _stallDir; })
-    .catch(function () {});
+    .catch(function (err) { console.error('[loadMarketplace] stall-directory fetch failed:', err); });
 
   // Fetch all products in one call then group by supplier_id
   fetch(API + '/api/suppliers/products')
-    .then(function (r) { return r.json(); })
+    .then(function (r) { 
+      if (!r.ok) throw new Error('HTTP ' + r.status); 
+      return r.json(); 
+    })
     .then(function (d) {
       var all = d.products || [];
+      console.log('[loadMarketplace] products received:', all.length);
       var byStall = {};
       all.forEach(function (p) {
         var sid = Number(p.supplier_id);
@@ -634,43 +638,50 @@ function loadMarketplace() {
         byStall[sid].push(p);
       });
 
-        // Fetch media thumbnails per stall using the public endpoint
-        // We fire requests in parallel for all stalls that have products
-        var stallIds = Object.keys(byStall).filter(function(sid){ return byStall[sid].length > 0; });
-        if (!stallIds.length) {
+      // Fetch media thumbnails per stall using the public endpoint
+      // We fire requests in parallel for all stalls that have products
+      var stallIds = Object.keys(byStall).filter(function(sid){ return byStall[sid].length > 0; });
+      if (!stallIds.length) {
+        _stallData = byStall;
+        applyStallNames(byStall);
+        renderStalls(byStall);
+        return;
+      }
+      var pending = stallIds.length;
+      function done() {
+        pending -= 1;
+        if (pending <= 0) {
           _stallData = byStall;
           applyStallNames(byStall);
           renderStalls(byStall);
-          return;
         }
-        var pending = stallIds.length;
-        function done() {
-          pending -= 1;
-          if (pending <= 0) {
-            _stallData = byStall;
-            applyStallNames(byStall);
-            renderStalls(byStall);
-          }
-        }
-        stallIds.forEach(function(sid) {
-          fetch(API + '/api/stall/' + sid + '/media')
-            .then(function(r2){ return r2.json(); })
-            .then(function(md) {
-              var mediaByProduct = {};
-              (md.media || []).forEach(function(m){
-                if (m.media_type === 'image' && m.product_id) {
-                  if (!mediaByProduct[m.product_id]) mediaByProduct[m.product_id] = m.storage_url;
-                }
-              });
-              byStall[sid].forEach(function(p){
-                if (mediaByProduct[p.id]) p.storage_url = mediaByProduct[p.id];
-              });
-              done();
-            })
-            .catch(function(){ done(); });
-        });
+      }
+      stallIds.forEach(function(sid) {
+        fetch(API + '/api/stall/' + sid + '/media')
+          .then(function(r2){ 
+            if (!r2.ok) throw new Error('HTTP ' + r2.status);
+            return r2.json(); 
+          })
+          .then(function(md) {
+            var mediaByProduct = {};
+            (md.media || []).forEach(function(m){
+              if (m.media_type === 'image' && m.product_id) {
+                if (!mediaByProduct[m.product_id]) mediaByProduct[m.product_id] = m.storage_url;
+              }
+            });
+            byStall[sid].forEach(function(p){
+              if (mediaByProduct[p.id]) p.storage_url = mediaByProduct[p.id];
+            });
+            done();
+          })
+          .catch(function(err){ 
+            console.error('[loadMarketplace] media fetch failed for stall ' + sid + ':', err);
+            done(); 
+          });
+      });
     })
-    .catch(function () {
+    .catch(function (err) {
+      console.error('[loadMarketplace] products fetch failed:', err);
       // API unavailable — render stalls with no products (contact cards)
       _stallData = {};
       applyStallNames({});
