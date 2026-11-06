@@ -183,6 +183,7 @@ tailwind.config = {
           <p class="text-[.65rem] uppercase tracking-[.1em] text-[#8dc49d] mt-0.5">Visitor requests</p>
         </div>
       </div>
+      <input type="hidden" id="pageInput" value="1">
     </div>
   </div>
 </section>
@@ -357,6 +358,7 @@ function clearSearch() {
 }
 
 var _stallData = {};   // stallId -> { products: [] }
+var _stallDir = [];    // live stall/company names from the API
 var _loaded    = false;
 
 function filterStalls() {
@@ -519,21 +521,61 @@ function renderStalls(productsByStall) {
   var heroProds = document.getElementById('heroProducts');
   var heroLeads = document.getElementById('heroLeads');
 
-  var totalProds = 0;
+  // Keep only stalls that have at least one product
+  var activeStalls = [];
   STALLS.forEach(function (s) {
-    var prods = (productsByStall[s.id] || []);
+    var prods = productsByStall[s.id] || [];
+    if (prods.length > 0) activeStalls.push(s);
+  });
+
+  var totalProds = 0;
+  activeStalls.forEach(function (s) {
+    var prods = productsByStall[s.id] || [];
     totalProds += prods.length;
   });
 
+  var page = parseInt(document.getElementById('pageInput')?.value || '1');
+  var pageSize = 12; // stalls per page
+  var totalPages = Math.ceil(activeStalls.length / pageSize);
+  if (totalPages < 1) totalPages = 1;
+  if (page > totalPages) page = totalPages;
+  var start = (page - 1) * pageSize;
+  var end = start + pageSize;
+  var pageStalls = activeStalls.slice(start, end);
+
   rows.innerHTML = '';
-  STALLS.forEach(function (stall, idx) {
+  pageStalls.forEach(function (stall, idx) {
     var prods = productsByStall[stall.id] || [];
     rows.insertAdjacentHTML('beforeend', buildStallBlock(stall, prods, idx));
   });
 
-  skeleton.classList.add('hidden');
-  rows.classList.remove('hidden');
-  _loaded = true;
+  // Pagination controls
+  var paginator = document.getElementById('stallPaginator');
+  if (paginator) {
+    paginator.innerHTML = '';
+    // Previous button
+    var prevBtn = document.createElement('button');
+    prevBtn.className = 'rounded-full bg-bark px-3 py-1.5 text-[.68rem] font-semibold text-white hover:bg-barkdark transition';
+    prevBtn.disabled = page <= 1;
+    prevBtn.textContent = '← Prev';
+    prevBtn.onclick = function() { if (page > 1) { document.getElementById('pageInput').value = page - 1; renderStalls(productsByStall); } };
+    paginator.appendChild(prevBtn);
+    // Page numbers
+    for (var p = 1; p <= totalPages; p++) {
+      var pageBtn = document.createElement('button');
+      pageBtn.className = 'rounded-full bg-leaf px-3 py-1.5 text-[.68rem] font-semibold text-white hover:bg-leafdark transition ' + (p === page ? 'bg-bark text-white' : '');
+      pageBtn.textContent = p;
+      pageBtn.onclick = function() { document.getElementById('pageInput').value = p; renderStalls(productsByStall); };
+      paginator.appendChild(pageBtn);
+    }
+    // Next button
+    var nextBtn = document.createElement('button');
+    nextBtn.className = 'rounded-full bg-bark px-3 py-1.5 text-[.68rem] font-semibold text-white hover:bg-barkdark transition';
+    nextBtn.disabled = page >= totalPages;
+    nextBtn.textContent = 'Next →';
+    nextBtn.onclick = function() { if (page < totalPages) { document.getElementById('pageInput').value = page + 1; renderStalls(productsByStall); } };
+    paginator.appendChild(nextBtn);
+  }
 
   if (heroProds) heroProds.textContent = totalProds || '—';
 
@@ -548,30 +590,40 @@ function renderStalls(productsByStall) {
 }
 
 /* ── Fetch products for all stalls ─────────────────────────────── */
+function normName(s) {
+  return String(s || '').toLowerCase().replace(/[\s\u00a0]+/g, ' ').trim();
+}
+
+/* Live stall-company names: exhibitors can rename at any time, so overlay
+   them on the static register before rendering:
+   (a) a supplier whose products sit under this stall id owns that block;
+   (b) a supplier whose saved business/stall name matches a registered stall
+       keeps that same stall up to date on this page. */
+function applyStallNames() {
+  var byId = {}, byName = {};
+  _stallDir.forEach(function (row) {
+    var sid = Number(row.id);
+    if (row.business) { byId[sid] = row; byName[normName(row.business)] = row; }
+  });
+  STALLS.forEach(function (s) {
+    var row = (byStall[s.id] && byStall[s.id].products.length) ? byId[s.id] : null;
+    if (!row) row = byName[normName(s.biz)];
+    if (!row) return;
+    if (row.business) s.biz = row.business;
+    if (row.contact)  s.ex  = row.contact;
+    if (row.category) s.cat = row.category;
+  });
+}
+
 function loadMarketplace() {
-  // Live names first: exhibitors can rename their company/stall at any time,
-  // so the marketplace must show current names, not the frozen snapshot.
+  // Current names (non-blocking: applied before render whenever it arrives)
   fetch(API + '/api/stall-directory')
     .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (d) {
-      if (d && d.ok && d.stalls) {
-        d.stalls.forEach(function (row) {
-          var s = STALLS.find(function (x) { return x.id === Number(row.id); });
-          if (s) {
-            if (row.business) s.biz = row.business;
-            if (row.contact)  s.ex  = row.contact;
-            if (row.category) s.cat = row.category;
-          } else if (row.business) {
-            STALLS.push({ id: Number(row.id), biz: row.business, ex: row.contact || row.business, cat: row.category || 'Other' });
-          }
-        });
-      }
-      return null;
-    })
-    .catch(function () { return null; })
-    .then(function () {
-      // Fetch all products in one call then group by supplier_id
-      fetch(API + '/api/suppliers/products')
+    .then(function (d) { _stallDir = (d && d.ok && d.stalls) ? d.stalls : _stallDir; })
+    .catch(function () {});
+
+  // Fetch all products in one call then group by supplier_id
+  fetch(API + '/api/suppliers/products')
     .then(function (r) { return r.json(); })
     .then(function (d) {
       var all = d.products || [];
@@ -587,6 +639,7 @@ function loadMarketplace() {
         var stallIds = Object.keys(byStall).filter(function(sid){ return byStall[sid].length > 0; });
         if (!stallIds.length) {
           _stallData = byStall;
+          applyStallNames(byStall);
           renderStalls(byStall);
           return;
         }
@@ -595,6 +648,7 @@ function loadMarketplace() {
           pending -= 1;
           if (pending <= 0) {
             _stallData = byStall;
+            applyStallNames(byStall);
             renderStalls(byStall);
           }
         }
@@ -619,8 +673,8 @@ function loadMarketplace() {
     .catch(function () {
       // API unavailable — render stalls with no products (contact cards)
       _stallData = {};
+      applyStallNames({});
       renderStalls({});
-    });
     });
 }
 

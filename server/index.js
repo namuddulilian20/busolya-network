@@ -716,15 +716,34 @@ app.patch('/api/supplier/profile', requireSupplier, rateLimit, async (req, res, 
         [req.supplier.phone, business, district || '']
       );
     }
+    // And the login identity's org stays in step with the stall name
+    if (business) {
+      await db.query('update participants set org = $2 where phone = $1', [req.supplier.phone, business]);
+    }
     return res.json({ ok: true, supplier });
   } catch (err) { next(err); }
 });
 
-// GET /api/stall-directory — public: live stall names so every page shows
-// the exhibitor's current company/stall name, not a frozen snapshot
+// GET /api/stall-directory — public: live stall names keyed by the supplier's
+// participant id (the id the marketplace already keys products on), so pages
+// show the exhibitor's current company/stall name, not a frozen snapshot
 app.get('/api/stall-directory', async (req, res, next) => {
   try {
-    const r = await db.query('select id, business, contact, category, district from suppliers order by id');
+    const r = await db.query(`
+      select p.id,
+             coalesce(s.business, p.org, p.name)  as business,
+             coalesce(s.contact, p.name)          as contact,
+             coalesce(s.category, p.org)          as category,
+             coalesce(s.district, p.district)     as district,
+             (select count(*)::int from supplier_products sp
+              where sp.supplier_id = p.id and sp.available) as listings
+      from participants p
+      left join suppliers s on s.phone = p.phone
+      where s.id is not null
+         or exists (select 1 from supplier_products sp
+                    where sp.supplier_id = p.id and sp.available)
+      order by p.id
+    `);
     return res.json({ ok: true, stalls: r.rows });
   } catch (err) { next(err); }
 });
