@@ -410,21 +410,12 @@ tailwind.config = {
     ? '' : 'https://busolya-api.onrender.com';
 
   /* ── Auth guard ─────────────────────────────────────────── */
-  var me = window.BusolyaAuth.getUser();
-  // Also accept supplier login (bsl_supplier cookie) if role is admin/employee
-  if (!me && window.BUSOLYA) {
-    // Try to parse supplier session cookie directly
-    var m = document.cookie.match(/bsl_supplier=([^;]+)/);
-    if (m) {
-      try {
-        var parts = m[1].split('.');
-        var body = JSON.parse(decodeURIComponent(atob(parts[0])));
-        if (body && (body.role === 'admin' || body.role === 'employee')) me = body;
-      } catch (_) {}
-    }
+  if (!window.BusolyaAuth || !window.BusolyaAuth.isAuthenticated()) {
+    location.href = 'login.html'; return;
   }
-  if (!me || (me.role !== 'admin' && me.role !== 'employee')) {
-    location.href = '/admin/login'; return;
+  var me = window.BusolyaAuth.getUser();
+  if (me && me.role !== 'admin' && me.role !== 'employee') {
+    location.href = 'index.html'; return;
   }
   var badge = document.getElementById('operatorBadge');
   if (badge && me) badge.textContent = 'Signed in as ' + (me.name || me.phone) + ' (' + me.role + ')';

@@ -666,6 +666,12 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
     res.cookie(SUPPLIER_COOKIE, signSupplier(payload), {
       httpOnly: true, sameSite: 'none', secure: true, maxAge: SESSION_HOURS * 3600 * 1000
     });
+    // Also set admin cookie so admin.html's requireAdmin check passes
+    if (payload.role === 'admin' || payload.role === 'employee') {
+      res.cookie(COOKIE, sign(payload), {
+        httpOnly: true, sameSite: 'none', secure: true, maxAge: SESSION_HOURS * 3600 * 1000
+      });
+    }
     return res.json({
       ok:               true,
       id:               row.id,
