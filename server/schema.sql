@@ -272,6 +272,52 @@ create index if not exists supplier_products_supplier_idx on supplier_products (
 create index if not exists supplier_products_category_idx on supplier_products (category);
 create index if not exists supplier_products_available_idx on supplier_products (available);
 
+-- ---------- purchase order tracking ----------
+create table if not exists purchase_orders (
+  id              bigserial primary key,
+  supplier_id     bigint not null references participants (id) on delete cascade,
+  product_id      bigint references supplier_products (id) on delete set null,
+  quantity        numeric(14,2) not null default 0,
+  unit_price      numeric(14,2) not null default 0,
+  total           numeric(14,2) not null default 0,
+  status          text not null default 'pending' check (status in ('pending','confirmed','shipped','delivered','cancelled')),
+  ordered_at      timestamptz not null default now(),
+  delivered_at    timestamptz,
+  notes           text
+);
+create index if not exists purchase_orders_supplier_idx on purchase_orders (supplier_id);
+create index if not exists purchase_orders_product_idx on purchase_orders (product_id);
+create index if not exists purchase_orders_status_idx on purchase_orders (status);
+
+-- ---------- low-stock alerts config ----------
+create table if not exists low_stock_alerts (
+  id              bigserial primary key,
+  supplier_id     bigint not null references participants (id) on delete cascade,
+  product_id      bigint references supplier_products (id) on delete set null,
+  threshold       numeric(14,2) not null default 10,
+  active          boolean not null default true
+);
+create index if not exists low_stock_alerts_supplier_idx on low_stock_alerts (supplier_id);
+create index if not exists low_stock_alerts_product_idx on low_stock_alerts (product_id);
+
+-- ---------- inventory summaries view ----------
+create or replace view inventory_summary as
+select
+  sp.id as product_id,
+  sp.title as product_title,
+  sp.category,
+  sp.supplier_id,
+  p.name as supplier_name,
+  sp.quantity_stock as current_stock,
+  coalesce(po.ordered_qty,0) as on_order,
+  (sp.quantity_stock - coalesce(po.ordered_qty,0)) as available_stock,
+  case when (sp.quantity_stock - coalesce(po.ordered_qty,0)) < 5 then 'low' else 'ok' end as stock_status
+from supplier_products sp
+join participants p on p.id = sp.supplier_id
+left join (
+  select product_id, sum(quantity) as ordered_qty from purchase_orders where status in ('pending','confirmed','shipped') group by product_id
+) po on po.product_id = sp.id);
+
 -- ---------- demand log stock linkage ----------
 -- ---------- visitor request / demand stock linkage ----------
 -- Code references visitor_requests_stock; this is the canonical name.

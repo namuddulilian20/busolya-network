@@ -281,6 +281,78 @@ app.get('/api/stats', async (req, res, next) => {
 
 const REF_PREFIX = { demand: 'BAE-D', supply: 'BAE-S', linkage: 'BAE-L' };
 
+// ---------- purchase order tracking ----------
+app.post('/api/purchase-orders', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const supplierId = req.supplier.id;
+    const productId = Number(b.product_id) || null;
+    const quantity = Number(b.quantity) || 0;
+    const unitPrice = Number(b.unit_price) || 0;
+    if (!productId || quantity <= 0) return res.status(400).json({ ok: false, error: 'product_id and positive quantity required' });
+    const total = quantity * unitPrice;
+    const r = await db.query(
+      `insert into purchase_orders (supplier_id, product_id, quantity, unit_price, total, status, notes)
+       values ($1,$2,$3,$4,$5,'pending',$6) returning *`,
+      [supplierId, productId, quantity, unitPrice, total, b.notes || null]
+    );
+    res.json({ ok: true, po: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+app.get('/api/purchase-orders', requireSupplier, async (req, res, next) => {
+  try {
+    const r = await db.query(
+      `select po.*, sp.title as product_title from purchase_orders po
+       join supplier_products sp on sp.id = po.product_id
+       where po.supplier_id = $1 order by po.ordered_at desc`,
+      [req.supplier.id]
+    );
+    res.json({ ok: true, orders: r.rows });
+  } catch (err) { next(err); }
+});
+
+app.get('/api/inventory-summary', requireSupplier, async (req, res, next) => {
+  try {
+    const r = await db.query('select * from inventory_summary where supplier_id = $1 order by stock_status, product_title', [req.supplier.id]);
+    res.json({ ok: true, summary: r.rows });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/low-stock-alerts', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const supplierId = req.supplier.id;
+    const productId = Number(b.product_id) || null;
+    const threshold = Number(b.threshold) || 10;
+    if (!productId || threshold < 0) return res.status(400).json({ ok: false, error: 'product_id and threshold required' });
+    // Upsert: update if exists, insert if not
+    const r = await db.query(
+      `insert into low_stock_alerts (supplier_id, product_id, threshold, active)
+       values ($1,$2,$3,true)
+       on conflict (supplier_id, product_id)
+       do update set threshold = excluded.threshold, active = true
+       returning *`,
+      [supplierId, productId, threshold]
+    );
+    res.json({ ok: true, alert: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+app.get('/api/low-stock-alerts', requireSupplier, async (req, res, next) => {
+  try {
+    const r = await db.query(
+      `select la.*, sp.title as product_title from low_stock_alerts la
+       join supplier_products sp on sp.id = la.product_id
+       where la.supplier_id = $1 and la.active = true`,
+      [req.supplier.id]
+    );
+    res.json({ ok: true, alerts: r.rows });
+  } catch (err) { next(err); }
+});
+
+const REF_PREFIX = { demand: 'BAE-D', supply: 'BAE-S', linkage: 'BAE-L' };
+
 app.post('/api/submissions', rateLimit, async (req, res, next) => {
   try {
     const body = req.body || {};
