@@ -163,21 +163,8 @@ create table if not exists settings (
 
 -- ---------- supplier & participant authentication (idempotent) ----------
 -- Add auth columns to suppliers if they don't exist yet.
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'suppliers' AND column_name = 'password_hash'
-  ) THEN
-    ALTER TABLE suppliers ADD COLUMN password_hash text;
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'suppliers' AND column_name = 'email'
-  ) THEN
-    ALTER TABLE suppliers ADD COLUMN email text;
-  END IF;
-END $$;
+ALTER TABLE suppliers ADD COLUMN password_hash text;
+ALTER TABLE suppliers ADD COLUMN email text;
 
 create table if not exists participants (
   id            bigserial primary key,
@@ -198,28 +185,9 @@ create index if not exists participants_role_idx  on participants (role);
 -- Add email, updated_at columns to existing installations (idempotent).
 -- The email index is created inside the guard so it only runs after the
 -- column exists — prevents "column does not exist" on a legacy database.
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'participants' AND column_name = 'email'
-  ) THEN
-    ALTER TABLE participants ADD COLUMN email text unique;
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'participants' AND column_name = 'updated_at'
-  ) THEN
-    ALTER TABLE participants ADD COLUMN updated_at timestamptz not null default now();
-  END IF;
-  -- Create email index if it doesn't exist (may fail silently if already there)
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_indexes
-    WHERE tablename = 'participants' AND indexname = 'participants_email_idx'
-  ) THEN
-    CREATE UNIQUE INDEX participants_email_idx ON participants (email);
-  END IF;
-END $$;
+ALTER TABLE participants ADD COLUMN email text unique;
+ALTER TABLE participants ADD COLUMN updated_at timestamptz not null default now();
+CREATE UNIQUE INDEX participants_email_idx ON participants (email);
 create table if not exists users (
   id          bigserial primary key,
   phone       text unique not null,
@@ -485,16 +453,8 @@ create table if not exists supplier_directory_link (
 create index if not exists supplier_directory_link_supplier_idx on supplier_directory_link (supplier_id);
 
 -- ---------- participants: phone-as-password + phone_verified columns ----------
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'participants' AND column_name = 'password_is_phone'
-  ) THEN
-    ALTER TABLE participants ADD COLUMN password_is_phone boolean not null default true;
-    ALTER TABLE participants ADD COLUMN phone_verified    boolean not null default false;
-  END IF;
-END $$;
+ALTER TABLE participants ADD COLUMN password_is_phone boolean not null default true;
+ALTER TABLE participants ADD COLUMN phone_verified boolean not null default false;
 
 -- ---------- supplier_media: blobs/images/audio/video per supplier ----------
 create table if not exists supplier_media (
