@@ -68,7 +68,11 @@ async function migrate() {
       } catch (err) {
         // "already exists" errors are safe to ignore (idempotent schema)
         const safe = /already exists|duplicate (column|index|constraint|table|object)/i.test(err.message);
-        if (!safe) throw err;
+        if (!safe) {
+          console.error('[migrate] FAILED statement:', trimmed.slice(0, 300).replace(/\s+/g, ' '));
+          console.error('[migrate] Error:', err.message);
+          throw err;
+        }
         // Log suppressed errors in non-production for visibility
         if (process.env.NODE_ENV !== 'production') {
           console.warn('[migrate] suppressed:', err.message.slice(0, 120));
