@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Supplier Portal — Busolya Agro Farmers Ltd</title>
-<meta name="description" content="Add and manage your products, services and visitor request leads in the Busolya network.">
+<meta name="description" content="Add and manage your products, services and visitor request leads in the Busolya network">
 <link rel="icon" href="assets/logo.jpg">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -22,6 +22,7 @@ tailwind.config = {
 </style>
 </head>
 <body>
+
 <div id="header-placeholder"></div>
 
 <main class="mx-auto max-w-5xl px-5 py-8">
@@ -70,7 +71,7 @@ tailwind.config = {
   <div class="mb-6 flex flex-wrap border-b border-[#e2d6c2]">
     <button class="tab-on  px-4 py-3" data-tab="products">My listings</button>
     <button class="tab-off px-4 py-3" data-tab="add">Add listing</button>
-    <button class="tab-off px-4 py-3" data-tab="media">Photos &amp; media</button>
+    <button class="tab-off px-4 py-3" data-tab="media">Photos & media</button>
     <button class="tab-off px-4 py-3" data-tab="directory">Directory entry</button>
     <button class="tab-off px-4 py-3" data-tab="demand">Visitors looking for your products</button>
     <button class="tab-off px-4 py-3" data-tab="password">Change password</button>
@@ -150,7 +151,81 @@ tailwind.config = {
     </div>
   </div>
 
-  <!-- ── Tab: Photos & media ────────────────────────────── -->
+  <!-- ── Tab: Purchases ──────────────────────────────────────────── -->
+  <div id="tab-purchases" class="tab-panel">
+    <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
+      <h2 class="mb-1 font-display text-xl font-bold text-bark">Purchase orders</h2>
+      <p class="mb-4 text-sm text-ink/55">Track orders from placement to delivery.</p>
+      <form id="addPoForm" class="space-y-3 mb-6">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Product</label>
+            <select id="poProduct" class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" disabled><option value="">— Add a product first —</option></select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Quantity</label>
+            <input id="poQuantity" type="number" min="1" value="1"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Unit price (UGX)</label>
+            <input id="poUnitPrice" type="number" min="0" value="0"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Notes (optional)</label>
+            <input id="poNotes" type="text"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="Delivery notes, special requirements…">
+          </div>
+        </div>
+        <button type="submit"
+          class="rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">
+          Create purchase order
+        </button>
+      </form>
+      <div id="poList" class="space-y-2"></div>
+      <p id="noPo" class="hidden text-sm text-ink/50 py-6">No purchase orders yet.</p>
+    </div>
+  </div>
+
+  <!-- ── Tab: Inventory ──────────────────────────────────────────── -->
+  <div id="tab-inventory" class="tab-panel">
+    <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
+      <h2 class="mb-1 font-display text-xl font-bold text-bark">Inventory summary</h2>
+      <p class="mb-4 text-sm text-ink/55">Current stock, on-order, and available quantity per product.</p>
+      <div id="invSummary" class="space-y-4"></div>
+    </div>
+  </div>
+
+  <!-- ── Tab: Low-stock alerts ─────────────────────────────────────── -->
+  <div id="tab-alerts" class="tab-panel">
+    <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
+      <h2 class="mb-1 font-display text-xl font-bold text-bark">Low-stock alerts</h2>
+      <p class="mb-4 text-sm text-ink/55">Configure thresholds per product; receive alerts when stock falls below.</p>
+      <form id="addAlertForm" class="space-y-3 mb-6">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Product</label>
+            <select id="alertProduct" class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" disabled><option value="">— Add a product first —</option></select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Threshold (units)</label>
+            <input id="alertThreshold" type="number" min="0" value="5"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf">
+          </div>
+        </div>
+        <button type="submit"
+          class="rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">
+          Save alert threshold
+        </button>
+      </form>
+      <div id="alertList" class="space-y-3"></div>
+      <p id="noAlert" class="hidden text-sm text-ink/50 py-6">No active low-stock alerts.</p>
+    </div>
+  </div>
+
+  <!-- ── Tab: Photos & media ────────────────────────────────────────── -->
   <div id="tab-media" class="tab-panel hidden">
     <div class="max-w-2xl space-y-6">
       <div class="rounded-xl border border-[#e2d6c2] bg-paper p-6">
@@ -291,12 +366,15 @@ tailwind.config = {
       if (name === 'demand')   loadVisitorRequests();
       if (name === 'media')    loadMedia();
       if (name === 'products') loadProducts();
+      if (name === 'purchases') loadPurchaseOrders();
+      if (name === 'inventory') loadInventorySummary();
+      if (name === 'alerts')   loadLowStockAlerts();
     });
   });
 
   function fmt(n) { return Number(n || 0).toLocaleString(); }
   function esc(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(s || '').replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
   }
   function showMsg(el, text, type) {
     el.className = 'mt-3 rounded-lg px-4 py-3 text-sm ' +
@@ -370,6 +448,28 @@ tailwind.config = {
           opt.textContent = p.title;
           sel.appendChild(opt);
         });
+        // Populate purchase order product selector
+        var poSel = document.getElementById('poProduct');
+        if (poSel) {
+          poSel.innerHTML = '<option value="">— Select product —</option>';
+          (d.products || []).forEach(function (p) {
+            var opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.title;
+            poSel.appendChild(opt);
+          });
+        }
+        // Populate alert product selector
+        var alertSel = document.getElementById('alertProduct');
+        if (alertSel) {
+          alertSel.innerHTML = '<option value="">— Select product —</option>';
+          (d.products || []).forEach(function (p) {
+            var opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.title;
+            alertSel.appendChild(opt);
+          });
+        }
       }).catch(function () {});
   }
 
@@ -404,7 +504,120 @@ tailwind.config = {
     .catch(function () { showMsg(msgEl, 'Server error. Try again.', 'err'); });
   });
 
-  /* ── Media upload ────────────────────────────────────────────── */
+  /* ── Purchase order form ────────────────────────────────────────── */
+  document.getElementById('addPoForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var msgEl = document.getElementById('addMsg');
+    var productId = document.getElementById('poProduct').value;
+    var quantity = Number(document.getElementById('poQuantity').value);
+    var unitPrice = Number(document.getElementById('poUnitPrice').value);
+    var notes = document.getElementById('poNotes').value.trim();
+    if (!productId || quantity <= 0 || unitPrice < 0) { showMsg(msgEl, 'Select a product and enter valid quantity/price.', 'err'); return; }
+    var total = quantity * unitPrice;
+    fetch(API + '/api/purchase-orders', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', body: JSON.stringify({ product_id: Number(productId), quantity, unit_price: unitPrice, notes })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.ok) { showMsg(msgEl, d.error || 'Could not create purchase order.', 'err'); return; }
+      showMsg(msgEl, 'Purchase order created! Order #'+d.po.id, 'ok');
+      document.getElementById('addPoForm').reset();
+      loadPurchaseOrders();
+    })
+    .catch(function () { showMsg(msgEl, 'Server error. Try again.', 'err'); });
+  });
+
+  function loadPurchaseOrders() {
+    fetch(API + '/api/purchase-orders?supplier_id=' + me.id, { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var list = document.getElementById('poList');
+        var none = document.getElementById('noPo');
+        var orders = d.orders || [];
+        document.getElementById('statListings').textContent = orders.length; // reuse stat
+        if (!orders.length) { none.classList.remove('hidden'); list.innerHTML = ''; return; }
+        none.classList.add('hidden');
+        list.innerHTML = orders.map(function (o) {
+          var statusClass = o.status;
+          var statusLabel = o.status;
+          return '<div class="border border-[#e2d6c2] rounded-xl p-3 flex items-start justify-between gap-2">' +
+            '<div class="font-semibold text-bark">' + (o.product_title || 'Product') + '</div>' +
+            '<div class="text-xs text-ink/55">' +
+              'Qty: ' + fmt(o.quantity) + ' @ UGX ' + fmt(o.unit_price) + ' = UGX ' + fmt(o.total) + '<br>' +
+              'Status: <span class="' + (o.status === 'delivered' ? 'text-leaf' : '') + ' font-medium">' + statusLabel + '</span>' +
+            '</div>' +
+            (o.delivered_at ? '<div class="text-[.65rem] text-ink/30">Delivered: ' + fmt(o.delivered_at) + '</div>' : '') +
+          '</div>';
+        }).join('');
+      }).catch(function () {});
+  }
+
+  /* ── Inventory summary ──────────────────────────────────────────── */
+  function loadInventorySummary() {
+    fetch(API + '/api/inventory-summary?supplier_id=' + me.id, { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var summary = d.summary || [];
+        var invDiv = document.getElementById('invSummary');
+        if (!summary.length) { invDiv.innerHTML = '<p class="text-sm text-ink/50">No inventory data available.</p>'; return; }
+        invDiv.innerHTML = summary.map(function (item) {
+          var statusClass = item.stock_status === 'low' ? 'text-leaf' : 'text-bark';
+          return '<div class="border border-[#e2d6c2] rounded-xl p-4 flex flex-col gap-2">' +
+            '<div class="font-semibold text-bark">' + item.product_title + '</div>' +
+            '<div class="grid grid-cols-2 gap-2 text-xs text-ink/60">' +
+              '<div><strong>Current stock:</strong> ' + fmt(item.current_stock) + '</div>' +
+              '<div><strong>On order:</strong> ' + fmt(item.on_order) + '</div>' +
+              '<div><strong>Available:</strong> ' + fmt(item.available_stock) + '</div>' +
+            '</div>' +
+            '<div class="mt-2 pt-2 border-t border-[#e2d6c2]">' +
+              '<strong class="' + statusClass + '">Status: ' + item.stock_status + '</strong>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }).catch(function () {});
+  }
+
+  /* ── Low-stock alerts form ────────────────────────────────────────── */
+  document.getElementById('addAlertForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var msgEl = document.getElementById('addMsg');
+    var productId = document.getElementById('alertProduct').value;
+    var threshold = Number(document.getElementById('alertThreshold').value);
+    if (!productId || threshold < 0) { showMsg(msgEl, 'Select a product and enter a threshold.', 'err'); return; }
+    fetch(API + '/api/low-stock-alerts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', body: JSON.stringify({ product_id: Number(productId), threshold })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.ok) { showMsg(msgEl, d.error || 'Could not save alert.', 'err'); return; }
+      showMsg(msgEl, 'Low-stock alert saved for ' + d.alert.product_title + ' (threshold: ' + d.alert.threshold + ')', 'ok');
+      document.getElementById('addAlertForm').reset();
+      loadLowStockAlerts();
+    })
+    .catch(function () { showMsg(msgEl, 'Server error. Try again.', 'err'); });
+  });
+
+  function loadLowStockAlerts() {
+    fetch(API + '/api/low-stock-alerts?supplier_id=' + me.id, { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var list = document.getElementById('alertList');
+        var none = document.getElementById('noAlert');
+        var alerts = d.alerts || [];
+        if (!alerts.length) { none.classList.remove('hidden'); list.innerHTML = ''; return; }
+        none.classList.add('hidden');
+        list.innerHTML = alerts.map(function (a) {
+          return '<div class="border border-[#e2d6c2] rounded-xl p-3 flex items-start justify-between gap-2">' +
+            '<div class="font-semibold text-bark">' + a.product_title + '</div>' +
+            '<div class="text-xs text-ink/55">Threshold: ' + fmt(a.threshold) + ' units — <span class="alert-status' + (a.active ? '' : ' text-seal') + '">' + (a.active ? 'active' : 'inactive') + '</span></div>' +
+          '</div>';
+        }).join('');
+      }).catch(function () {});
+  }
+
+  /* ── Media upload ──────────────────────────────────────────────── */
   function loadMedia() {
     fetch(API + '/api/media', { credentials: 'include' })
       .then(function (r) { return r.json(); })
