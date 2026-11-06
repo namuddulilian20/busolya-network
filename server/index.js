@@ -351,7 +351,6 @@ app.get('/api/low-stock-alerts', requireSupplier, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-const REF_PREFIX = { demand: 'BAE-D', supply: 'BAE-S', linkage: 'BAE-L' };
 
 app.post('/api/submissions', rateLimit, async (req, res, next) => {
   try {
