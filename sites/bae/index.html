@@ -95,12 +95,14 @@ tailwind.config = {
     <span>🟡 Bataka Agro Expo 2026</span>
     <span>📍 Lwatamu Gardens, Mengo, Kampala</span>
     <span>📅 4 – 8 November 2026</span>
+    <span class="tickerStatus">🟢 Online expo running all year</span>
     <span>⏰ 8:00 AM – 6:00 PM daily</span>
     <span>🎟 Adults UGX 5,000 · Kids UGX 3,000</span>
     <span>📞 +256 200 911 567</span>
     <span>🟡 Bataka Agro Expo 2026</span>
     <span>📍 Lwatamu Gardens, Mengo, Kampala</span>
     <span>📅 4 – 8 November 2026</span>
+    <span class="tickerStatus">🟢 Online expo running all year</span>
     <span>⏰ 8:00 AM – 6:00 PM daily</span>
     <span>🎟 Adults UGX 5,000 · Kids UGX 3,000</span>
     <span>📞 +256 200 911 567</span>
@@ -146,7 +148,7 @@ tailwind.config = {
     <!-- Countdown + live stats -->
     <div class="grid gap-4">
       <div class="rounded-2xl border border-white/15 bg-white/8 p-6 backdrop-blur-sm text-center">
-        <p class="font-display text-[.65rem] uppercase tracking-[.22em] text-[#ffe9c7] mb-3">Expo opens in</p>
+        <p id="cdLabel" class="font-display text-[.65rem] uppercase tracking-[.22em] text-[#ffe9c7] mb-3">Expo opens in</p>
         <div id="countdown" class="grid grid-cols-4 gap-2">
           <div class="rounded-xl bg-black/30 px-2 py-3">
             <span class="block font-display text-2xl font-bold text-white leading-none" data-cd="d">—</span>
@@ -165,7 +167,7 @@ tailwind.config = {
             <span class="mt-1 block text-[.58rem] uppercase tracking-[.1em] text-[#a8cfb0]">sec</span>
           </div>
         </div>
-        <p class="mt-3 text-xs text-[#6da87d]">Lwatamu Gardens, Mengo, Kampala</p>
+        <p id="cdVenue" class="mt-3 text-xs text-[#6da87d]">Lwatamu Gardens, Mengo, Kampala</p>
       </div>
       <div class="grid grid-cols-3 gap-3">
         <div class="rounded-xl border border-white/12 bg-white/7 p-3 text-center backdrop-blur-sm">
@@ -291,38 +293,13 @@ tailwind.config = {
 
 <script src="assets/network.js"></script>
 <script src="assets/components.js"></script>
+<script src="assets/expo-timer.js"></script>
 <script>
 (function () {
 'use strict';
 
 var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
   ? '' : 'https://busolya-api.onrender.com';
-
-/* ── Countdown ──────────────────────────────────────────────────── */
-(function () {
-  var start = new Date('2026-11-04T08:00:00+03:00').getTime();
-  var end   = new Date('2026-11-08T18:00:00+03:00').getTime();
-  var box   = document.getElementById('countdown');
-  if (!box) return;
-  var cd = {
-    d: box.querySelector('[data-cd="d"]'),
-    h: box.querySelector('[data-cd="h"]'),
-    m: box.querySelector('[data-cd="m"]'),
-    s: box.querySelector('[data-cd="s"]')
-  };
-  function pad(n) { return (n < 10 ? '0' : '') + n; }
-  function tick() {
-    var now  = Date.now();
-    if (now >= end) { cd.d.textContent='0'; cd.h.textContent='00'; cd.m.textContent='00'; cd.s.textContent='00'; return; }
-    if (now >= start) { cd.d.textContent='LIVE'; cd.h.textContent=''; cd.m.textContent=''; cd.s.textContent=''; return; }
-    var diff = start - now;
-    cd.d.textContent = Math.floor(diff / 86400000);
-    cd.h.textContent = pad(Math.floor(diff / 3600000) % 24);
-    cd.m.textContent = pad(Math.floor(diff / 60000) % 60);
-    cd.s.textContent = pad(Math.floor(diff / 1000) % 60);
-  }
-  tick(); setInterval(tick, 1000);
-})();
 
 /* ── Catalogue data ─────────────────────────────────────────────── */
 // The 18 registered exhibitors (from exhibitors.html register).

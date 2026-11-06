@@ -40,7 +40,8 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
       <p class="font-display text-[.7rem] uppercase tracking-[.2em] text-[#ffe9c7]">Wednesday to Sunday</p>
       <p class="mt-2 font-display text-5xl font-bold leading-none text-white">4<span class="text-gold">—</span>8</p>
       <p class="mt-1 font-display text-2xl font-bold text-white">November</p>
-      <p class="mt-1 text-sm text-[#d9c8b4]">2026</p>
+      <p class="mt-1 text-sm text-[#d9c8b4]" id="expoYear">2026</p>
+      <p id="cdLabel" class="mt-4 font-display text-[.7rem] uppercase tracking-[.2em] text-[#ffe9c7]">Countdown to gates</p>
       <div id="countdown" class="mt-5 grid grid-cols-4 gap-2 text-center">
         <div class="rounded-lg bg-black/25 px-2 py-2"><span class="block font-display text-xl font-bold text-white" data-cd="d">—</span><span class="text-[.6rem] uppercase tracking-[.1em] text-[#c9b6a0]">days</span></div>
         <div class="rounded-lg bg-black/25 px-2 py-2"><span class="block font-display text-xl font-bold text-white" data-cd="h">—</span><span class="text-[.6rem] uppercase tracking-[.1em] text-[#c9b6a0]">hrs</span></div>
@@ -165,34 +166,6 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
 <script src="assets/network.js"></script>
 <script src="assets/components.js"></script>
-<script>
-(function () {
-  var start = new Date('2026-11-04T08:00:00+03:00').getTime();
-  var end = new Date('2026-11-08T18:00:00+03:00').getTime();
-  var box = document.getElementById('countdown');
-  if (!box) return;
-  var cells = {
-    d: box.querySelector('[data-cd="d"]'),
-    h: box.querySelector('[data-cd="h"]'),
-    m: box.querySelector('[data-cd="m"]'),
-    s: box.querySelector('[data-cd="s"]')
-  };
-  function pad(n) { return (n < 10 ? '0' : '') + n; }
-  function tick() {
-    var now = Date.now();
-    if (now > end) {
-      cells.d.textContent = '0'; cells.h.textContent = '00'; cells.m.textContent = '00'; cells.s.textContent = '00';
-      return;
-    }
-    var diff = Math.max(0, start - now);
-    cells.d.textContent = Math.floor(diff / 86400000);
-    cells.h.textContent = pad(Math.floor(diff / 3600000) % 24);
-    cells.m.textContent = pad(Math.floor(diff / 60000) % 60);
-    cells.s.textContent = pad(Math.floor(diff / 1000) % 60);
-  }
-  tick();
-  setInterval(tick, 1000);
-})();
-</script>
+<script src="assets/expo-timer.js"></script>
 </body>
 </html>
