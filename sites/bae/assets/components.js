@@ -173,7 +173,7 @@
       } else if (user.role === 'admin' || user.role === 'employee') {
         location.href = 'admin.html';
       } else if (user.role === 'supplier') {
-        location.href = 'supplier-portal.html';
+        location.href = 'exhibitor-portal.html';
       } else {
         location.href = 'index.html';
       }
