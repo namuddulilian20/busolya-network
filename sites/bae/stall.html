@@ -116,7 +116,8 @@
   const stallEx = params.get('ex');
   document.getElementById('stallName').textContent = decodeURIComponent(stallBiz || 'Exhibitor Stall');
   document.getElementById('stallExhibitor').textContent = (stallEx ? 'Exhibitor: ' + decodeURIComponent(stallEx) : '');
-  const API = window.NETWORK && window.NETWORK.bae ? window.NETWORK.bae : '';
+  const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+    ? 'http://localhost:10000' : 'https://busolya-api.onrender.com';
   function loadProducts() {
     const url = API + '/api/suppliers/products' + (stallId ? '?supplier_id=' + stallId : '');
     fetch(url, { credentials: 'include' })
