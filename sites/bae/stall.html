@@ -120,7 +120,10 @@
   function loadProducts() {
     const url = API + '/api/suppliers/products' + (stallId ? '?supplier_id=' + stallId : '');
     fetch(url, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { 
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); 
+        return r.json(); 
+      })
       .then(function (d) {
         var list = document.getElementById('productList');
         var none = document.getElementById('noProducts');
@@ -153,7 +156,10 @@
         // Load product images from public media endpoint
         mine.forEach(function(p) {
           fetch(API + '/api/products/' + p.id + '/media')
-            .then(function(r2){ return r2.json(); })
+            .then(function(r2){ 
+              if (!r2.ok) throw new Error('HTTP ' + r2.status); 
+              return r2.json(); 
+            })
             .then(function(md){
               var imgs = (md.media||[]).filter(function(m){ return m.media_type === 'image'; });
               if (!imgs.length) return;
@@ -161,8 +167,9 @@
               if (el) el.innerHTML = '<img src="' + imgs[0].storage_url + '" alt="' + escH(p.title) + '" class="h-full w-full object-cover">';
             }).catch(function (err) { console.error('FETCH ERROR in sites\bae\stall.html:', err); });
         });
-      }).catch(function () {
-        document.getElementById('noProducts').textContent = 'Could not load products. Try again later.';
+      }).catch(function (err) {
+        console.error('FETCH ERROR in sites\\bae\\stall.html:', err);
+        document.getElementById('noProducts').textContent = 'Could not load products: ' + err.message + '. Try again later.';
       });
   }
 
@@ -198,7 +205,10 @@
       credentials: 'include',
       body: JSON.stringify(body)
     })
-    .then(function (r) { return r.json(); })
+    .then(function (r) { 
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); 
+      return r.json(); 
+    })
     .then(function (d) {
       if (d.ok || d.ref) {
         showDemandMsg('Request sent to ' + (stallBiz || 'this stall') + '. Reference: ' + (d.ref || 'saved'), 'ok');
