@@ -87,40 +87,45 @@ async function migrate() {
  *  - -- line comments
  */
 function splitSql(sql) {
+  // Protect DO $$ ... END $$ blocks so their internal semicolons
+  // are not treated as statement separators.
+  const blocks = [];
+  let protectedSql = sql.replace(/DO\s+\$\$[\s\S]*?END\s+\$\$/g, (match) => {
+    const placeholder = `__DO_BLOCK_${blocks.length}__`;
+    blocks.push(match);
+    return placeholder;
+  });
+
   const stmts = [];
   let current = '';
-  let inDollarQuote = false;
   let inSingleQuote = false;
   let i = 0;
 
-  while (i < sql.length) {
-    const ch = sql[i];
-    const remaining = sql.slice(i);
+  while (i < protectedSql.length) {
+    const ch = protectedSql[i];
+    const remaining = protectedSql.slice(i);
 
-    // Toggle dollar-quote on $$ marker
-    if (!inSingleQuote && remaining.startsWith('$$')) {
-      inDollarQuote = !inDollarQuote;
-      current += '$$';
-      i += 2;
+    // Toggle single-quote ('' escape)
+    if (ch === "'") {
+      inSingleQuote = !inSingleQuote;
+      current += ch;
+      i++;
       continue;
     }
 
-    // Toggle single-quote ('' escape)
-    if (!inDollarQuote && ch === "'") {
-      inSingleQuote = !inSingleQuote;
-      current += ch; i++; continue;
-    }
-
     // Skip line comments outside quotes
-    if (!inDollarQuote && !inSingleQuote && ch === '-' && sql[i+1] === '-') {
-      const end = sql.indexOf('\n', i);
-      i = end === -1 ? sql.length : end + 1;
+    if (!inSingleQuote && ch === '-' && protectedSql[i + 1] === '-') {
+      const end = protectedSql.indexOf('\n', i);
+      i = end === -1 ? protectedSql.length : end + 1;
       continue;
     }
 
     // Statement separator
-    if (!inDollarQuote && !inSingleQuote && ch === ';') {
-      stmts.push(current.trim());
+    if (!inSingleQuote && ch === ';') {
+      let stmt = current.trim();
+      // Restore any DO block placeholders in this statement
+      stmt = stmt.replace(/__DO_BLOCK_(\d+)__/g, (m, n) => blocks[Number(n)]);
+      if (stmt) stmts.push(stmt);
       current = '';
       i++;
       continue;
@@ -129,7 +134,12 @@ function splitSql(sql) {
     current += ch;
     i++;
   }
-  if (current.trim()) stmts.push(current.trim());
+
+  if (current.trim()) {
+    let stmt = current.trim();
+    stmt = stmt.replace(/__DO_BLOCK_(\d+)__/g, (m, n) => blocks[Number(n)]);
+    stmts.push(stmt);
+  }
   return stmts;
 }
 
