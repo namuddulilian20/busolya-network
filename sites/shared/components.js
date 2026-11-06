@@ -605,40 +605,50 @@
       'bg-maroon2':  '#5e1f18'
     };
 
-    var btnSel = [], btnUp = {}, btnDn = {}, sec = [], dark = [];
+    var btnSel = [], btnUp = {}, btnDn = {}, btnGlow = {}, sec = [], dark = [];
     Object.keys(COLORS).forEach(function (token) {
       var c = COLORS[token];
-      btnUp[token] = hexMix(c, 'w', 16);
-      btnDn[token] = hexMix(c, 'd', 28);
+      btnUp[token] = hexMix(c, 'w', 24);
+      btnDn[token] = hexMix(c, 'd', 32);
+      var r = parseInt(c.substr(1, 2), 16), g = parseInt(c.substr(3, 2), 16), b = parseInt(c.substr(5, 2), 16);
+      btnGlow[token] = r + ',' + g + ',' + b;
       var sel = 'a[class~="' + token + '"], button[class~="' + token + '"]';
       btnSel.push(sel);
       if (COLORS[token] === c) sec.push('[class~="' + token + '"]');
       dark.push(sel);
     });
 
+    /* Thick Tmall-style buttons: glass gloss on top of a saturated
+       brand gradient, a solid darker lip at the bottom for depth,
+       then a springy hover that leans forward and pops. */
     var parts = [];
     btnSel.forEach(function (sel) {
       var token = sel.match(/\[class~="([^"]+)"\]/)[1];
-      parts.push(sel + ' { background-image: linear-gradient(160deg, ' +
-        btnUp[token] + ' 0%, ' + COLORS[token] + ' 45%, ' + btnDn[token] + ' 100%) !important; }');
+      parts.push(sel + ' { background-image:' +
+        ' linear-gradient(180deg, rgba(255,255,255,.30) 0%, rgba(255,255,255,.05) 42%, rgba(0,0,0,.16) 100%),' +
+        ' linear-gradient(165deg, ' + btnUp[token] + ' 0%, ' + COLORS[token] + ' 45%, ' + btnDn[token] + ' 100%) !important;' +
+        ' box-shadow: inset 0 2px 1px rgba(255,255,255,.42), inset 0 -3px 5px rgba(0,0,0,.28),' +
+        ' 0 4px 0 rgba(0,0,0,.30), 0 14px 26px -10px rgba(' + btnGlow[token] + ',.55); }');
+      parts.push(sel + ':hover { box-shadow: inset 0 2px 1px rgba(255,255,255,.5), inset 0 -3px 5px rgba(0,0,0,.24),' +
+        ' 0 7px 0 rgba(0,0,0,.26), 0 20px 34px -10px rgba(' + btnGlow[token] + ',.6); }');
+      parts.push(sel + ':active { box-shadow: inset 0 3px 6px rgba(0,0,0,.3),' +
+        ' 0 1px 0 rgba(0,0,0,.3), 0 4px 10px -6px rgba(' + btnGlow[token] + ',.5); }');
     });
 
     var css = [
       '/* Busolya embossed layer - injected by components.js */',
       parts.join('\n'),
       dark.join(',\n') + ' {',
-      '  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 1px 0 0 rgba(255,255,255,.12),',
-      '              inset 0 -2px 3px rgba(0,0,0,.22), 0 6px 14px -6px rgba(26,13,6,.45);',
-      '  text-shadow: 0 1px 0 rgba(0,0,0,.18);',
-      '  border: 1px solid rgba(0,0,0,.14) !important;',
-      '  transform: translateY(0); transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;',
+      '  text-shadow: 0 1px 1px rgba(0,0,0,.25);',
+      '  border: 1px solid rgba(0,0,0,.22) !important;',
+      '  transition: transform .28s cubic-bezier(.3,1.8,.45,1), box-shadow .28s cubic-bezier(.3,1.8,.45,1), filter .2s ease;',
+      '  will-change: transform;',
       '}',
       dark.join(':hover,\n') + ':hover {',
-      '  transform: translateY(-1px); filter: brightness(1.06);',
-      '  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -2px 3px rgba(0,0,0,.18), 0 9px 20px -6px rgba(26,13,6,.5);',
+      '  transform: translateY(-4px) scale(1.05); filter: brightness(1.08);',
       '}',
       dark.join(':active,\n') + ':active {',
-      '  transform: translateY(1px); box-shadow: inset 0 2px 4px rgba(0,0,0,.35);',
+      '  transform: translateY(2px) scale(.97);',
       '}',
 
       /* cards and paper panels: raised paper with a highlighted rim */
@@ -646,13 +656,19 @@
       '  background-image: linear-gradient(165deg, #fffdfa 0%, #fffdf8 60%, ' + hexMix('#fffdf8', 'd', 4) + ' 100%);',
       '  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), inset 0 0 0 1px rgba(255,255,255,.4),',
       '              0 1px 2px rgba(26,13,6,.06), 0 10px 26px -14px rgba(26,13,6,.28);',
+      '  transition: transform .3s cubic-bezier(.3,1.8,.45,1), box-shadow .3s cubic-bezier(.3,1.8,.45,1);',
+      '}',
+      '[class~="bg-paper"]:hover {',
+      '  transform: translateY(-3px);',
+      '  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), inset 0 0 0 1px rgba(255,255,255,.4),',
+      '              0 2px 3px rgba(26,13,6,.06), 0 18px 34px -14px rgba(26,13,6,.35);',
       '}',
 
       /* dark section canvases: rich gradient with a warm glow */
       sec.join(',\n') + ' {',
-      '  background-image: radial-gradient(1100px 320px at 15% -12%, rgba(198,138,46,.28), transparent 60%),',
-      '                    radial-gradient(900px 260px at 90% 110%, rgba(255,255,255,.10), transparent 55%) !important;',
-      '  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 -18px 40px -20px rgba(0,0,0,.45);',
+      '  background-image: radial-gradient(1100px 340px at 15% -12%, rgba(' + btnGlow['bg-gold'] + ',.38), transparent 62%),',
+      '                    radial-gradient(900px 260px at 90% 110%, rgba(255,255,255,.12), transparent 55%) !important;',
+      '  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), inset 0 -18px 40px -20px rgba(0,0,0,.45);',
       '}',
 
       /* header: cream sheen, brand gradient strip on top, soft drop */
