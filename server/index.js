@@ -925,7 +925,7 @@ app.get('/', (req, res) => res.redirect('/baf/index.html'));
 // ---------- admin ----------
 
 app.get('/admin/login', (req, res) => {
-  if (currentSession(req)) return res.redirect('/admin');
+  if (currentSession(req)) return res.redirect('/admin.html');
   res.type('html').send(ui.loginPage(''));
 });
 
@@ -943,7 +943,7 @@ app.post('/admin/login', (req, res) => {
     secure: req.secure,
     maxAge: SESSION_HOURS * 3600 * 1000
   });
-  return res.redirect('/admin');
+  return res.redirect('/admin.html');
 });
 
 app.post('/admin/logout', (req, res) => {
