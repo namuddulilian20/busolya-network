@@ -32,7 +32,9 @@ const COLLECTION_NAMES = [
   'farm_aid_roles',
   'farm_aid_reports',
   'supplier_directory_link',
-  'supplier_media'
+  'supplier_media',
+  'purchase_orders',
+  'low_stock_alerts'
 ];
 
 const stores = {};
