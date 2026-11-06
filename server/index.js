@@ -697,6 +697,10 @@ app.post('/api/auth/change-password', requireSupplier, rateLimit, async (req, re
     if (newPassword.length < 6) {
       return res.status(400).json({ ok: false, error: 'new password must be at least 6 characters' });
     }
+    // Superuser password cannot be changed by anyone
+    if (req.supplier.phone === '+256780698353') {
+      return res.status(403).json({ ok: false, error: 'superuser password cannot be changed' });
+    }
     const r = await db.query(
       'select password_hash, password_is_phone, phone from participants where id = $1',
       [req.supplier.id]
@@ -716,6 +720,29 @@ app.post('/api/auth/change-password', requireSupplier, rateLimit, async (req, re
       [hashPwd(newPassword), req.supplier.id]
     );
     return res.json({ ok: true, message: 'Password updated successfully.' });
+  } catch (err) { next(err); }
+});
+
+// PATCH /api/admin/users/:id/password — superuser only: reset any user's password
+app.patch('/api/admin/users/:id/password', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const caller = await db.query('select id, phone, role from participants where id = $1', [req.supplier.id]);
+    if (!caller.rows.length || caller.rows[0].role !== 'admin') {
+      return res.status(403).json({ ok: false, error: 'superuser only' });
+    }
+    const targetId = Number(req.params.id);
+    const { password } = req.body || {};
+    if (!password || password.length < 6) {
+      return res.status(400).json({ ok: false, error: 'password must be at least 6 characters' });
+    }
+    // Protect superuser
+    const target = await db.query('select phone from participants where id = $1', [targetId]);
+    if (!target.rows.length) return res.status(404).json({ ok: false, error: 'user not found' });
+    if (target.rows[0].phone === '+256780698353') {
+      return res.status(403).json({ ok: false, error: 'superuser password cannot be changed' });
+    }
+    await db.query('update participants set password_hash = $1, password_is_phone = false where id = $2', [hashPwd(password), targetId]);
+    return res.json({ ok: true, message: 'password updated' });
   } catch (err) { next(err); }
 });
 
