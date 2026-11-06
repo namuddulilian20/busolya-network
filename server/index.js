@@ -655,6 +655,80 @@ app.get('/api/auth/me', async (req, res) => {
   return res.json({ ok: true, ...payload });
 });
 
+// GET /api/supplier/profile — logged-in supplier's editable stall details
+app.get('/api/supplier/profile', requireSupplier, async (req, res, next) => {
+  try {
+    const r = await db.query(
+      'select id, business, contact, phone, district, category, offer, capacity, price_band from suppliers where phone = $1 limit 1',
+      [req.supplier.phone]
+    );
+    if (!r.rows.length) {
+      return res.json({ ok: true, supplier: null, message: 'no supplier row yet — add a product to create one' });
+    }
+    return res.json({ ok: true, supplier: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// PATCH /api/supplier/profile — the exhibitor can rename their company/stall.
+// Updates the suppliers row and keeps the public directory entry in sync.
+app.patch('/api/supplier/profile', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const business = clean(b.business, 160);
+    const contact  = clean(b.contact, 120);
+    const district = clean(b.district, 80);
+    const category = clean(b.category, 80);
+    if (!business && !contact && !district && !category) {
+      return res.status(400).json({ ok: false, error: 'nothing to update' });
+    }
+    const upd = await db.query(
+      `update suppliers set
+         business = coalesce($2, business),
+         contact  = coalesce($3, contact),
+         district = coalesce($4, district),
+         category = coalesce($5, category)
+       where phone = $1
+       returning id, business, contact, district, category`,
+      [req.supplier.phone, business, contact, district, category]
+    );
+    let supplier;
+    if (upd.rows.length) {
+      supplier = upd.rows[0];
+    } else {
+      // No suppliers row yet for this phone — create one so the stall exists.
+      const ins = await db.query(
+        `insert into suppliers (business, contact, phone, district, category, listing_optin, credit_terms, status)
+         values ($1,$2,$3,$4,$5,true,'','new')
+         returning id, business, contact, district, category`,
+        [business || req.supplier.name || req.supplier.phone,
+         contact || req.supplier.name || req.supplier.phone,
+         req.supplier.phone, district, category]
+      );
+      supplier = ins.rows[0];
+    }
+    // Keep the public yellow-pages entry aligned with the stall name
+    if (business || district) {
+      await db.query(
+        `update directory_entries set
+           name     = coalesce($2, name),
+           district = coalesce(nullif($3,''), district)
+         where phone = $1`,
+        [req.supplier.phone, business, district || '']
+      );
+    }
+    return res.json({ ok: true, supplier });
+  } catch (err) { next(err); }
+});
+
+// GET /api/stall-directory — public: live stall names so every page shows
+// the exhibitor's current company/stall name, not a frozen snapshot
+app.get('/api/stall-directory', async (req, res, next) => {
+  try {
+    const r = await db.query('select id, business, contact, category, district from suppliers order by id');
+    return res.json({ ok: true, stalls: r.rows });
+  } catch (err) { next(err); }
+});
+
 // POST /api/supplier/product — logged-in supplier adds a product/service (becomes a supply lead)
 app.post('/api/supplier/product', requireSupplier, rateLimit, async (req, res, next) => {
   try {

@@ -72,7 +72,7 @@ tailwind.config = {
     <button class="tab-on  px-4 py-3" data-tab="products">My listings</button>
     <button class="tab-off px-4 py-3" data-tab="add">Add listing</button>
     <button class="tab-off px-4 py-3" data-tab="media">Photos &amp; media</button>
-    <button class="tab-off px-4 py-3" data-tab="directory">Directory entry</button>
+    <button class="tab-off px-4 py-3" data-tab="directory">Stall name &amp; directory</button>
     <button class="tab-off px-4 py-3" data-tab="demand">Demand for my products</button>
     <button class="tab-off px-4 py-3" data-tab="password">Change password</button>
   </div>
@@ -208,11 +208,49 @@ tailwind.config = {
     </div>
   </div>
 
-  <!-- ── Tab: Directory entry ───────────────────────────── -->
+  <!-- ── Tab: Stall settings ───────────────────────────── -->
   <div id="tab-directory" class="tab-panel hidden">
     <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
-      <h2 class="mb-2 font-display text-xl font-bold text-bark">Your directory entry</h2>
-      <p class="mb-4 text-sm text-ink/65">This appears in the Busolya yellow pages. It was pre-populated when you registered.</p>
+      <h2 class="mb-2 font-display text-xl font-bold text-bark">Company &amp; stall name</h2>
+      <p class="mb-4 text-sm text-ink/65">Change your company or stall name, contact person, category and district. The marketplace, directory and public pages update instantly.</p>
+      <form id="profileForm" novalidate class="space-y-4">
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-bark">Company / stall name <span class="text-seal">*</span></label>
+          <input id="pBusiness" type="text" maxlength="160" required
+            class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+            placeholder="The name buyers see on your stall">
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-bark">Contact person</label>
+          <input id="pContact" type="text" maxlength="120"
+            class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+            placeholder="Who visitors should ask for">
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Category</label>
+            <input id="pCategory" type="text" maxlength="80"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="e.g. Farming, Food &amp; Catering">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">District</label>
+            <input id="pDistrict" type="text" maxlength="80"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="e.g. Kampala">
+          </div>
+        </div>
+        <button type="submit"
+          class="rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">
+          Save stall details
+        </button>
+      </form>
+      <div id="profileMsg" class="mt-3 hidden rounded-lg px-4 py-3 text-sm"></div>
+    </div>
+
+    <div class="max-w-2xl mt-6 rounded-xl border border-[#e2d6c2] bg-paper p-6">
+      <h3 class="mb-2 font-display text-lg font-bold text-bark">Your directory entry</h3>
+      <p class="mb-4 text-sm text-ink/65">This appears in the Busolya yellow pages. It stays in sync with your stall name above.</p>
       <div id="dirEntry" class="space-y-2 text-sm">
         <p class="text-ink/40">Loading…</p>
       </div>
@@ -525,7 +563,7 @@ tailwind.config = {
         var el = document.getElementById('dirEntry');
         var entries = d.entries || [];
         if (!entries.length) {
-          el.innerHTML = '<p class="text-ink/50">No directory entry found. Add a product listing to create one automatically.</p>';
+          el.innerHTML = '<p class="text-ink/50">No directory entry found. Add a product listing or save your stall details to create one automatically.</p>';
           return;
         }
         var e = entries[0];
@@ -537,6 +575,58 @@ tailwind.config = {
           '</dl>';
       }).catch(function () {});
   }
+
+  /* ── Stall profile (company / stall name) ────────────────────── */
+  function loadProfile() {
+    fetch(API + '/api/supplier/profile', { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) return;
+        var s = d.supplier || {};
+        document.getElementById('pBusiness').value = s.business || '';
+        document.getElementById('pContact').value  = s.contact  || '';
+        document.getElementById('pCategory').value = s.category || '';
+        document.getElementById('pDistrict').value = s.district || '';
+      }).catch(function () {});
+  }
+
+  document.getElementById('profileForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var msgEl = document.getElementById('profileMsg');
+    var business = document.getElementById('pBusiness').value.trim();
+    if (!business) { showMsg(msgEl, 'Company / stall name is required.', 'err'); return; }
+    var btn = this.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    fetch(API + '/api/supplier/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        business: business,
+        contact:  document.getElementById('pContact').value.trim(),
+        category: document.getElementById('pCategory').value.trim(),
+        district: document.getElementById('pDistrict').value.trim()
+      })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      btn.disabled = false;
+      if (d.ok) {
+        showMsg(msgEl, 'Stall details saved. The marketplace and directory now show your new name.', 'ok');
+        loadDirectory();
+        // keep the "View my stall" label fresh
+        try {
+          var u = JSON.parse(localStorage.getItem('bsl_user') || '{}');
+          u.name = d.supplier && d.supplier.contact || u.name;
+          localStorage.setItem('bsl_user', JSON.stringify(u));
+        } catch (_) {}
+      } else {
+        showMsg(msgEl, d.error || 'Could not save. Try again.', 'err');
+      }
+    })
+    .catch(function () { btn.disabled = false; showMsg(msgEl, 'Network error. Try again.', 'err'); });
+  });
+  loadProfile();
   function row(label, val) {
     return '<dt class="text-ink/50">' + label + '</dt><dd class="text-bark">' + esc(val || '—') + '</dd>';
   }

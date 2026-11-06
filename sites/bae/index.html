@@ -314,7 +314,7 @@ var STALLS = [
   { id:  6, biz: 'Sky Dental Care and Dental Services',  ex: 'Mbabazi Maliza',      cat: 'Health Services' },
   { id:  7, biz: 'Kkata Agro Agri Chemicals & Supplies', ex: 'Kimbowa James',       cat: 'Agro Inputs' },
   { id:  8, biz: 'Global Fitness International',         ex: 'Ali Rehan',           cat: 'Health & Fitness' },
-  { id:  9, biz: 'Muyinzi Tasubwa',                      ex: 'Muyizi Tasubwa',      cat: 'Farming' },
+  { id:  9, biz: 'Muyizzi Tasubwa',                      ex: 'Muyizzi Tasubwa',     cat: 'Farming' },
   { id: 10, biz: 'Jeus Loves You Art and Crafts',        ex: 'Liz Bakyayita',       cat: 'Arts & Crafts' },
   { id: 11, biz: 'Indian Neelambari (Herbal)',            ex: 'Krishna Kumri',       cat: 'Herbal & Health' },
   { id: 12, biz: 'Abida Naisargi',                       ex: 'Abida',               cat: 'General Trade' },
@@ -549,8 +549,29 @@ function renderStalls(productsByStall) {
 
 /* ── Fetch products for all stalls ─────────────────────────────── */
 function loadMarketplace() {
-  // Fetch all products in one call then group by supplier_id
-  fetch(API + '/api/suppliers/products')
+  // Live names first: exhibitors can rename their company/stall at any time,
+  // so the marketplace must show current names, not the frozen snapshot.
+  fetch(API + '/api/stall-directory')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (d && d.ok && d.stalls) {
+        d.stalls.forEach(function (row) {
+          var s = STALLS.find(function (x) { return x.id === Number(row.id); });
+          if (s) {
+            if (row.business) s.biz = row.business;
+            if (row.contact)  s.ex  = row.contact;
+            if (row.category) s.cat = row.category;
+          } else if (row.business) {
+            STALLS.push({ id: Number(row.id), biz: row.business, ex: row.contact || row.business, cat: row.category || 'Other' });
+          }
+        });
+      }
+      return null;
+    })
+    .catch(function () { return null; })
+    .then(function () {
+      // Fetch all products in one call then group by supplier_id
+      fetch(API + '/api/suppliers/products')
     .then(function (r) { return r.json(); })
     .then(function (d) {
       var all = d.products || [];
@@ -599,6 +620,7 @@ function loadMarketplace() {
       // API unavailable — render stalls with no products (contact cards)
       _stallData = {};
       renderStalls({});
+    });
     });
 }
 

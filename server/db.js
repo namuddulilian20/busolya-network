@@ -146,6 +146,15 @@ async function seedIfEmpty() {
 
   /* ── PostgreSQL production seeding (all idempotent) ── */
 
+  // Data rectification: the "Muyinzi/Muyizi Tasubwa" stall rows were misspelled
+  // at registration and exhibitors had no way to fix them. Normalise to the
+  // canonical name on every boot (idempotent — matches only the wrong spelling).
+  const WRONG_STALL_NAMES = ['muyinzi tasubwa', 'muyizi tasubwa'];
+  for (const w of WRONG_STALL_NAMES) {
+    await query('update suppliers set business = $1 where lower(business) = $2', ['Muyizzi Tasubwa', w]);
+  }
+  await query('update directory_entries set name = $1 where lower(name) = any($2::text[])', ['Muyizzi Tasubwa', WRONG_STALL_NAMES]);
+
   const counts = await query(`
     select
       (select count(*)::int from subjects)          as subjects,
