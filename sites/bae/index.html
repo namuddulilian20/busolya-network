@@ -371,7 +371,11 @@ function filterStalls() {
   rows.querySelectorAll('.stall-block').forEach(function (block) {
     var stallId  = Number(block.getAttribute('data-stall'));
     var stallObj = STALLS.find(function (s) { return s.id === stallId; });
-    if (!stallObj) return;
+    if (!stallObj) {
+      // API-only stall: look up from _stallData / productsByStall via _stallDir
+      var dirRow = _stallDir && _stallDir.find(function (d) { return Number(d.id) === stallId; });
+      stallObj = { id: stallId, biz: dirRow ? dirRow.business : 'Exhibitor #' + stallId, ex: '', cat: dirRow ? dirRow.category : 'General' };
+    }
 
     var matchCat = !cat || stallObj.cat === cat;
     var data     = _stallData[stallId];
@@ -521,9 +525,28 @@ function renderStalls(productsByStall) {
   var heroProds = document.getElementById('heroProducts');
   var heroLeads = document.getElementById('heroLeads');
 
+  // Build combined stall register: hardcoded STALLS + any API-only stalls
+  var allStalls = [];
+  var seenIds = {};
+  STALLS.forEach(function (s) { allStalls.push(s); seenIds[s.id] = true; });
+
+  // Add stalls from API products that aren't in STALLS
+  Object.keys(productsByStall).forEach(function (key) {
+    var id = Number(key);
+    if (seenIds[id]) return;
+    seenIds[id] = true;
+    var dirRow = _stallDir && _stallDir.find(function (d) { return Number(d.id) === id; });
+    allStalls.push({
+      id: id,
+      biz: dirRow ? dirRow.business : 'Exhibitor #' + id,
+      ex:  dirRow ? dirRow.contact : '',
+      cat: dirRow ? dirRow.category : 'General'
+    });
+  });
+
   // Keep only stalls that have at least one product
   var activeStalls = [];
-  STALLS.forEach(function (s) {
+  allStalls.forEach(function (s) {
     var prods = productsByStall[s.id] || [];
     if (prods.length > 0) activeStalls.push(s);
   });
@@ -543,6 +566,9 @@ function renderStalls(productsByStall) {
   var end = start + pageSize;
   var pageStalls = activeStalls.slice(start, end);
 
+  // Show rows, hide skeleton
+  rows.classList.remove('hidden');
+  skeleton.classList.add('hidden');
   rows.innerHTML = '';
   pageStalls.forEach(function (stall, idx) {
     var prods = productsByStall[stall.id] || [];
@@ -651,6 +677,7 @@ function loadMarketplace() {
       function done() {
         pending -= 1;
         if (pending <= 0) {
+          _loaded = true;
           _stallData = byStall;
           applyStallNames(byStall);
           renderStalls(byStall);
@@ -683,6 +710,7 @@ function loadMarketplace() {
     .catch(function (err) {
       console.error('[loadMarketplace] products fetch failed:', err);
       // API unavailable — render stalls with no products (contact cards)
+      _loaded = true;
       _stallData = {};
       applyStallNames({});
       renderStalls({});
