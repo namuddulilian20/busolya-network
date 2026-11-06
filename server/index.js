@@ -113,8 +113,24 @@ function requireAdmin(req, res, next) {
 
 // ---------- public API ----------
 
+/* CORS with credentials: the three site origins call the API with
+   credentials: 'include', so Access-Control-Allow-Origin must echo the
+   exact origin — the wildcard '*' is rejected by the browser there.
+   Anything else (curl, server-side) still works without the header. */
+const CORS_ORIGINS = new Set([
+  'https://bataka-agro-expo.onrender.com',
+  'https://busolya-agro-farmers.onrender.com',
+  'https://abataka-mutindo-sacco.onrender.com',
+  'http://localhost:10000', 'http://localhost:3000', 'http://localhost:8080',
+  'http://localhost:5500', 'http://127.0.0.1:5500', 'http://127.0.0.1:3000'
+]);
 app.use('/api', (req, res, next) => {
-  res.set('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  if (origin && CORS_ORIGINS.has(origin)) {
+    res.set('Access-Control-Allow-Origin', origin);
+    res.set('Access-Control-Allow-Credentials', 'true');
+    res.set('Vary', 'Origin');
+  }
   res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
   res.set('Cache-Control', 'no-store');
@@ -577,7 +593,7 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
       exp:   Date.now() + SESSION_HOURS * 3600 * 1000
     };
     res.cookie(SUPPLIER_COOKIE, signSupplier(payload), {
-      httpOnly: true, sameSite: 'lax', secure: req.secure, maxAge: SESSION_HOURS * 3600 * 1000
+      httpOnly: true, sameSite: 'none', secure: true, maxAge: SESSION_HOURS * 3600 * 1000
     });
     return res.json({
       ok:               true,
@@ -595,7 +611,7 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
 
 // POST /api/auth/logout
 app.post('/api/auth/logout', async (req, res) => {
-  res.clearCookie(SUPPLIER_COOKIE);
+  res.clearCookie(SUPPLIER_COOKIE, { httpOnly: true, sameSite: 'none', secure: true });
   return res.json({ ok: true });
 });
 
