@@ -403,6 +403,7 @@ function shareStore(pl){var n=(me&&me.name)||'Supplier',u=location.origin+'/muti
   else if(pl==='tg')window.open('https://t.me/share/url?url='+encodeURIComponent(u)+'&text='+encodeURIComponent(t),'_blank');}
 
 loadProducts(); loadStats(); loadDirectory();
+window.shareStore = shareStore;
 })();
 </script>
 </body>

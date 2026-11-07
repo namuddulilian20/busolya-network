@@ -124,7 +124,7 @@ const CORS_ORIGINS = new Set([
   'http://localhost:10000', 'http://localhost:3000', 'http://localhost:8080',
   'http://localhost:5500', 'http://127.0.0.1:5500', 'http://127.0.0.1:3000'
 ]);
-app.use('/api', (req, res, next) => {
+function corsWithCredentials(req, res, next) {
   const origin = req.headers.origin;
   if (origin && CORS_ORIGINS.has(origin)) {
     res.set('Access-Control-Allow-Origin', origin);
@@ -136,7 +136,11 @@ app.use('/api', (req, res, next) => {
   res.set('Cache-Control', 'no-store');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   return next();
-});
+}
+app.use('/api', corsWithCredentials);
+/* The static admin pages fetch the server-rendered /admin/* tables, so
+   those paths need the same credentialed CORS headers. */
+app.use('/admin', corsWithCredentials);
 
 const hits = new Map();
 function rateLimit(req, res, next) {
@@ -527,7 +531,17 @@ app.post('/api/auth/register', rateLimit, async (req, res, next) => {
     const phone    = clean(b.phone, 40);
     const email    = clean(b.email, 160);
     const name     = clean(b.name, 120);
-    const role     = b.role && ['supplier','member','customer','employee'].includes(b.role) ? b.role : 'customer';
+    let   role     = b.role && ['supplier','member','customer','employee'].includes(b.role) ? b.role : 'customer';
+    /* Admin is never granted by a public request alone: the caller must
+       already hold an admin session, or this is the first admin (bootstrap). */
+    if (b.role === 'admin') {
+      const hasAdmin = (await db.query("select 1 from participants where role = 'admin' limit 1")).rows.length > 0;
+      if (currentSession(req) || !hasAdmin) {
+        role = 'admin';
+      } else {
+        return res.status(403).json({ ok: false, error: 'admin role requires an administrator session' });
+      }
+    }
     const district = clean(b.district, 80);
     const org      = clean(b.org, 160);
     const sector   = clean(b.sector, 80);
@@ -545,6 +559,10 @@ app.post('/api/auth/register', rateLimit, async (req, res, next) => {
 
     // Idempotent: upsert by phone
     const existing = await db.query('select id, role from participants where phone = $1', [phone]);
+    /* Never let a public request take over or demote a privileged account. */
+    if (existing.rows.length && ['admin','employee'].includes(existing.rows[0].role) && !currentSession(req)) {
+      return res.status(403).json({ ok: false, error: 'this account is managed by an administrator' });
+    }
     let participantId, isNew;
     if (existing.rows.length) {
       await db.query(
@@ -752,6 +770,29 @@ app.patch('/api/admin/users/:id/password', requireSupplier, rateLimit, async (re
   } catch (err) { next(err); }
 });
 
+// PATCH /api/admin/users/:id/role — superuser only: change any user's role
+app.patch('/api/admin/users/:id/role', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const caller = await db.query('select id, phone, role from participants where id = $1', [req.supplier.id]);
+    if (!caller.rows.length || caller.rows[0].role !== 'admin') {
+      return res.status(403).json({ ok: false, error: 'superuser only' });
+    }
+    const targetId = Number(req.params.id);
+    const role = (req.body || {}).role;
+    if (!['admin','employee','supplier','member','customer'].includes(role)) {
+      return res.status(400).json({ ok: false, error: 'invalid role' });
+    }
+    const target = await db.query('select phone, role from participants where id = $1', [targetId]);
+    if (!target.rows.length) return res.status(404).json({ ok: false, error: 'user not found' });
+    // The superuser account must stay an admin.
+    if (target.rows[0].phone === '+256780698353' && role !== 'admin') {
+      return res.status(403).json({ ok: false, error: 'superuser must remain an administrator' });
+    }
+    await db.query('update participants set role = $1 where id = $2', [role, targetId]);
+    return res.json({ ok: true, message: 'role updated' });
+  } catch (err) { next(err); }
+});
+
 // GET /api/auth/me
 app.get('/api/auth/me', async (req, res) => {
   const payload = verifySupplier(readSupplierCookie(req));
@@ -931,7 +972,7 @@ app.get('/', (req, res) => res.redirect('/baf/index.html'));
 // ---------- admin ----------
 
 app.get('/admin/login', (req, res) => {
-  if (currentSession(req)) return res.redirect('/admin.html');
+  if (currentSession(req)) return res.redirect('/admin');
   res.type('html').send(ui.loginPage(''));
 });
 
@@ -949,7 +990,7 @@ app.post('/admin/login', (req, res) => {
     secure: req.secure,
     maxAge: SESSION_HOURS * 3600 * 1000
   });
-  return res.redirect('/admin.html');
+  return res.redirect('/admin');
 });
 
 app.post('/admin/logout', (req, res) => {
@@ -1269,7 +1310,7 @@ app.get('/api/users', requireAdminOrEmployee, async (req, res, next) => {
     const role = clean(req.query.role, 20);
     const params = [];
     let sql = 'select id, phone, email, name, role, district, org, created_at from participants';
-    if (role && ['supplier','member','customer','employee'].includes(role)) {
+    if (role && ['admin','supplier','member','customer','employee'].includes(role)) {
       params.push(role);
       sql += ' where role = $1';
     }
@@ -1285,7 +1326,10 @@ app.post('/api/users', requireAdminOrEmployee, rateLimit, async (req, res, next)
     const b = req.body || {};
     const phone    = clean(b.phone, 40);
     const name     = clean(b.name, 120);
-    const role     = b.role && ['supplier','member','customer','employee'].includes(b.role) ? b.role : 'customer';
+    const role     = b.role && ['admin','supplier','member','customer','employee'].includes(b.role) ? b.role : 'customer';
+    if (role === 'admin' && req.operator.role !== 'admin') {
+      return res.status(403).json({ ok: false, error: 'only an administrator can create another administrator' });
+    }
     const district = clean(b.district, 80);
     const org      = clean(b.org, 160);
     const email    = clean(b.email, 160);

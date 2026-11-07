@@ -129,7 +129,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
 
   function load() {
     if (cache[kind]) { render(cache[kind]); return; }
-    questionsEl.innerHTML = '<p class="text-sm text-ink/55">Loading the questions�</p>';
+    questionsEl.innerHTML = '<p class="text-sm text-ink/55">Loading the questions…</p>';
     window.BUSOLYA.get('/api/questions/' + kind).then(function (res) {
       cache[kind] = res.questions;
       render(res.questions);
@@ -146,7 +146,7 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
       var opts = (q.options || []).map(function (o) {
         return '<option value="' + escapeHtml(o) + '">' + escapeHtml(o) + '</option>';
       }).join('');
-      return '<label class="block" for="' + id + '">' + head + '<select id="' + id + '" class="' + cls + '"><option value="">Choose�</option>' + opts + '</select></label>';
+      return '<label class="block" for="' + id + '">' + head + '<select id="' + id + '" class="' + cls + '"><option value="">Choose…</option>' + opts + '</select></label>';
     }
     if (q.type === 'yesno') {
       return '<fieldset class="block"><legend class="text-sm font-semibold text-bark">' + escapeHtml(q.prompt) + '</legend>' +
@@ -201,12 +201,12 @@ tailwind.config = { theme: { extend: { colors: { bark:'#4a2311', bark2:'#63301a'
     if (!name || !phone) { say('Name and phone are required so the desk can follow up.', false); return; }
     if (!document.getElementById('f-consent').checked) { say('Tick the consent box before sending.', false); return; }
     var got = collect();
-    if (got.missing.length) { say('Please answer: ' + got.missing.slice(0, 3).join(' � '), false); return; }
+    if (got.missing.length) { say('Please answer: ' + got.missing.slice(0, 3).join(' — '), false); return; }
 
     var listing = String(got.answers.listed || '').toLowerCase() === 'yes';
     var button = form.querySelector('button[type="submit"]');
     button.disabled = true;
-    button.textContent = 'Sending�';
+    button.textContent = 'Sending…';
 
     window.BUSOLYA.post('/api/submissions', {
       kind: kind,
