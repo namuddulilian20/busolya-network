@@ -209,6 +209,27 @@ create index if not exists users_phone_idx on users (phone);
 create index if not exists users_email_idx on users (email);
 create index if not exists users_role_idx on users (role);
 
+-- Legacy databases may have been created before the 'admin' role was added,
+-- leaving a CHECK constraint that rejects it. Rebuild any role CHECK on
+-- participants and users so the full role set is always allowed.
+DO $$
+DECLARE c record;
+BEGIN
+  FOR c IN
+    SELECT conname, conrelid::regclass AS tbl
+      FROM pg_constraint
+     WHERE conrelid IN ('participants'::regclass, 'users'::regclass)
+       AND contype = 'c'
+       AND pg_get_constraintdef(oid) ILIKE '%role%'
+  LOOP
+    EXECUTE format('ALTER TABLE %s DROP CONSTRAINT %I', c.tbl, c.conname);
+  END LOOP;
+  ALTER TABLE participants ADD CONSTRAINT participants_role_check
+    CHECK (role IN ('supplier','member','customer','employee','admin'));
+  ALTER TABLE users ADD CONSTRAINT users_role_check
+    CHECK (role IN ('supplier','member','employee','customer','admin'));
+END $$;
+
 create table if not exists user_sessions (
   id         bigserial primary key,
   user_id    bigint not null references users (id) on delete cascade,
