@@ -681,7 +681,9 @@ app.post('/api/auth/challenge', rateLimit, async (req, res, next) => {
       masked_phone: maskPhone(row.phone),
       prompt: 'Enter the last 5 digits of the phone number of this account'
     });
-  } catch (err) { next(err); }
+  } catch (err) {
+    return res.status(500).json({ ok: false, debug: true, error: 'AUTHDBG: ' + (err && err.message) });
+  }
 });
 
 // POST /api/auth/login — step 2 of phone verification login: { login_id, last5 }.
@@ -764,7 +766,9 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
       password_is_phone: false,
       hint:             null
     });
-  } catch (err) { next(err); }
+  } catch (err) {
+    return res.status(500).json({ ok: false, debug: true, error: 'AUTHDBG: ' + (err && err.message) });
+  }
 });
 
 // POST /api/auth/logout
