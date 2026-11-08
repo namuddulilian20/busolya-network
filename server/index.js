@@ -546,16 +546,13 @@ app.post('/api/auth/register', rateLimit, async (req, res, next) => {
     const org      = clean(b.org, 160);
     const sector   = clean(b.sector, 80);
 
-    // Password is optional — if omitted the phone number is the initial password.
-    const rawPassword    = String(b.password || '');
-    const usePhone       = !rawPassword;                // true → phone is the password
-    const effectivePass  = usePhone ? phone : rawPassword;
-    if (!usePhone && effectivePass.length < 6) {
-      return res.status(400).json({ ok: false, error: 'password must be at least 6 characters' });
-    }
-
     if (!phoneOk(phone)) return res.status(400).json({ ok: false, error: 'a valid phone number (9–15 digits) is required' });
     if (!name) return res.status(400).json({ ok: false, error: 'full name is required' });
+
+    /* Password-less accounts: no password is stored. Public sign-in is done by
+       phone verification (last 5 digits of the account phone) via the
+       /api/auth/challenge + /api/auth/verify-login flow. */
+    const usePhone = false;
 
     // Idempotent: upsert by phone
     const existing = await db.query('select id, role from participants where phone = $1', [phone]);
@@ -572,11 +569,10 @@ app.post('/api/auth/register', rateLimit, async (req, res, next) => {
            role              = $4,
            district          = coalesce(nullif($5,''), district),
            org               = coalesce(nullif($6,''), org),
-           password_hash     = $7,
-           password_is_phone = $8
+           password_hash     = null,
+           password_is_phone = false
          where phone = $1`,
-        [phone, name, email || null, role, district || null, org || null,
-         hashPwd(effectivePass), usePhone]
+        [phone, name, email || null, role, district || null, org || null]
       );
       participantId = existing.rows[0].id;
       isNew = false;
@@ -584,9 +580,8 @@ app.post('/api/auth/register', rateLimit, async (req, res, next) => {
       const ins = await db.query(
         `insert into participants
            (phone, email, name, role, district, org, password_hash, password_is_phone)
-         values ($1,$2,$3,$4,$5,$6,$7,$8) returning id`,
-        [phone, email || null, name, role, district || null, org || null,
-         hashPwd(effectivePass), usePhone]
+         values ($1,$2,$3,$4,$5,$6,null,false) returning id`,
+        [phone, email || null, name, role, district || null, org || null]
       );
       participantId = ins.rows[0].id;
       isNew = true;
@@ -622,30 +617,83 @@ app.post('/api/auth/register', rateLimit, async (req, res, next) => {
       phone,
       role,
       created: isNew,
-      password_is_phone: usePhone,
+      password_is_phone: false,
       message: isNew
-        ? (usePhone
-            ? 'Account created. Your phone number is your initial password — change it any time from your portal.'
-            : 'Account created. You can now sign in.')
+        ? 'Account created. Sign in with your phone number and confirm the last 5 digits.'
         : 'Account updated.'
     });
   } catch (err) { next(err); }
 });
 
-// POST /api/auth/login — accepts phone OR email as login_id; sets session cookie.
-// Phone-as-password: users whose password_is_phone = true can log in by entering
-// their own phone number as the password, until they change it.
+/* ── Phone masking ─────────────────────────────────────────────── */
+/* Reveals only the first few characters; every digit after that becomes •
+   so the last 5 digits (the login verification) are never shown. */
+function maskPhone(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return phone;
+  // Keep the first few digits; everything after is masked, so the
+  // last 5 digits (the login verification) are never revealed.
+  const keep = Math.max(1, Math.min(4, digits.length - 6));
+  let out = '';
+  let seen = 0;
+  for (const ch of String(phone)) {
+    if (/\d/.test(ch)) {
+      seen += 1;
+      out += seen <= keep ? ch : '•';
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+}
+
+// POST /api/auth/challenge — step 1 of phone verification login.
+// Confirms the account exists and returns the masked phone + the prompt.
+app.post('/api/auth/challenge', rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const loginId = clean(b.login_id || b.phone || b.email || b.id, 160);
+    if (!loginId) {
+      return res.status(400).json({ ok: false, error: 'phone number is required' });
+    }
+    const isEmail = loginId.includes('@');
+    const col = isEmail ? 'email' : 'phone';
+    const p = await db.query(
+      `select id, phone from participants where ${col} = $1 limit 1`,
+      [loginId]
+    );
+    let row = p.rows[0] || null;
+    if (!row) {
+      const s = await db.query(
+        'select id, phone from suppliers where phone = $1 limit 1', [loginId]
+      );
+      row = s.rows[0] || null;
+    }
+    if (!row || !row.phone) {
+      return res.status(404).json({ ok: false, error: 'no account found for that phone number' });
+    }
+    if (['admin', 'employee'].includes(row.role)) {
+      return res.status(403).json({ ok: false, error: 'administrator accounts sign in with their password' });
+    }
+    return res.json({
+      ok: true,
+      masked_phone: maskPhone(row.phone),
+      prompt: 'Enter the last 5 digits of the phone number of this account'
+    });
+  } catch (err) { next(err); }
+});
+
+// POST /api/auth/login — step 2 of phone verification login: { login_id, last5 }.
+// Administrator / employee accounts keep password sign-in ({ login_id, password }).
 app.post('/api/auth/login', rateLimit, async (req, res, next) => {
   try {
     const b = req.body || {};
-    // Accept login_id (email or phone) sent by the client login forms, or explicit phone/email
     const loginId  = clean(b.login_id || b.phone || b.email, 160);
+    const last5    = String(b.last5 || '').replace(/\D/g, '');
     const password = String(b.password || '');
     if (!loginId) {
       return res.status(400).json({ ok: false, error: 'phone number or email is required' });
     }
-    // If no password supplied, attempt phone-as-password (password = loginId)
-    const effectivePassword = password || loginId;
 
     const isEmail = loginId.includes('@');
     const col = isEmail ? 'email' : 'phone';
@@ -658,7 +706,7 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
     // Fallback: legacy supplier rows created via supply submissions
     if (!row) {
       const s = await db.query(
-        `select id, business as name, phone, password_hash, false as password_is_phone, 'supplier' as role, business as org from suppliers where phone = $1`,
+        `select id, business as name, phone, null as password_hash, false as password_is_phone, 'supplier' as role, business as org from suppliers where phone = $1`,
         [loginId]
       );
       row = s.rows[0] || null;
@@ -668,10 +716,26 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
       return res.status(401).json({ ok: false, error: 'no account found for that phone number' });
     }
 
-    // Check password: always compare hashed. Phone-as-password: hash(phone) matches stored hash.
-    const hashMatch = row.password_hash && row.password_hash === hashPwd(effectivePassword);
-    if (!hashMatch) {
-      return res.status(401).json({ ok: false, error: 'wrong password' });
+    const privileged = ['admin', 'employee'].includes(row.role);
+
+    if (privileged) {
+      // Administrator and staff: password sign-in only (still used by admin.html gate)
+      const hashMatch = row.password_hash && row.password_hash === hashPwd(password);
+      if (!hashMatch) {
+        return res.status(401).json({ ok: false, error: 'wrong password' });
+      }
+    } else {
+      // Public users: phone verification — enter the last 5 digits of this account's phone.
+      if (!last5) {
+        return res.status(400).json({ ok: false, error: 'phone verification required', verify: 'start at /api/auth/challenge, then send last5 (the last 5 digits of your phone number)' });
+      }
+      if (last5.length !== 5) {
+        return res.status(400).json({ ok: false, error: 'enter exactly 5 digits — the last 5 digits of your phone number' });
+      }
+      const digits = String(row.phone || '').replace(/\D/g, '');
+      if (!digits || digits.slice(-5) !== last5) {
+        return res.status(401).json({ ok: false, error: 'those digits do not match this account' });
+      }
     }
 
     const payload = {
@@ -696,10 +760,8 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
       phone:            row.phone || loginId,
       name:             row.name,
       role:             payload.role,
-      password_is_phone: row.password_is_phone || false,
-      hint:             row.password_is_phone
-        ? 'You are using your phone number as your password. Visit your portal to change it.'
-        : null
+      password_is_phone: false,
+      hint:             null
     });
   } catch (err) { next(err); }
 });
@@ -708,43 +770,6 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
 app.post('/api/auth/logout', async (req, res) => {
   res.clearCookie(SUPPLIER_COOKIE, { httpOnly: true, sameSite: 'none', secure: true });
   return res.json({ ok: true });
-});
-
-// POST /api/auth/change-password
-// Lets any logged-in user replace their phone-as-password with a real one,
-// or change an existing password. Requires current_password OR phone-as-password acceptance.
-app.post('/api/auth/change-password', requireSupplier, rateLimit, async (req, res, next) => {
-  try {
-    const b              = req.body || {};
-    const newPassword    = String(b.new_password || b.password || '');
-    const currentGuess   = String(b.current_password || req.supplier.phone || '');
-    if (newPassword.length < 6) {
-      return res.status(400).json({ ok: false, error: 'new password must be at least 6 characters' });
-    }
-    // Superuser password cannot be changed by anyone
-    if (req.supplier.phone === '+256780698353') {
-      return res.status(403).json({ ok: false, error: 'superuser password cannot be changed' });
-    }
-    const r = await db.query(
-      'select password_hash, password_is_phone, phone from participants where id = $1',
-      [req.supplier.id]
-    );
-    if (!r.rows.length) return res.status(404).json({ ok: false, error: 'user not found' });
-    const { password_hash, password_is_phone, phone } = r.rows[0];
-
-    // Verify current password — accept either the stored hash or phone-as-password
-    const currentOk = (password_hash === hashPwd(currentGuess)) ||
-                      (password_is_phone && hashPwd(phone) === password_hash);
-    if (!currentOk) {
-      return res.status(401).json({ ok: false, error: 'current password is incorrect' });
-    }
-
-    await db.query(
-      `update participants set password_hash = $1, password_is_phone = false where id = $2`,
-      [hashPwd(newPassword), req.supplier.id]
-    );
-    return res.json({ ok: true, message: 'Password updated successfully.' });
-  } catch (err) { next(err); }
 });
 
 // PATCH /api/admin/users/:id/password — superuser only: reset any user's password
@@ -1384,8 +1409,8 @@ app.get('/api/products/:id', async (req, res, next) => {
     const r = await db.query('select * from supplier_products where id = $1', [id]);
     if (!r.rows.length) return res.status(404).json({ ok: false, error: 'product not found' });
     const product = r.rows[0];
-    // Attach public media (images, audio, video)
-    const m = await db.query(
+    // Attach public media (images, audio, video).
+    let m = await db.query(
       `select id, media_type, title, description, filename, mime_type, size_bytes,
               storage_url, product_id, created_at
        from supplier_media
@@ -1393,6 +1418,19 @@ app.get('/api/products/:id', async (req, res, next) => {
        order by created_at asc`,
       [id]
     );
+    // Fallback: some uploads were saved before a product existed in the UI + API and
+    // were stored with product_id = NULL under the same supplier. Serve those so
+    // products don't render with a default image when a real one exists.
+    if (!m.rows.length) {
+      m = await db.query(
+        `select id, media_type, title, description, filename, mime_type, size_bytes,
+                storage_url, product_id, created_at
+         from supplier_media
+         where supplier_id = $1 and product_id is null and status = 'active'
+         order by created_at asc`,
+        [product.supplier_id]
+      );
+    }
     product.media = m.rows || [];
     return res.json({ ok: true, product });
   } catch (err) { next(err); }
@@ -1403,7 +1441,7 @@ app.get('/api/products/:id/media', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id < 1) return res.status(400).json({ ok: false, error: 'bad id' });
-    const m = await db.query(
+    let m2 = await db.query(
       `select id, media_type, title, description, filename, mime_type, size_bytes,
               storage_url, product_id, created_at
        from supplier_media
@@ -1411,7 +1449,21 @@ app.get('/api/products/:id/media', async (req, res, next) => {
        order by created_at asc`,
       [id]
     );
-    return res.json({ ok: true, media: m.rows || [] });
+    // Fallback: uploads saved with product_id = NULL under the same supplier.
+    if (!m2.rows.length) {
+      const sp = await db.query('select supplier_id from supplier_products where id = $1', [id]);
+      if (sp.rows.length) {
+        m2 = await db.query(
+          `select id, media_type, title, description, filename, mime_type, size_bytes,
+                  storage_url, product_id, created_at
+           from supplier_media
+           where supplier_id = $1 and product_id is null and status = 'active'
+           order by created_at asc`,
+          [sp.rows[0].supplier_id]
+        );
+      }
+    }
+    return res.json({ ok: true, media: m2.rows || [] });
   } catch (err) { next(err); }
 });
 
@@ -1569,7 +1621,13 @@ app.delete('/api/suppliers/products/:id', requireSupplier, rateLimit, async (req
       const b         = req.body || {};
       const suppId    = req.supplier.id;
       const relPath   = path.relative(UPLOADS_DIR, req.file.path).replace(/\\/g, '/');
-      const publicUrl = `${MEDIA_BASE_URL}/${relPath}`;
+      // media_base may be a relative path (/media): on the deployed static
+      // sites that would resolve against the site origin and 404, so store
+      // an absolute URL built from this request's host.
+      const mediaBase = /^https?:\/\//i.test(MEDIA_BASE_URL)
+        ? MEDIA_BASE_URL
+        : `${req.protocol}://${req.get('host')}${MEDIA_BASE_URL}`;
+      const publicUrl = `${mediaBase}/${relPath}`;
       const mtype     = mediaType(req.file.mimetype);
       const productId = b.product_id ? Number(b.product_id) : null;
 

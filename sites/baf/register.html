@@ -88,17 +88,6 @@ tailwind.config = {
         </div>
       </div>
 
-      <div>
-        <label class="mb-1 block text-sm font-semibold text-bark">
-          Password
-          <span class="ml-1 font-normal text-ink/45">(optional — your phone number is the default)</span>
-        </label>
-        <input id="regPassword" type="password" autocomplete="new-password"
-          class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
-          placeholder="Leave blank to use your phone number as password">
-        <p class="mt-1 text-xs text-ink/45">You can always set or change your password from your portal after signing in.</p>
-      </div>
-
       <button type="submit"
         class="w-full rounded-full bg-leaf px-5 py-3 text-sm font-bold text-white hover:bg-leafdark transition">
         Create account
@@ -142,9 +131,7 @@ tailwind.config = {
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     var role     = document.getElementById('regRole').value;
-    var password = document.getElementById('regPassword').value;
     // Password is optional; if supplied it must be at least 6 chars
-    if (password && password.length < 6) { showMsg('Password must be at least 6 characters (or leave it blank).', 'err'); return; }
 
     var body = {
       name:  document.getElementById('regName').value.trim(),
@@ -152,7 +139,6 @@ tailwind.config = {
       email: document.getElementById('regEmail').value.trim() || undefined,
       role:  role
     };
-    if (password) body.password = password;
     if (role === 'supplier') {
       body.org      = document.getElementById('regOrg').value.trim();
       body.sector   = document.getElementById('regSector').value.trim() || undefined;

@@ -30,29 +30,32 @@ tailwind.config = {
       <p class="mt-1 text-sm text-ink/60">Supplier · Member · Employee · Customer</p>
     </div>
 
-    <!-- Phone-as-password hint -->
+    <!-- Phone verification note -->
     <div class="mb-4 rounded-lg border border-leaf/25 bg-[#f2f8ef] px-4 py-3 text-xs text-leafdark">
-      First time? Leave the password blank — your phone number is your initial password.
-      You can set a personal password any time from your portal.
+      No passwords here. Sign in with your phone number — we'll ask you to confirm the last 5 digits of the number on this account.
     </div>
 
     <form id="loginForm" novalidate class="space-y-4">
-      <div>
-        <label class="mb-1 block text-sm font-semibold text-bark">Phone number or email</label>
-        <input id="loginId" type="text" required autocomplete="username"
-          class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
-          placeholder="+256 700 000 000 or email@example.com">
+      <!-- Step 1: phone number -->
+      <div id="stepPhone">
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-bark">Phone number or email</label>
+          <input id="loginId" type="text" required autocomplete="username"
+            class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+            placeholder="+256 700 000 000 or email@example.com">
+        </div>
       </div>
-      <div>
-        <label class="mb-1 block text-sm font-semibold text-bark">
-          Password
-          <span class="ml-1 font-normal text-ink/45">(leave blank to use your phone number)</span>
-        </label>
-        <input id="loginPassword" type="password" autocomplete="current-password"
-          class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
-          placeholder="Your password or leave blank">
+      <!-- Step 2: confirm the last 5 digits -->
+      <div id="stepVerify" class="hidden">
+        <p class="text-sm text-ink/70">Account <span id="maskedPhone" class="font-semibold text-bark"></span></p>
+        <label class="mt-2 mb-1 block text-sm font-semibold text-bark">Last 5 digits of your phone number</label>
+        <input id="last5" type="text" inputmode="numeric" maxlength="5" autocomplete="off"
+          class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark tracking-[.4em] focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+          placeholder="•••••">
+        <button type="button" id="backToPhone"
+          class="mt-2 text-xs font-semibold text-ink/50 hover:text-bark">← use a different number</button>
       </div>
-      <button type="submit"
+      <button type="submit" id="loginBtn"
         class="w-full rounded-full bg-leaf px-5 py-3 text-sm font-bold text-white hover:bg-leafdark transition">
         Sign in
       </button>
@@ -80,6 +83,9 @@ tailwind.config = {
 
   var form = document.getElementById('loginForm');
   var msg  = document.getElementById('loginMsg');
+  var step1   = document.getElementById('stepPhone');
+  var step2   = document.getElementById('stepVerify');
+  var btn     = document.getElementById('loginBtn');
 
   function showMsg(text, type) {
     msg.className = 'mt-3 rounded-lg px-4 py-3 text-sm ' +
@@ -89,22 +95,49 @@ tailwind.config = {
     msg.classList.remove('hidden');
   }
 
+  function showStep(step) {
+    if (step === 1) { step1.classList.remove('hidden'); step2.classList.add('hidden'); btn.textContent = 'Sign in'; }
+    else            { step1.classList.add('hidden');    step2.classList.remove('hidden'); btn.textContent = 'Verify & sign in'; }
+  }
+
+  document.getElementById('backToPhone').addEventListener('click', function () { showStep(1); });
+
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    var loginId  = document.getElementById('loginId').value.trim();
-    var password = document.getElementById('loginPassword').value;
-    if (!loginId) { showMsg('Please enter your phone number or email.', 'err'); return; }
+    var loginId = document.getElementById('loginId').value.trim();
+    var last5   = document.getElementById('last5').value.trim();
 
+    // Step 1: request the challenge (masked number) then switch to verification
+    if (step2.classList.contains('hidden')) {
+      if (!loginId) { showMsg('Please enter your phone number or email.', 'err'); return; }
+      fetch(API + '/api/auth/challenge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ login_id: loginId })
+      })
+      .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
+      .then(function (r) {
+        if (!r.ok) { showMsg(r.data.error || 'Could not start sign-in.', 'err'); return; }
+        document.getElementById('maskedPhone').textContent = r.data.masked_phone || '';
+        showStep(2);
+        document.getElementById('last5').focus();
+      })
+      .catch(function () { showMsg('Could not reach the server. Check your connection.', 'err'); });
+      return;
+    }
+
+    // Step 2: verify the last 5 digits
+    if (!/^\d{5}$/.test(last5)) { showMsg('Enter exactly 5 digits — the last 5 digits of your phone number.', 'err'); return; }
     fetch(API + '/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ login_id: loginId, password: password })
+      body: JSON.stringify({ login_id: loginId, last5: last5 })
     })
     .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
     .then(function (r) {
       if (!r.ok) { showMsg(r.data.error || 'Sign in failed.', 'err'); return; }
-      if (r.data.hint) showMsg(r.data.hint, 'ok');
       window.BusolyaAuth.login({
         id:    r.data.id,
         phone: r.data.phone,

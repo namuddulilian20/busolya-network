@@ -418,7 +418,12 @@ function fmt(n) { return Number(n || 0).toLocaleString('en-UG'); }
 var HDCLASSES = ['stall-hd', 'stall-hd-gold', 'stall-hd-seal'];
 
 function buildProductCard(p, stallId, biz) {
-  var hasImg  = p.storage_url || p.image_url;
+  // Media may be stored as a relative /media URL — resolve against the API origin.
+  var absMedia = function (u) {
+    if (!u) return '';
+    return /^https?:|^data:/.test(u) ? u : 'https://busolya-api.onrender.com' + (u.charAt(0) === '/' ? u : '/' + u);
+  };
+  var hasImg  = absMedia(p.storage_url || p.image_url);
   var imgHtml = hasImg
     ? '<img src="' + esc(hasImg) + '" alt="' + esc(p.title) + '" class="h-36 w-full object-cover" loading="lazy">'
     : '<div class="flex h-36 w-full items-center justify-center bg-[#e6efe0] text-4xl">🌱</div>';

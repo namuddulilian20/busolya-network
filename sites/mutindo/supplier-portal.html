@@ -69,7 +69,7 @@ tailwind.config = {
     <button class="tab-off px-4 py-3" data-tab="media">Photos &amp; media</button>
     <button class="tab-off px-4 py-3" data-tab="directory">Directory entry</button>
     <button class="tab-off px-4 py-3" data-tab="demand">Visitor requests</button>
-    <button class="tab-off px-4 py-3" data-tab="password">Change password</button>
+    <button class="tab-off px-4 py-3 hidden" data-tab="password">Change password</button>
   </div>
 
   <!-- Tab: My listings -->
@@ -184,26 +184,6 @@ tailwind.config = {
     <p id="noVisitorRequests" class="hidden text-sm text-ink/50 py-4">No visitor requests for your products yet.</p>
   </div>
 
-  <!-- Tab: Change password -->
-  <div id="tab-password" class="tab-panel hidden">
-    <div class="max-w-md rounded-xl border border-[#e2d6c2] bg-paper p-6">
-      <h2 class="mb-2 font-display text-xl font-bold text-bark">Change password</h2>
-      <p class="mb-4 text-sm text-ink/55" id="pwdHint"></p>
-      <form id="pwdForm" novalidate class="space-y-4">
-        <div>
-          <label class="mb-1 block text-sm font-semibold text-bark">Current password</label>
-          <input id="pwdCurrent" type="password" autocomplete="current-password" class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" placeholder="Your current password (or phone number)">
-        </div>
-        <div>
-          <label class="mb-1 block text-sm font-semibold text-bark">New password <span class="text-seal">*</span></label>
-          <input id="pwdNew" type="password" autocomplete="new-password" minlength="6" class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" placeholder="Minimum 6 characters">
-        </div>
-        <button type="submit" class="rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">Save new password</button>
-      </form>
-      <div id="pwdMsg" class="mt-3 hidden rounded-lg px-4 py-3 text-sm"></div>
-    </div>
-  </div>
-
 </main>
 
 <div id="footer-placeholder"></div>
@@ -214,6 +194,12 @@ tailwind.config = {
 'use strict';
 var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
   ? '' : 'https://busolya-api.onrender.com';
+
+// Resolve media stored as a relative /media URL against the API origin.
+function absMedia(u) {
+  if (!u) return '';
+  return /^https?:|^data:/.test(u) ? u : 'https://busolya-api.onrender.com' + (u.charAt(0) === '/' ? u : '/' + u);
+}
 
 if (!window.BusolyaAuth || !window.BusolyaAuth.isAuthenticated()) { location.href = 'supplier-login.html'; return; }
 var me = window.BusolyaAuth.getUser();
@@ -320,7 +306,7 @@ function loadMedia(){
       if(!items.length){none.classList.remove('hidden');grid.innerHTML='';return;}
       none.classList.add('hidden');
       grid.innerHTML=items.map(function(m){
-        var thumb=m.media_type==='image'?'<img src="'+esc(m.storage_url||'')+'" alt="" class="w-full h-28 object-cover rounded-t-xl">':'<div class="w-full h-28 bg-[#e6efe0] rounded-t-xl flex items-center justify-center text-3xl">'+(m.media_type==='audio'?'🎵':m.media_type==='video'?'🎬':'📄')+'</div>';
+        var thumb=m.media_type==='image'?'<img src="'+esc(absMedia(m.storage_url||''))+'" alt="" class="w-full h-28 object-cover rounded-t-xl">':'<div class="w-full h-28 bg-[#e6efe0] rounded-t-xl flex items-center justify-center text-3xl">'+(m.media_type==='audio'?'🎵':m.media_type==='video'?'🎬':'📄')+'</div>';
         return '<div class="rounded-xl border border-[#e2d6c2] bg-paper overflow-hidden">'+thumb+
           '<div class="p-2"><p class="text-xs font-semibold text-bark truncate">'+esc(m.title||m.filename||'—')+'</p>'+
           '<p class="text-[.65rem] text-ink/45 mt-0.5">'+esc(m.media_type)+'</p>'+
@@ -384,17 +370,7 @@ window.linkVR=function(pid,sid){
     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function(d){if(d.ok)loadVisitorRequests();else alert(d.error||'Could not link.');}).catch(function(){alert('Server error.');});
 };
 
-(function(){
-  var stored=localStorage.getItem('bsl_user');try{var u=stored?JSON.parse(stored):null;if(u&&u.password_is_phone)document.getElementById('pwdHint').textContent='You are using your phone number as your password. Set a personal one below.';}catch(_){}
-  document.getElementById('pwdForm').addEventListener('submit',function(e){
-    e.preventDefault();var msgEl=document.getElementById('pwdMsg'),cur=document.getElementById('pwdCurrent').value,np=document.getElementById('pwdNew').value;
-    if(np.length<6){showMsg(msgEl,'New password must be at least 6 characters.','err');return;}
-    fetch(API+'/api/auth/change-password',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({current_password:cur,new_password:np})})
-      .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
-      .then(function(r){if(!r.ok){showMsg(msgEl,r.data.error||'Could not change password.','err');return;}showMsg(msgEl,'Password changed.','ok');document.getElementById('pwdForm').reset();})
-      .catch(function(){showMsg(msgEl,'Server error.','err');});
-  });
-})();
+/* Password-change panel removed: sign-in is phone-verification only. */
 
 function loadStats(){fetch(API+'/api/stats').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function(d){if(d.stats)document.getElementById('statDir').textContent=d.stats.directory||0;}).catch(function (err) { console.error('FETCH ERROR in sites\mutindo\supplier-portal.html:', err); });}
 

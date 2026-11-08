@@ -48,9 +48,14 @@
 
   <section class="mb-8">
     <h2 class="font-display text-2xl font-bold text-bark mb-4">Products &amp; services at this stall</h2>
-    <div id="productList" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+    <div id="productList" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" style="scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;"></div>
     <p id="noProducts" class="hidden text-sm text-ink/50">No products or services listed yet. Ask the exhibitor at their stand for a catalogue.</p>
   </section>
+  <!-- Product grid navigation arrows -->
+  <div class="flex items-center gap-2 mb-4 transform" id="productArrows">
+    <button onclick="scrollProducts(-1)" class="rounded-lg border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-leaf hover:text-white transition" aria-label="Previous products">←</button>
+    <button onclick="scrollProducts(1)" class="rounded-lg border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-leaf hover:text-white transition" aria-label="Next products">→</button>
+  </div>
 
   <section class="mb-8">
     <h2 class="font-display text-2xl font-bold text-bark mb-4">Book a stall — expo prices</h2>
@@ -129,6 +134,7 @@
         var list = document.getElementById('productList');
         var none = document.getElementById('noProducts');
         var products = d.products || [];
+        // Show all products if no stallId, otherwise filter by stall supplier
         var mine = stallId ? products.filter(function (p) { return String(p.supplier_id) === stallId; }) : products;
         if (!mine.length) { none.style.display = ''; return; }
         none.style.display = 'none';
@@ -138,7 +144,7 @@
             + '&biz=' + encodeURIComponent(stallBiz || '')
             + '&ex='  + encodeURIComponent(stallEx  || '');
           return '<article data-pid="' + p.id + '" class="rounded-xl border border-[#e2d6c2] bg-white overflow-hidden" id="product-' + p.id + '">' +
-            '<div id="pimg-' + p.id + '" class="flex h-36 w-full items-center justify-center bg-[#e6efe0] text-5xl">🌱</div>' +
+            '<div id="pimg-' + p.id + '" class="flex h-36 w-36 items-center justify-center bg-[#e6efe0] text-5xl rounded-l-full overflow-hidden">🌱</div>' +
             '<div class="p-4">' +
               '<a href="' + detailUrl + '" class="block font-display text-lg font-bold text-bark hover:text-leaf">' + escH(p.title || 'Product') + '</a>' +
               '<p class="mt-1 text-sm text-ink/60">' + escH(p.category || '') + (p.unit ? ' · ' + escH(p.unit) : '') + '</p>' +
@@ -165,7 +171,11 @@
               var imgs = (md.media||[]).filter(function(m){ return m.media_type === 'image'; });
               if (!imgs.length) return;
               var el = document.getElementById('pimg-' + p.id);
-              if (el) el.innerHTML = '<img src="' + imgs[0].storage_url + '" alt="' + escH(p.title) + '" class="h-full w-full object-cover">';
+              var _mAbs = function (u) {
+                if (!u) return '';
+                return /^https?:|^data:/.test(u) ? u : 'https://busolya-api.onrender.com' + (u.charAt(0) === '/' ? u : '/' + u);
+              };
+              if (el) el.innerHTML = '<img src="' + (imgs[0] && imgs[0].storage_url ? _mAbs(imgs[0].storage_url) : '') + '" alt="' + escH(p.title) + '" class="h-full w-full object-cover object-center" style="background:url(https://busolya-api.onrender.com/assets/mark.svg) center/cover no-repeat">';
             }).catch(function (err) { console.error('FETCH ERROR in sites\bae\stall.html:', err); });
         });
       }).catch(function (err) {
@@ -262,8 +272,26 @@
     msg.classList.remove('hidden');
   }
   loadProducts();
-window.shareStall = shareStall;
-window.shareProduct = shareProduct;
+  window.shareStall = shareStall;
+  window.shareProduct = shareProduct;
+  
+  function scrollProducts(direction) {
+    var container = document.getElementById('productList');
+    var arrows = document.getElementById('productArrows');
+    var step = container.clientWidth;
+    container.scrollBy({ left: direction * step, behavior: 'smooth' });
+    // Show/hide arrows based on scroll position
+    if (container.scrollLeft > 0) {
+      arrows.querySelector('button[onclick="scrollProducts(-1)"]').style.display = 'block';
+    } else {
+      arrows.querySelector('button[onclick="scrollProducts(-1)"]').style.display = 'none';
+    }
+    if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
+      arrows.querySelector('button[onclick="scrollProducts(1)"]').style.display = 'none';
+    } else {
+      arrows.querySelector('button[onclick="scrollProducts(1)"]').style.display = 'block';
+    }
+  }
 })();
 </script>
 </body>

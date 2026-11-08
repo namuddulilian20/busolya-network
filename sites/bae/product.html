@@ -245,6 +245,13 @@ tailwind.config = {
 var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
   ? '' : 'https://busolya-api.onrender.com';
 
+// Media lives on the API origin (at /media/*) but may be stored as a
+// relative URL — resolve it against the API so it can't 404 on the static site.
+function absMedia(u) {
+  if (!u) return '';
+  return /^https?:|^data:/.test(u) ? u : 'https://busolya-api.onrender.com' + (u.charAt(0) === '/' ? u : '/' + u);
+}
+
 var params     = new URLSearchParams(location.search);
 var productId  = Number(params.get('id'));
 var stallId    = Number(params.get('stall'));   // optional hint from marketplace
@@ -290,7 +297,9 @@ function activateMedia(idx) {
 
   if (m.media_type === 'image') {
     if (m.storage_url) {
-      mainImg.src = m.storage_url;
+      mainImg.src = /^https?:|^data:/.test(m.storage_url)
+        ? m.storage_url
+        : 'https://busolya-api.onrender.com' + (m.storage_url.charAt(0) === '/' ? m.storage_url : '/' + m.storage_url);
       mainImg.alt = m.title || _product.title || '';
       mainImg.classList.remove('hidden');
     } else {
@@ -298,12 +307,12 @@ function activateMedia(idx) {
     }
   } else if (m.media_type === 'audio') {
     noImg.classList.remove('hidden');
-    audioEl.src = m.storage_url || '';
+    audioEl.src = absMedia(m.storage_url || '');
     audioEl.classList.remove('hidden');
     playerWrap.classList.remove('hidden');
     badge.textContent = '🎵 Audio'; badge.classList.remove('hidden');
   } else if (m.media_type === 'video') {
-    videoEl.src = m.storage_url || '';
+    videoEl.src = absMedia(m.storage_url || '');
     videoEl.classList.remove('hidden');
     playerWrap.classList.remove('hidden');
     badge.textContent = '🎬 Video'; badge.classList.remove('hidden');
@@ -325,7 +334,7 @@ function buildThumbs(media) {
   if (!media.length) { strip.style.display='none'; return; }
   strip.innerHTML = media.map(function(m, i){
     var icon = m.media_type === 'image'
-      ? (m.storage_url ? '<img src="'+esc(m.storage_url)+'" alt="" class="h-full w-full object-cover">' : '<span class="text-2xl">🌱</span>')
+      ? (m.storage_url ? '<img src="'+esc(absMedia(m.storage_url))+'" alt="" class="h-full w-full object-cover">' : '<span class="text-2xl">🌱</span>')
       : (m.media_type === 'audio' ? '<span class="text-xl">🎵</span>' :
          m.media_type === 'video' ? '<span class="text-xl">🎬</span>' : '<span class="text-xl">📄</span>');
     return '<div class="thumb flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-xl overflow-hidden border-2 border-[#e2d6c2] bg-paper" data-idx="'+i+'">'+icon+'</div>';
@@ -470,7 +479,7 @@ function loadMoreFromStall(supplierId, excludeId) {
             if (!imgs.length) return;
             var el = document.getElementById('more-thumb-' + p.id);
             if (!el) return;
-            el.innerHTML = '<img src="'+esc(imgs[0].storage_url)+'" alt="" class="h-full w-full object-cover">';
+            el.innerHTML = '<img src="'+esc(absMedia(imgs[0].storage_url))+'" alt="" class="h-full w-full object-cover">';
           }).catch(function (err) { console.error('FETCH ERROR in sites\bae\product.html:', err); });
       });
     }).catch(function (err) { console.error('FETCH ERROR in sites\bae\product.html:', err); });

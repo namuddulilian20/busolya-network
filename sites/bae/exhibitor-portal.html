@@ -74,7 +74,7 @@ tailwind.config = {
     <button class="tab-off px-4 py-3" data-tab="media">Photos &amp; media</button>
     <button class="tab-off px-4 py-3" data-tab="directory">Stall name &amp; directory</button>
     <button class="tab-off px-4 py-3" data-tab="demand">Demand for my products</button>
-    <button class="tab-off px-4 py-3" data-tab="password">Change password</button>
+    <button class="tab-off px-4 py-3 hidden" data-tab="password">Change password</button>
   </div>
 
   <!-- ── Tab: My listings ────────────────────────────────── -->
@@ -277,33 +277,6 @@ tailwind.config = {
     <p id="noDemand" class="hidden text-sm text-ink/50 py-4">No demand logged for your products yet.</p>
   </div>
 
-  <!-- ── Tab: Change password ───────────────────────────── -->
-  <div id="tab-password" class="tab-panel hidden">
-    <div class="max-w-md rounded-xl border border-[#e2d6c2] bg-paper p-6">
-      <h2 class="mb-2 font-display text-xl font-bold text-bark">Change password</h2>
-      <p class="mb-4 text-sm text-ink/55" id="pwdHint"></p>
-      <form id="pwdForm" novalidate class="space-y-4">
-        <div>
-          <label class="mb-1 block text-sm font-semibold text-bark">Current password</label>
-          <input id="pwdCurrent" type="password" autocomplete="current-password"
-            class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
-            placeholder="Your current password (or your phone number if you haven't changed it)">
-        </div>
-        <div>
-          <label class="mb-1 block text-sm font-semibold text-bark">New password <span class="text-seal">*</span></label>
-          <input id="pwdNew" type="password" autocomplete="new-password" minlength="6"
-            class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
-            placeholder="Minimum 6 characters">
-        </div>
-        <button type="submit"
-          class="rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">
-          Save new password
-        </button>
-      </form>
-      <div id="pwdMsg" class="mt-3 hidden rounded-lg px-4 py-3 text-sm"></div>
-    </div>
-  </div>
-
 </main>
 
 <div id="footer-placeholder"></div>
@@ -315,6 +288,12 @@ tailwind.config = {
 
   var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
     ? '' : 'https://busolya-api.onrender.com';
+
+  // Resolve media stored as a relative /media URL against the API origin.
+  function absMedia(u) {
+    if (!u) return '';
+    return /^https?:|^data:/.test(u) ? u : 'https://busolya-api.onrender.com' + (u.charAt(0) === '/' ? u : '/' + u);
+  }
 
   /* ── Auth guard ──────────────────────────────────────────────── */
   if (!window.BusolyaAuth || !window.BusolyaAuth.isAuthenticated()) {
@@ -363,9 +342,11 @@ tailwind.config = {
 
   /* ── Products ────────────────────────────────────────────────── */
   var _products = [];
+  var _selectedCategory = '';
 
-  function renderProducts(products) {
+  function renderProducts(products, category) {
     _products = products;
+    _selectedCategory = category;
     var list = document.getElementById('productList');
     var none = document.getElementById('noProducts');
     list.innerHTML = '';
@@ -373,7 +354,31 @@ tailwind.config = {
     if (!products.length) { none.classList.remove('hidden'); return; }
     none.classList.add('hidden');
 
-    products.forEach(function (p) {
+    // Filter by category if specified
+    var displayProducts = category
+      ? products.filter(function (p) { return p.category === category; })
+      : products;
+
+    // Category filter pills
+    var pillsEl = document.getElementById('productPills');
+    if (pillsEl) {
+      var categories = [''].concat([...new Set(products.map(function (p) { return p.category; }))]);
+      pillsEl.innerHTML = categories.map(function (cat) {
+        var isActive = cat === category;
+        return '<span class="rounded-border px-3 py-1.5 text-sm font-semibold ' +
+          (isActive ? 'text-white bg-leaf' : 'text-bark hover:bg-leaf hover:text-white transition') +
+          '" data-category="' + cat + '">' + (cat || 'All') + '</span>';
+      }).join(' ');
+    // Wire click handlers for category pills
+    pillsEl.querySelectorAll('span').forEach(function (span) {
+      span.addEventListener('click', function () {
+        var cat = span.getAttribute('data-category');
+        loadProducts(cat);
+      });
+    });
+    }
+
+    displayProducts.forEach(function (p) {
       var card = document.createElement('div');
       card.className = 'flex flex-wrap items-start justify-between gap-3 rounded-xl border border-[#e2d6c2] bg-paper p-4';
       card.setAttribute('data-pid', p.id);
@@ -403,7 +408,7 @@ tailwind.config = {
         if (!confirm('Remove this listing?')) return;
         fetch(API + '/api/suppliers/products/' + btn.getAttribute('data-id'), {
           method: 'DELETE', credentials: 'include'
-        }).then(function () { loadProducts(); })
+        }).then(function () { loadProducts(_selectedCategory); })
           .catch(function () { alert('Could not remove.'); });
       });
     });
@@ -420,11 +425,11 @@ tailwind.config = {
     });
   }
 
-  function loadProducts() {
+  function loadProducts(category) {
     fetch(API + '/api/suppliers/products?supplier_id=' + me.id, { credentials: 'include' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
       .then(function (d) {
-        renderProducts(d.products || []);
+        renderProducts(d.products || [], category);
         // Populate product select on media tab
         var sel = document.getElementById('mProduct');
         sel.innerHTML = '<option value="">— All products / general stall —</option>';
@@ -484,7 +489,7 @@ tailwind.config = {
         none.classList.add('hidden');
         grid.innerHTML = items.map(function (m) {
           var thumb = m.media_type === 'image'
-            ? '<img src="' + esc(m.storage_url || '') + '" alt="' + esc(m.title || '') + '" class="w-full h-28 object-cover rounded-t-xl">'
+            ? '<img src="' + absMedia(m.storage_url || '') + '" alt="' + esc(m.title || '') + '" class="w-full h-28 object-cover object-center rounded-t-xl">'
             : '<div class="w-full h-28 bg-[#e6efe0] rounded-t-xl flex items-center justify-center text-3xl">' +
                 (m.media_type === 'audio' ? '🎵' : m.media_type === 'video' ? '🎬' : '📄') + '</div>';
           return '<div class="rounded-xl border border-[#e2d6c2] bg-paper overflow-hidden">' +
@@ -680,39 +685,7 @@ tailwind.config = {
     .catch(function () { alert('Server error.'); });
   }
 
-  /* ── Change password ─────────────────────────────────────────── */
-  (function () {
-    var hintEl = document.getElementById('pwdHint');
-    // Show a hint if the user's session carries password_is_phone flag
-    var stored = localStorage.getItem('bsl_user');
-    try {
-      var u = stored ? JSON.parse(stored) : null;
-      if (u && u.password_is_phone) {
-        hintEl.textContent = 'You are currently using your phone number as your password. Set a personal password below.';
-      }
-    } catch (_) {}
-
-    document.getElementById('pwdForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var msgEl = document.getElementById('pwdMsg');
-      var current = document.getElementById('pwdCurrent').value;
-      var newPwd  = document.getElementById('pwdNew').value;
-      if (newPwd.length < 6) { showMsg(msgEl, 'New password must be at least 6 characters.', 'err'); return; }
-      fetch(API + '/api/auth/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ current_password: current, new_password: newPwd })
-      })
-      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
-      .then(function (r) {
-        if (!r.ok) { showMsg(msgEl, r.data.error || 'Could not change password.', 'err'); return; }
-        showMsg(msgEl, 'Password changed. Next time sign in with your new password.', 'ok');
-        document.getElementById('pwdForm').reset();
-      })
-      .catch(function () { showMsg(msgEl, 'Server error. Try again.', 'err'); });
-    });
-  })();
+  /* ── Change password tab removed: sign-in is phone-verification only ── */
 
   /* ── Stats ───────────────────────────────────────────────────── */
   function loadStats() {
