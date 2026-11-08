@@ -40,12 +40,12 @@ tailwind.config = {
   <div class="absolute inset-0 opacity-[.12]" style="background-image:repeating-linear-gradient(45deg,#fff 0 1px,transparent 1px 16px)"></div>
   <div class="relative mx-auto grid max-w-6xl items-center gap-10 px-5 py-14 md:grid-cols-[1.25fr_.75fr] md:py-20">
     <div>
-      <p class="mb-4 inline-block rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[.7rem] uppercase tracking-[.16em] text-[#ffe9c7]">A platform of the Bataka network</p>
-      <h1 class="font-display text-4xl font-bold leading-tight text-white sm:text-5xl">The account behind the order.</h1>
-      <p class="mt-4 max-w-xl text-[#f2d8cc]">A SACCO for the people the expo serves: savings that hold, shares that count, and credit that is priced against a member's record rather than a promise. It is also the hub that connects the network's sites.</p>
+      <p id="heroBadge" class="mb-4 inline-block rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[.7rem] uppercase tracking-[.16em] text-[#ffe9c7]">A platform of the Bataka network</p>
+      <h1 id="heroTitle" class="font-display text-4xl font-bold leading-tight text-white sm:text-5xl">The account behind the order.</h1>
+      <p class="mt-4 max-w-xl text-[#f2d8cc]"><span id="heroSubtitle">A SACCO for the people the expo serves: savings that hold, shares that count, and credit that is priced against a member's record rather than a promise. It is also the hub that connects the network's sites.</span></p>
       <div class="mt-7 flex flex-wrap gap-3">
-        <a href="#network" class="rounded-full bg-gold px-6 py-3 text-sm font-bold text-[#40200f] hover:bg-[#d9a03d]">See the network</a>
-        <a href="#" data-net="baf" class="rounded-full border-2 border-[#fbeade]/70 px-6 py-3 text-sm font-bold text-[#fbeade] hover:bg-[#fbeade] hover:text-maroon">Busolya Agro Farmers</a>
+        <a id="heroCta1" href="#network" class="rounded-full bg-gold px-6 py-3 text-sm font-bold text-[#40200f] hover:bg-[#d9a03d]">See the network</a>
+        <a id="heroCta2" href="#" data-net="baf" class="rounded-full border-2 border-[#fbeade]/70 px-6 py-3 text-sm font-bold text-[#fbeade] hover:bg-[#fbeade] hover:text-maroon">Busolya Agro Farmers</a>
         <div class="flex items-center gap-2">
           <button onclick="shareSacco('wa')" class="rounded-full border border-[#fbeade]/50 px-3 py-1.5 text-[.7rem] font-semibold text-[#fbeade] hover:bg-white/20 transition" title="Share on WhatsApp">WhatsApp</button>
           <button onclick="shareSacco('tg')" class="rounded-full border border-[#fbeade]/50 px-3 py-1.5 text-[.7rem] font-semibold text-[#fbeade] hover:bg-white/20 transition" title="Share on Telegram">Telegram</button>
@@ -243,6 +243,29 @@ tailwind.config = {
     }
   }
 window.shareSacco = shareSacco;
+})();
+</script>
+<script>
+/* ── Hero "faucets": admin-editable wording from the dashboard ── */
+(function () {
+  var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+    ? '' : 'https://busolya-api.onrender.com';
+  fetch(API + '/api/settings/mutindo')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || !d.ok) return;
+      var v = d.values || {};
+      function t(id, key) {
+        var el = document.getElementById(id);
+        if (el && v[key]) el.textContent = v[key];
+      }
+      t('heroBadge', 'hero_badge');
+      t('heroTitle', 'hero_title');
+      t('heroSubtitle', 'hero_subtitle');
+      t('heroCta1', 'hero_cta1');
+      t('heroCta2', 'hero_cta2');
+    })
+    .catch(function () {});
 })();
 </script>
 </body>

@@ -74,6 +74,7 @@ tailwind.config = {
     <button class="tab-off px-4 py-3" data-tab="media">Photos & media</button>
     <button class="tab-off px-4 py-3" data-tab="directory">Directory entry</button>
     <button class="tab-off px-4 py-3" data-tab="demand">Visitors looking for your products</button>
+    <button class="tab-off px-4 py-3" data-tab="moderation">Feedback &amp; moderation</button>
     <button class="tab-off px-4 py-3 hidden" data-tab="password">Change password</button>
   </div>
 
@@ -299,6 +300,22 @@ tailwind.config = {
     <p class="mb-4 text-sm text-ink/60">These visitors asked for what you sell. Link your product to start a match.</p>
     <div id="visitorRequestList" class="space-y-3"></div>
     <p id="noVisitorRequests" class="hidden text-sm text-ink/50 py-4">No visitor requests for your products yet.</p>
+  </div>
+
+
+  <!-- ── Moderation: visitor feedback on my listings ── -->
+  <div id="tab-moderation" class="tab-panel hidden">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <h2 class="font-display text-xl font-bold text-bark">Visitor feedback &amp; moderation</h2>
+      <div class="flex gap-2">
+        <button id="spModVisible" class="rounded-full border border-bark px-4 py-1.5 text-xs font-semibold text-bark">Visible</button>
+        <button id="spModHidden" class="rounded-full border border-bark px-4 py-1.5 text-xs font-semibold text-bark">Hidden</button>
+        <button id="spModAll" class="rounded-full border border-bark px-4 py-1.5 text-xs font-semibold text-bark">All</button>
+      </div>
+    </div>
+    <p class="text-sm text-ink/55 mb-4">Comments visitors leave on your products and stall. Good ones show automatically — you only need to act on unfair or bad ones. Hiding is reversible.</p>
+    <div id="spModList" class="space-y-2"></div>
+    <p id="spModMsg" class="mt-2 hidden rounded-lg px-4 py-3 text-sm"></p>
   </div>
 
 </main>
@@ -790,6 +807,60 @@ tailwind.config = {
 window.shareStore = shareStore;
 window.shareProduct = shareProduct;
 window.linkVisitorRequest = linkVisitorRequest;
+
+  /* ── Moderation of visitor feedback ───────────────────────── */
+  var spFilter = 'all';
+  function spFmtDate(s) { return s ? new Date(s).toLocaleDateString('en-GB') : '—'; }
+  function spLoadModeration() {
+    var list = document.getElementById('spModList');
+    list.innerHTML = '<p class="text-sm text-ink/50">Loading…</p>';
+    authedFetch(API + '/api/supplier/comments?status=' + spFilter).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.ok) { list.innerHTML = '<p class="text-sm text-ink/50">Could not load feedback.</p>'; return; }
+      var items = d.comments || [];
+      if (!items.length) { list.innerHTML = '<p class="text-sm text-ink/50">No comments in this view.</p>'; return; }
+      list.innerHTML = items.map(function (cm) {
+        var badge = cm.status === 'hidden'
+          ? '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#fbe9e7] text-seal">Hidden</span>'
+          : '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#e6efe0] text-leafdark">Visible</span>';
+        return '<div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">' +
+          '<div class="flex flex-wrap items-center gap-2">' + badge +
+            '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
+            '<span class="text-xs text-ink/40">' + esc(cm.verdict) + '</span>' +
+            (cm.product_title ? '<span class="text-xs text-ink/40">listing: ' + esc(cm.product_title) + '</span>' : '') +
+          '</div>' +
+          '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
+          '<div class="mt-2 flex items-center justify-between gap-3">' +
+            '<span class="text-xs text-ink/40">' + spFmtDate(cm.created_at) + '</span>' +
+            '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="spModBtn rounded border border-[#e2d6c2] px-3 py-1 text-xs font-semibold text-bark hover:bg-[#f4e8d6]">' +
+              (cm.status === 'hidden' ? 'Allow again' : 'Hide this comment') + '</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      Array.prototype.forEach.call(list.querySelectorAll('.spModBtn'), function (b) {
+        b.addEventListener('click', function () {
+          b.disabled = true;
+          fetch(API + '/api/comments/' + b.getAttribute('data-cid'), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ status: b.getAttribute('data-now') })
+          }).then(function () { spLoadModeration(); }).catch(function () {});
+        });
+      });
+    }).catch(function () { list.innerHTML = '<p class="text-sm text-ink/50">Could not load feedback.</p>'; });
+  }
+  ['spModVisible', 'spModHidden', 'spModAll'].forEach(function (id, i) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', function () { spFilter = ['visible', 'hidden', 'all'][i]; spLoadModeration(); });
+  });
+  // lazy-load when the tab is first opened
+  var spTabs = document.querySelectorAll('[data-tab]');
+  Array.prototype.forEach.call(spTabs, function (tab) {
+    tab.addEventListener('click', function () {
+      if (tab.getAttribute('data-tab') === 'moderation') spLoadModeration();
+    });
+  });
+
 })();
 </script>
 </body>

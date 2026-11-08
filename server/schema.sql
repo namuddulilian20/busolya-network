@@ -497,3 +497,23 @@ create table if not exists supplier_media (
 create index if not exists supplier_media_supplier_idx on supplier_media (supplier_id);
 create index if not exists supplier_media_product_idx  on supplier_media (product_id);
 create index if not exists supplier_media_type_idx     on supplier_media (media_type);
+
+-- ---------- product & service exchange thread (comments, owner-moderated) ----------
+create table if not exists product_comments (
+  id           bigserial primary key,
+  product_id   bigint references supplier_products (id) on delete cascade,
+  supplier_id  bigint not null references participants (id) on delete cascade,
+  user_id      bigint references participants (id) on delete set null,
+  author_name  text not null,
+  author_phone text not null,
+  title        text,
+  body         text not null,
+  verdict      text not null default 'positive' check (verdict in ('positive','suggestion','complaint','question')),
+  status       text not null default 'visible' check (status in ('visible','hidden')),
+  hidden_by    text,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+create index if not exists product_comments_product_idx  on product_comments (product_id);
+create index if not exists product_comments_supplier_idx on product_comments (supplier_id);
+create index if not exists product_comments_status_idx   on product_comments (status);

@@ -45,12 +45,12 @@ tailwind.config = {
   <div class="absolute inset-0 opacity-[.14]" style="background-image:repeating-linear-gradient(45deg,#fff 0 1px,transparent 1px 14px)"></div>
   <div class="relative mx-auto grid max-w-6xl items-center gap-10 px-5 py-14 md:grid-cols-[1.3fr_.7fr] md:py-20">
     <div>
-      <p class="mb-4 inline-block rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[.7rem] uppercase tracking-[.16em] text-[#ffe9c7]">Obulimi n'Obulunzi Obwomulembe</p>
-      <h1 class="font-display text-4xl font-bold leading-tight text-white sm:text-5xl">Farming that pays — and records that prove it.</h1>
-      <p class="mt-4 max-w-xl text-[#e8d9c4]">Busolya Agro Farmers Ltd links exhibitors, service providers, farmers, buyers and creditors into one working network: a suppliers log, visitor requests captured on every lead, a print and online directory, and Farm Aid for dormant land.</p>
+      <p id="heroBadge" class="mb-4 inline-block rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[.7rem] uppercase tracking-[.16em] text-[#ffe9c7]">Obulimi n'Obulunzi Obwomulembe</p>
+      <h1 id="heroTitle" class="font-display text-4xl font-bold leading-tight text-white sm:text-5xl">Farming that pays — and records that prove it.</h1>
+      <p class="mt-4 max-w-xl text-[#e8d9c4]"><span id="heroSubtitle">Busolya Agro Farmers Ltd links exhibitors, service providers, farmers, buyers and creditors into one working network: a suppliers log, visitor requests captured on every lead, a print and online directory, and Farm Aid for dormant land.</span></p>
       <div class="mt-7 flex flex-wrap gap-3">
-        <a href="programs.html" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">How facilitation works</a>
-        <a href="directory.html" class="rounded-full border-2 border-[#f6ecdd]/70 px-6 py-3 text-sm font-bold text-[#f6ecdd] hover:bg-[#f6ecdd] hover:text-bark">Open the directory</a>
+        <a id="heroCta1" href="programs.html" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">How facilitation works</a>
+        <a id="heroCta2" href="directory.html" class="rounded-full border-2 border-[#f6ecdd]/70 px-6 py-3 text-sm font-bold text-[#f6ecdd] hover:bg-[#f6ecdd] hover:text-bark">Open the directory</a>
       </div>
     </div>
     <div class="justify-self-center">
@@ -224,5 +224,28 @@ tailwind.config = {
 
 <script src="assets/network.js"></script>
 <script src="assets/components.js"></script>
+<script>
+/* ── Hero "faucets": admin-editable wording from the dashboard ── */
+(function () {
+  var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+    ? '' : 'https://busolya-api.onrender.com';
+  fetch(API + '/api/settings/baf')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || !d.ok) return;
+      var v = d.values || {};
+      function t(id, key) {
+        var el = document.getElementById(id);
+        if (el && v[key]) el.textContent = v[key];
+      }
+      t('heroBadge', 'hero_badge');
+      t('heroTitle', 'hero_title');
+      t('heroSubtitle', 'hero_subtitle');
+      t('heroCta1', 'hero_cta1');
+      t('heroCta2', 'hero_cta2');
+    })
+    .catch(function () {});
+})();
+</script>
 </body>
 </html>

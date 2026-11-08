@@ -1546,6 +1546,199 @@ app.delete('/api/suppliers/products/:id', requireSupplier, rateLimit, async (req
   } catch (err) { next(err); }
 });
 
+// ---------- site content "faucets" (admin-editable home-page wordings) ----------
+// Stored in the settings table under key site:<site> as one JSONB document.
+// The static pages read GET /api/settings/:site and fall back to their
+// built-in wording when nothing is stored (or the API is unreachable).
+const FAUCET_SITES = ['bae', 'baf', 'mutindo'];
+
+function faucetKey (site) { return 'site:' + String(site).toLowerCase(); }
+
+app.get('/api/settings/:site', async (req, res, next) => {
+  try {
+    const site = String(req.params.site || '').toLowerCase();
+    if (!FAUCET_SITES.includes(site)) return res.status(400).json({ ok: false, error: 'unknown site' });
+    const r = await db.query('select value from settings where key = $1', [faucetKey(site)]);
+    return res.json({ ok: true, site, values: r.rows.length ? r.rows[0].value || {} : {} });
+  } catch (err) { next(err); }
+});
+
+app.put('/api/settings/:site', requireAdminOrEmployee, rateLimit, async (req, res, next) => {
+  try {
+    const site = String(req.params.site || '').toLowerCase();
+    if (!FAUCET_SITES.includes(site)) return res.status(400).json({ ok: false, error: 'unknown site' });
+    const patch = req.body && typeof req.body === 'object' ? req.body : {};
+    const cleanPatch = {};
+    for (const [k, v] of Object.entries(patch)) {
+      if (!/^[a-z0-9_]{1,40}$/i.test(k)) continue;
+      cleanPatch[k] = clean(String(v == null ? '' : v), 600);
+    }
+    const r = await db.query(
+      `insert into settings (key, value, updated_at)
+       values ($1, $2::jsonb, now())
+       on conflict (key) do update
+         set value = settings.value || excluded.value, updated_at = now()
+       returning value`,
+      [faucetKey(site), JSON.stringify(cleanPatch)]
+    );
+    return res.json({ ok: true, site, values: r.rows[0].value });
+  } catch (err) { next(err); }
+});
+
+// ---------- product & service exchange thread (moderated by stall owner) ----------
+// Flow (ProductHunt-style, registry rule):
+//   • any signed-in user may post a comment on a listed product;
+//   • positive / suggestion / question verdicts publish immediately;
+//   • complaints publish too, but the stall owner (or admin) may hide any item;
+//   • hidden items are invisible to the public, restorable at any time.
+
+const COMMENT_VERDICTS = ['positive', 'suggestion', 'complaint', 'question'];
+
+app.get('/api/products/:id/comments', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ ok: false, error: 'bad id' });
+    const w = await db.query('select supplier_id from supplier_products where id = $1', [id]);
+    if (!w.rows.length) return res.status(404).json({ ok: false, error: 'product not found' });
+    const supplierId = w.rows[0].supplier_id;
+
+    const payload = verifySupplier(readSupplierCookie(req));
+    const isOwner = payload && Number(payload.id) === supplierId;
+    const isModerator = payload && ['admin', 'employee'].includes(payload.role);
+    const includeHidden = req.query.include_hidden === '1' && (isOwner || isModerator);
+
+    let sql = `select id, product_id, supplier_id, user_id, author_name, author_phone,
+                      title, body, verdict, status, hidden_by, created_at
+               from product_comments where product_id = $1`;
+    if (!includeHidden) sql += ` and status = 'visible'`;
+    sql += ' order by created_at desc limit 200';
+    const r = await db.query(sql, [id]);
+    return res.json({
+      ok: true,
+      comments: r.rows.map((c) => ({ ...c, author_phone: maskPhone(c.author_phone) })),
+      can_moderate: !!(isOwner || isModerator)
+    });
+  } catch (err) { next(err); }
+});
+
+app.post('/api/products/:id/comments', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ ok: false, error: 'bad id' });
+    const p = await db.query('select id, supplier_id from supplier_products where id = $1', [id]);
+    if (!p.rows.length) return res.status(404).json({ ok: false, error: 'product not found' });
+    const b = req.body || {};
+    const body = clean(b.body, 1200);
+    if (!body || body.length < 3) return res.status(400).json({ ok: false, error: 'a comment of at least 3 characters is required' });
+    const title = clean(b.title, 160) || null;
+    const verdict = COMMENT_VERDICTS.includes(b.verdict) ? b.verdict : 'positive';
+    const authorName = clean(req.supplier.name, 120) || (req.supplier.phone || 'Member');
+    const authorPhone = req.supplier.phone || '';
+    const r = await db.query(
+      `insert into product_comments (product_id, supplier_id, user_id, author_name, author_phone, title, body, verdict)
+       values ($1,$2,$3,$4,$5,$6,$7,$8) returning id, created_at, status`,
+      [id, p.rows[0].supplier_id, req.supplier.id, authorName, authorPhone, title, body, verdict]
+    );
+    return res.status(201).json({ ok: true, comment: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// GET /api/suppliers/:id/comments — the whole exchange thread for one stall
+app.get('/api/suppliers/:id/comments', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ ok: false, error: 'bad id' });
+    const payload = verifySupplier(readSupplierCookie(req));
+    const isOwner = payload && Number(payload.id) === id;
+    let sql = `select c.id, c.product_id, c.author_name, c.author_phone, c.title, c.body,
+                      c.verdict, c.status, c.created_at, p.title as product_title
+               from product_comments c
+               left join supplier_products p on p.id = c.product_id
+               where c.supplier_id = $1`;
+    if (!isOwner) sql += ` and c.status = 'visible'`;
+    sql += ' order by c.created_at desc limit 200';
+    const r = await db.query(sql, [id]);
+    return res.json({
+      ok: true,
+      comments: r.rows.map((c) => ({ ...c, author_phone: maskPhone(c.author_phone) })),
+      can_moderate: !!isOwner
+    });
+  } catch (err) { next(err); }
+});
+
+// POST /api/suppliers/:id/comments — stall-level comment (no specific product)
+app.post('/api/suppliers/:id/comments', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ ok: false, error: 'bad id' });
+    const t = await db.query("select id from participants where id = $1 and role = 'supplier'", [id]);
+    if (!t.rows.length) return res.status(404).json({ ok: false, error: 'stall not found' });
+    const b = req.body || {};
+    const body = clean(b.body, 1200);
+    if (!body || body.length < 3) return res.status(400).json({ ok: false, error: 'a comment of at least 3 characters is required' });
+    const verdict = COMMENT_VERDICTS.includes(b.verdict) ? b.verdict : 'positive';
+    const authorName = clean(req.supplier.name, 120) || (req.supplier.phone || 'Member');
+    const r = await db.query(
+      `insert into product_comments (supplier_id, user_id, author_name, author_phone, title, body, verdict)
+       values ($1,$2,$3,$4,$5,$6,$7) returning id, created_at, status`,
+      [id, req.supplier.id, authorName, req.supplier.phone || '', clean(b.title, 160) || null, body, verdict]
+    );
+    return res.status(201).json({ ok: true, comment: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// GET /api/supplier/comments — the stall owner's moderation inbox (own products)
+app.get('/api/supplier/comments', requireSupplier, async (req, res, next) => {
+  try {
+    const show = req.query.status && ['visible', 'hidden', 'all'].includes(req.query.status)
+      ? req.query.status : 'all';
+    const wantAdmin = ['admin', 'employee'].includes(req.supplier.role);
+    let sql = `select c.id, c.product_id, c.supplier_id, c.author_name, c.author_phone, c.title, c.body,
+                      c.verdict, c.status, c.created_at, p.title as product_title,
+                      spr.business as stall_name
+               from product_comments c
+               left join supplier_products p on p.id = c.product_id
+               left join participants sp on sp.id = c.supplier_id
+               left join suppliers spr on spr.phone = sp.phone
+               where 1 = 1`;
+    const params = [];
+    if (!wantAdmin) { sql += ' and c.supplier_id = $1'; params.push(req.supplier.id); }
+    if (show !== 'all') { sql += ` and c.status = $${params.length + 1}`; params.push(show); }
+    sql += ' order by c.created_at desc limit 300';
+    const r = await db.query(sql, params);
+    return res.json({
+      ok: true,
+      comments: r.rows.map((c) => ({ ...c, author_phone: maskPhone(c.author_phone) }))
+    });
+  } catch (err) { next(err); }
+});
+
+// PATCH /api/comments/:id — stall owner (of the comment's stall) or admin only
+app.patch('/api/comments/:id', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ ok: false, error: 'bad id' });
+    if (!req.body || !['visible', 'hidden'].includes(req.body.status)) {
+      return res.status(400).json({ ok: false, error: 'status must be visible or hidden' });
+    }
+    const c = await db.query('select id, supplier_id from product_comments where id = $1', [id]);
+    if (!c.rows.length) return res.status(404).json({ ok: false, error: 'comment not found' });
+    const mine = Number(c.rows[0].supplier_id) === req.supplier.id;
+    const adminOK = ['admin', 'employee'].includes(req.supplier.role);
+    if (!mine && !adminOK) {
+      return res.status(403).json({ ok: false, error: 'only the stall owner or an administrator can moderate this comment' });
+    }
+    const r = await db.query(
+      `update product_comments
+         set status = $1, hidden_by = $2, updated_at = now()
+       where id = $3
+       returning id, status`,
+      [req.body.status, req.body.status === 'hidden' ? (req.supplier.name || req.supplier.phone) : null, id]
+    );
+    return res.json({ ok: true, comment: r.rows[0] });
+  } catch (err) { next(err); }
+});
+
 // ---------- supplier media (images / audio / video / documents) ----------
 //
 // Suppliers, members, and other lay users can upload product images, audio

@@ -83,6 +83,8 @@ tailwind.config = {
     <button class="tab-off px-4 py-3" data-tab="farmaid">Farm Aid</button>
     <button class="tab-off px-4 py-3" data-tab="education">Education</button>
     <button class="tab-off px-4 py-3" data-tab="products">Supplier listings</button>
+    <button class="tab-off px-4 py-3" data-tab="content">Site content</button>
+    <button class="tab-off px-4 py-3" data-tab="moderation">Moderation</button>
   </div>
 
   <!-- ── Users tab ─────────────────────────────────────────── -->
@@ -307,6 +309,32 @@ tailwind.config = {
         <tbody id="productsTableBody" class="divide-y divide-[#e2d6c2] bg-paper"></tbody>
       </table>
     </div>
+  </div>
+
+
+  <!-- ── Site content (faucets) ────────────────────────────── -->
+  <div id="tab-content" class="tab-panel hidden">
+    <div class="mb-4">
+      <h2 class="font-display text-xl font-bold text-bark">Site content — home-page wording</h2>
+      <p class="mt-1 text-sm text-ink/55">These are the faucets for the top hero/carousel wordings on abataka-mutindo-sacco.onrender.com (Abataka Mutindo SACCO). A value saved here shows on the public home page immediately; a blank field keeps the built-in wording.</p>
+    </div>
+    <form id="faucetForm" class="grid gap-3 md:grid-cols-2"></form>
+    <p id="faucetMsg" class="mt-3 hidden rounded-lg px-4 py-3 text-sm"></p>
+  </div>
+
+  <!-- ── Moderation ────────────────────────────────────────── -->
+  <div id="tab-moderation" class="tab-panel hidden">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <h2 class="font-display text-xl font-bold text-bark">Comment moderation</h2>
+      <div class="flex gap-2">
+        <button id="modShowVisible" class="rounded-full border border-bark px-4 py-1.5 text-xs font-semibold text-bark">Visible</button>
+        <button id="modShowHidden" class="rounded-full border border-bark px-4 py-1.5 text-xs font-semibold text-bark">Hidden</button>
+        <button id="modShowAll" class="rounded-full border border-bark px-4 py-1.5 text-xs font-semibold text-bark">All</button>
+      </div>
+    </div>
+    <p class="text-sm text-ink/55 mb-4">Good comments post straight through. Unfair or bad ones can be hidden by the stall owner or here; hiding is reversible.</p>
+    <div id="modList" class="space-y-2"></div>
+    <p id="modMsg" class="mt-2 hidden rounded-lg px-4 py-3 text-sm"></p>
   </div>
 
 </main>
@@ -719,6 +747,111 @@ tailwind.config = {
   loadProducts();
 
 window.shareMember = shareMember;
+  var SITE = 'mutindo';
+
+  /* ── Site content faucets ───────────────────────────────── */
+  var FIELDS = {"hero_badge": ["Hero badge line", "A platform of the Bataka network"], "hero_title": ["Hero title", "The account behind the order."], "hero_subtitle": ["Hero paragraph", "One or two sentences under the title."], "hero_cta1": ["Button 1 label", "See the network"], "hero_cta2": ["Button 2 label", "Busolya Agro Farmers"]};
+  var faucetLoaded = false;
+  function faucetInput(key, label, ph, val) {
+    return '<div class="mb-2">' +
+      '<label class="mb-1 block text-xs font-bold uppercase tracking-[.1em] text-seal" for="f_' + key + '">' + label + ' <span class="font-normal text-ink/40">(' + key + ')</span></label>' +
+      '<textarea id="f_' + key + '" rows="2" data-key="' + key + '" placeholder="' + (ph || '') + '" ' +
+      'class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-3 py-2 text-sm text-bark focus:border-leaf">' + (val || '') + '</textarea>' +
+    '</div>';
+  }
+  function loadFaucets() {
+    if (faucetLoaded) return;
+    faucetLoaded = true;
+    var form = document.getElementById('faucetForm');
+    authedFetch(API + '/api/settings/' + SITE).then(function (r) { return r.json(); }).then(function (d) {
+      var vals = (d && d.values) || {};
+      var html = Object.keys(FIELDS).map(function (key) {
+        return faucetInput(key, FIELDS[key][0], FIELDS[key][1], vals[key]);
+      }).join('') +
+      '<div class="md:col-span-2"><button type="submit" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Save wordings</button></div>';
+      form.innerHTML = html;
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var patch = {};
+        Array.prototype.forEach.call(form.querySelectorAll('[data-key]'), function (el) {
+          var v = el.value.trim();
+          patch[el.getAttribute('data-key')] = v;
+        });
+        fetch(API + '/api/settings/' + SITE, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(patch)
+        })
+        .then(function (r) { return r.json().then(function (x) { return { ok: r.ok, data: x }; }); })
+        .then(function (r) {
+          if (!r.ok) { showMsg('faucetMsg', r.data.error || 'Could not save.', 'err'); return null; }
+          showMsg('faucetMsg', 'Saved — the public home page uses this wording now.', 'ok');
+          return null;
+        })
+        .catch(function () { showMsg('faucetMsg', 'Could not reach the server.', 'err'); });
+      });
+    }).catch(function () { showMsg('faucetMsg', 'Could not load saved wording.', 'err'); });
+  }
+
+  /* ── Comment moderation ─────────────────────────────────── */
+  var modFilter = 'all';
+  function loadModeration() {
+    var list = document.getElementById('modList');
+    list.innerHTML = '<p class="text-sm text-ink/50">Loading…</p>';
+    authedFetch(API + '/api/supplier/comments?status=' + modFilter).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.ok) { list.innerHTML = '<p class="text-sm text-ink/50">Could not load comments.</p>'; return; }
+      var items = d.comments || [];
+      if (!items.length) { list.innerHTML = '<p class="text-sm text-ink/50">No comments in this view.</p>'; return; }
+      list.innerHTML = items.map(function (cm) {
+        var badge = cm.status === 'hidden'
+          ? '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#fbe9e7] text-seal">Hidden</span>'
+          : '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#e6efe0] text-leafdark">Visible</span>';
+        return '<div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">' +
+          '<div class="flex flex-wrap items-center gap-2">' + badge +
+            '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
+            '<span class="text-xs text-ink/40">' + esc(cm.verdict) + '</span>' +
+            (cm.stall_name ? '<span class="text-xs text-ink/40">stall: ' + esc(cm.stall_name) + '</span>' : '') +
+            (cm.product_title ? '<span class="text-xs text-ink/40">product: ' + esc(cm.product_title) + '</span>' : '') +
+          '</div>' +
+          '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
+          '<div class="mt-2 flex items-center justify-between gap-3">' +
+            '<span class="text-xs text-ink/40">' + fmtDate(cm.created_at) + '</span>' +
+            '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="modBtn rounded border border-[#e2d6c2] px-3 py-1 text-xs font-semibold text-bark hover:bg-[#f4e8d6]">' +
+              (cm.status === 'hidden' ? 'Restore' : 'Hide') + '</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      Array.prototype.forEach.call(list.querySelectorAll('.modBtn'), function (b) {
+        b.addEventListener('click', function () {
+          b.disabled = true;
+          fetch(API + '/api/comments/' + b.getAttribute('data-cid'), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ status: b.getAttribute('data-now') })
+          }).then(function () { loadModeration(); }).catch(function () {});
+        });
+      });
+    }).catch(function () { list.innerHTML = '<p class="text-sm text-ink/50">Could not load comments.</p>'; });
+  }
+  ['modShowVisible', 'modShowHidden', 'modShowAll'].forEach(function (id, i) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', function () {
+      modFilter = ['visible', 'hidden', 'all'][i];
+      loadModeration();
+    });
+  });
+
+  /* load these tabs lazily when first opened */
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var name = tab.getAttribute('data-tab');
+      if (name === 'content') loadFaucets();
+      if (name === 'moderation') loadModeration();
+    });
+  });
+
 })();
 </script>
 </body>

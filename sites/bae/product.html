@@ -189,6 +189,41 @@ tailwind.config = {
       <p id="noMore" class="hidden text-sm text-ink/50 py-4">No other listings from this stall yet.</p>
     </section>
 
+    <!-- ── Reviews & exchange on this product (owner-moderated) ── -->
+    <section class="mt-12">
+      <h2 class="font-display text-2xl font-bold text-bark">Reviews &amp; exchange on this listing</h2>
+      <p class="mt-1 text-sm text-ink/55">Sign in and share your experience, a question or a complaint. The stall owner reads every comment and can hide unhelpful ones; fair comments show immediately.</p>
+      <div id="prodComments" class="mt-4 space-y-3"></div>
+      <p id="noProdComments" class="hidden mt-3 text-sm text-ink/50">No comments yet — be the first to review this product.</p>
+
+      <div id="pcGate" class="hidden mt-4 rounded-xl border border-[#e2d6c2] bg-[#f8f3e9] p-4 text-sm text-ink/70">
+        <a id="pcLoginLink" href="login.html" class="font-semibold text-leafdark hover:underline">Sign in</a> to post a comment on this product.
+      </div>
+      <form id="pcForm" class="hidden mt-4 rounded-2xl border border-[#e2d6c2] bg-paper p-5 space-y-3">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-[.14em] text-seal mb-1" for="pcVerdict">Type of comment</label>
+          <select id="pcVerdict" class="w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2 text-sm text-bark focus:border-leaf">
+            <option value="positive">Positive experience ✓</option>
+            <option value="suggestion">Suggestion</option>
+            <option value="question">Question</option>
+            <option value="complaint">Complaint — the owner reviews this</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-[.14em] text-seal mb-1" for="pcTitle">Heading (optional)</label>
+          <input id="pcTitle" maxlength="160" class="w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2 text-sm focus:border-leaf" placeholder="e.g. Fresh, well-packaged, delivered on time">
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-[.14em] text-seal mb-1" for="pcBody">Your comment</label>
+          <textarea id="pcBody" rows="3" maxlength="1200" required
+            class="w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2 text-sm focus:border-leaf"
+            placeholder="e.g. Bought cassava cuttings here — germination was strong and the seller explained the spacing."></textarea>
+        </div>
+        <button type="submit" class="rounded-full bg-leaf px-5 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">Post comment</button>
+      </form>
+      <p id="pcMsg" class="mt-3 hidden rounded-lg px-4 py-3 text-sm"></p>
+    </section>
+
     <!-- ── Demand form inline ── -->
     <section class="mt-12 rounded-2xl border border-[#e2d6c2] bg-paper p-7" id="demandSection">
       <h2 class="mb-1 font-display text-xl font-bold text-bark">Send a request about this product</h2>
@@ -558,6 +593,101 @@ if (!productId) {
 }
 
 window.doShare = doShare;
+
+/* ── Reviews & exchange (owner-moderated, ProductHunt-style) ── */
+var pcSignedIn = window.BusolyaAuth && window.BusolyaAuth.isAuthenticated();
+var pcCanModerate = false;
+
+function pcBadge(v) {
+  var map = {
+    positive:   ['Positive ✓', 'bg-[#e6efe0] text-leafdark'],
+    suggestion: ['Suggestion', 'bg-[#fdf6ea] text-[#8a6a2f]'],
+    question:   ['Question',   'bg-[#eef0f4] text-[#3f4a5a]'],
+    complaint:  ['Complaint',  'bg-[#fbe9e7] text-seal']
+  };
+  var m = map[v] || map.positive;
+  return '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold ' + m[1] + '">' + m[0] + '</span>';
+}
+
+function loadProdComments() {
+  var wrap = document.getElementById('prodComments');
+  var none = document.getElementById('noProdComments');
+  if (!productId) return;
+  fetch(API + '/api/products/' + productId + '/comments', { credentials: 'include' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.ok) { none.classList.remove('hidden'); return; }
+      pcCanModerate = !!d.can_moderate;
+      var items = d.comments || [];
+      if (!items.length) { none.classList.remove('hidden'); return; }
+      none.classList.add('hidden');
+      wrap.innerHTML = items.map(function (cm) {
+        var hiddenTag = (cm.status === 'hidden')
+          ? '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-[#fbe9e7] text-seal">Hidden</span> ' : '';
+        var modBtn = pcCanModerate
+          ? '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="pcModBtn rounded border border-[#e2d6c2] px-3 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6]">' +
+              (cm.status === 'hidden' ? 'Restore' : 'Hide this comment') + '</button>' : '';
+        return '<article class="rounded-xl border border-[#e2d6c2] bg-paper p-4 ' + (cm.status === 'hidden' ? 'opacity-60' : '') + '">' +
+          '<div class="flex flex-wrap items-center gap-2">' +
+            hiddenTag + pcBadge(cm.verdict) +
+            '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
+          '</div>' +
+          '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
+          '<div class="mt-2 flex items-center justify-between gap-3">' +
+            '<span class="text-xs text-ink/40">' + new Date(cm.created_at).toLocaleDateString() + '</span>' + modBtn +
+          '</div>' +
+        '</article>';
+      }).join('');
+      Array.prototype.forEach.call(wrap.querySelectorAll('.pcModBtn'), function (b) {
+        b.addEventListener('click', function () {
+          b.disabled = true;
+          fetch(API + '/api/comments/' + b.getAttribute('data-cid'), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ status: b.getAttribute('data-now') })
+          }).then(function () { loadProdComments(); });
+        });
+      });
+    })
+    .catch(function () { none.classList.remove('hidden'); });
+}
+
+// Post form vs sign-in gate
+var pcForm = document.getElementById('pcForm');
+var pcGate = document.getElementById('pcGate');
+var pcLoginLink = document.getElementById('pcLoginLink');
+var pcBackUrl = 'product.html?id=' + productId + (stallBiz ? '&biz=' + stallBiz : '') + (stallEx ? '&ex=' + stallEx : '') +
+  (stallId ? '&stall=' + stallId : '');
+if (pcLoginLink) pcLoginLink.href = 'login.html?next=' + encodeURIComponent(pcBackUrl);
+if (pcSignedIn && productId) pcForm.classList.remove('hidden'); else pcGate.classList.remove('hidden');
+
+pcForm.addEventListener('submit', function (e) {
+  e.preventDefault();
+  var bodyTxt = document.getElementById('pcBody').value.trim();
+  if (bodyTxt.length < 3) { showMsg(document.getElementById('pcMsg'), 'Please write at least a few words.', 'err'); return; }
+  fetch(API + '/api/products/' + productId + '/comments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      body: bodyTxt,
+      title: document.getElementById('pcTitle').value.trim() || null,
+      verdict: document.getElementById('pcVerdict').value
+    })
+  })
+  .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
+  .then(function (r) {
+    if (!r.ok) { showMsg(document.getElementById('pcMsg'), r.data.error || 'Could not post the comment.', 'err'); return; }
+    pcForm.reset();
+    document.getElementById('pcVerdict').value = 'positive';
+    showMsg(document.getElementById('pcMsg'), 'Comment posted.', 'ok');
+    loadProdComments();
+  })
+  .catch(function () { showMsg(document.getElementById('pcMsg'), 'Could not post the comment. Try again.', 'err'); });
+});
+
+if (productId) loadProdComments();
 })();
 </script>
 </body>

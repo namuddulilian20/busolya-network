@@ -32,7 +32,7 @@ tailwind.config = {
 
     <!-- Phone verification note -->
     <div class="mb-4 rounded-lg border border-leaf/25 bg-[#f2f8ef] px-4 py-3 text-xs text-leafdark">
-      No passwords here. Sign in with your phone number — we'll ask you to confirm the last 5 digits of the number on this account.
+      No passwords here. Sign in with your phone number — we'll ask you to confirm the last 5 digits of the number on this account. Administrators and staff sign in with their password instead.
     </div>
 
     <form id="loginForm" novalidate class="space-y-4">
@@ -55,6 +55,20 @@ tailwind.config = {
         <button type="button" id="backToPhone"
           class="mt-2 text-xs font-semibold text-ink/50 hover:text-bark">← use a different number</button>
       </div>
+      <!-- Step 3: administrator password (shown only when the challenge
+           reports that the account signs in with a password) -->
+      <div id="StepPassword" class="hidden">
+        <div class="mb-2 rounded-lg border border-[#f2e0c8] bg-[#fdf6ea] px-4 py-3 text-xs text-[#8a6a2f]">
+          Administrator or staff account detected - enter the account password.
+        </div>
+        <label class="mb-1 block text-sm font-semibold text-bark" for="PwInput">Password</label>
+        <input id="PwInput" type="password" autocomplete="current-password"
+          class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+          placeholder="Your password">
+        <button type="button" id="BackToPhone"
+          class="mt-2 text-xs font-semibold text-ink/50 hover:text-bark">&#8592; use phone verification instead</button>
+      </div>
+
       <button type="submit" id="loginBtn"
         class="w-full rounded-full bg-leaf px-5 py-3 text-sm font-bold text-white hover:bg-leafdark transition">
         Sign in
@@ -85,6 +99,19 @@ tailwind.config = {
   var msg  = document.getElementById('loginMsg');
   var step1   = document.getElementById('stepPhone');
   var step2   = document.getElementById('stepVerify');
+  var stepPw  = document.getElementById('StepPassword');
+  var pwInput = document.getElementById('PwInput');
+  var pwFlow  = false;  var pwBack = document.getElementById('BackToPhone');
+  if (pwBack && !pwBack.getAttribute('data-wired')) {
+    pwBack.addEventListener('click', function () {
+      pwFlow = false;
+      stepPw.classList.add('hidden');
+      step1.classList.remove('hidden');
+      btn.textContent = btn.getAttribute('data-label1') || 'Sign in';
+    });
+    pwBack.setAttribute('data-wired', '1');
+  }
+
   var btn     = document.getElementById('loginBtn');
 
   function showMsg(text, type) {
@@ -105,6 +132,23 @@ tailwind.config = {
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     var loginId = document.getElementById('loginId').value.trim();
+    // Administrator password flow (pwFlow set by the challenge response)
+    if (pwFlow) {
+      var pw = pwInput.value;
+      if (!pw) { showMsg('Enter the administrator or staff password.', 'err'); return; }
+      fetch(API + '/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ login_id: document.getElementById('loginId').value.trim(), password: pw })
+      })
+      .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
+      .then(function (r) {
+        if (!r.ok) { showMsg(r.data.error || 'Sign in failed.', 'err'); return; }
+        window.BusolyaAuth.login({ id: r.data.id, phone: r.data.phone, name: r.data.name, role: r.data.role });
+      })
+      .catch(function () { showMsg('Could not reach the server.', 'err'); });
+      return;
+    }
+
     var last5   = document.getElementById('last5').value.trim();
 
     // Step 1: request the challenge (masked number) then switch to verification
@@ -118,7 +162,16 @@ tailwind.config = {
       })
       .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
       .then(function (r) {
-        if (!r.ok) { showMsg(r.data.error || 'Could not start sign-in.', 'err'); return; }
+        if (!r.ok) {
+        if ((r.data.error || '').indexOf('administrator accounts sign in with their password') > -1) {
+          pwFlow = true;
+          step1.classList.add('hidden'); step2.classList.add('hidden'); stepPw.classList.remove('hidden');
+          btn.textContent = 'Sign in with password';
+          pwInput.focus();
+          return;
+        }
+        showMsg(r.data.error || 'Could not start sign-in.', 'err'); return;
+      }
         document.getElementById('maskedPhone').textContent = r.data.masked_phone || '';
         showStep(2);
         document.getElementById('last5').focus();

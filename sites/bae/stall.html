@@ -27,7 +27,7 @@
     <div class="flex items-center gap-3">
       <a href="visit.html" class="rounded-full bg-leaf px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Make a request</a>
       <a href="exhibitors.html" class="rounded-full border-2 border-bark px-6 py-3 text-sm font-bold text-bark hover:bg-bark hover:text-white">Back to register</a>
-      <a href="exhibitor-login.html" class="rounded-full bg-bark px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Manage this stall</a>
+      <a id="manageStallLink" href="exhibitor-login.html" class="rounded-full bg-bark px-6 py-3 text-sm font-bold text-white hover:bg-leafdark">Manage this stall</a>
       <div class="flex items-center gap-2">
         <button onclick="shareStall('wa')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on WhatsApp">WhatsApp</button>
         <button onclick="shareStall('tg')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition" title="Share on Telegram">Telegram</button>
@@ -56,6 +56,37 @@
     <button onclick="scrollProducts(-1)" class="rounded-lg border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-leaf hover:text-white transition" aria-label="Previous products">←</button>
     <button onclick="scrollProducts(1)" class="rounded-lg border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-leaf hover:text-white transition" aria-label="Next products">→</button>
   </div>
+
+  <!-- ── Reviews & exchange (owner-moderated discussion) ── -->
+  <section class="mb-8">
+    <h2 class="font-display text-2xl font-bold text-bark mb-4">Reviews &amp; exchange at this stall</h2>
+    <p class="text-sm text-ink/60 mb-4">Experience with this exhibitor's products or services? Post it here. The stall owner reviews every item and can hide unhelpful or unfair comments; everything else shows immediately.</p>
+    <div id="stallComments" class="space-y-3"></div>
+    <p id="noStallComments" class="hidden text-sm text-ink/50">No comments yet — be the first to share your experience.</p>
+
+    <div id="stallCommentGate" class="hidden mt-4 rounded-xl border border-[#e2d6c2] bg-[#f8f3e9] p-4 text-sm text-ink/70">
+      <a id="stallCommentLogin" href="login.html" class="font-semibold text-leafdark hover:underline">Sign in</a> to post a comment on this stall.
+    </div>
+    <form id="stallCommentForm" class="hidden mt-4 rounded-2xl border border-[#e2d6c2] bg-paper p-5 space-y-3">
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-[.14em] text-seal mb-1" for="scVerdict">Type of comment</label>
+        <select id="scVerdict" class="w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2 text-sm text-bark focus:border-leaf">
+          <option value="positive">Positive experience ✓</option>
+          <option value="suggestion">Suggestion</option>
+          <option value="question">Question</option>
+          <option value="complaint">Complaint — the owner reviews this</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-[.14em] text-seal mb-1" for="scBody">Your comment</label>
+        <textarea id="scBody" rows="3" maxlength="1200" required
+          class="w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2 text-sm focus:border-leaf"
+          placeholder="e.g. Fresh seed, fair prices, and the owner helped me plan my season."></textarea>
+      </div>
+      <button type="submit" class="rounded-full bg-leaf px-5 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">Post comment</button>
+    </form>
+    <p id="stallCommentMsg" class="mt-3 hidden rounded-lg px-4 py-3 text-sm"></p>
+  </section>
 
   <section class="mb-8">
     <h2 class="font-display text-2xl font-bold text-bark mb-4">Book a stall — expo prices</h2>
@@ -121,6 +152,12 @@
   const stallEx = params.get('ex');
   document.getElementById('stallName').textContent = decodeURIComponent(stallBiz || 'Exhibitor Stall');
   document.getElementById('stallExhibitor').textContent = (stallEx ? 'Exhibitor: ' + decodeURIComponent(stallEx) : '');
+  /* "Manage this stall" keeps the stall owner on THIS stall after signing in */
+  var manageLink = document.getElementById('manageStallLink');
+  if (manageLink && stallId) {
+    manageLink.href = 'exhibitor-login.html?next=' + encodeURIComponent('stall.html?id=' + encodeURIComponent(stallId)
+      + (stallBiz ? '&biz=' + stallBiz : '') + (stallEx ? '&ex=' + stallEx : ''));
+  }
   const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
     ? 'http://localhost:10000' : 'https://busolya-api.onrender.com';
   function loadProducts() {
@@ -274,6 +311,108 @@
   loadProducts();
   window.shareStall = shareStall;
   window.shareProduct = shareProduct;
+
+  /* ── Review / exchange thread (stall-level) ─────────────────────────── */
+  var signedIn = window.BusolyaAuth && window.BusolyaAuth.isAuthenticated();
+  var stallCanModerate = false;
+
+  function verdictBadge(v) {
+    var map = {
+      positive:   ['Positive ✓',   'bg-[#e6efe0] text-leafdark'],
+      suggestion: ['Suggestion',   'bg-[#fdf6ea] text-[#8a6a2f]'],
+      question:   ['Question',     'bg-[#eef0f4] text-[#3f4a5a]'],
+      complaint:  ['Complaint',    'bg-[#fbe9e7] text-seal']
+    };
+    var m = map[v] || map.positive;
+    return '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold ' + m[1] + '">' + m[0] + '</span>';
+  }
+
+  function loadStallComments() {
+    var wrap = document.getElementById('stallComments');
+    var none = document.getElementById('noStallComments');
+    if (!stallId) { none.classList.remove('hidden'); return; }
+    fetch(API + '/api/suppliers/' + encodeURIComponent(stallId) + '/comments', { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) { none.classList.remove('hidden'); return; }
+        stallCanModerate = !!d.can_moderate;
+        var items = d.comments || [];
+        if (!items.length) { none.classList.remove('hidden'); return; }
+        none.classList.add('hidden');
+        wrap.innerHTML = items.map(function (cm) {
+          var hiddenTag = (cm.status === 'hidden')
+            ? '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-[#fbe9e7] text-seal">Hidden</span> ' : '';
+          var modBtn = stallCanModerate
+            ? '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="stallModBtn rounded border border-[#e2d6c2] px-3 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6]">' +
+                (cm.status === 'hidden' ? 'Restore' : 'Hide this comment') + '</button>' : '';
+          return '<article class="rounded-xl border border-[#e2d6c2] bg-white p-4 ' + (cm.status === 'hidden' ? 'opacity-60' : '') + '">' +
+            '<div class="flex flex-wrap items-center gap-2">' +
+              hiddenTag + verdictBadge(cm.verdict) +
+              '<span class="font-semibold text-bark text-sm">' + escH(cm.author_name) + '</span>' +
+              (cm.product_title ? '<span class="text-xs text-ink/40">on ' + escH(cm.product_title) + '</span>' : '') +
+            '</div>' +
+            '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + escH(cm.body) + '</p>' +
+            '<div class="mt-2 flex items-center justify-between gap-3">' +
+              '<span class="text-xs text-ink/40">' + new Date(cm.created_at).toLocaleDateString() + '</span>' + modBtn +
+            '</div>' +
+          '</article>';
+        }).join('');
+        Array.prototype.forEach.call(wrap.querySelectorAll('.stallModBtn'), function (b) {
+          b.addEventListener('click', function () {
+            b.disabled = true;
+            fetch(API + '/api/comments/' + b.getAttribute('data-cid'), {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ status: b.getAttribute('data-now') })
+            }).then(function () { loadStallComments(); });
+          });
+        });
+      })
+      .catch(function () { none.classList.remove('hidden'); });
+  }
+
+  function showCmMsg(text, type, idd) {
+    var msg = document.getElementById(idd);
+    msg.className = 'mt-3 rounded-lg px-4 py-3 text-sm ' +
+      (type === 'ok' ? 'bg-[#e6efe0] text-leafdark border border-leaf/30' :
+       type === 'err' ? 'bg-[#fbe9e7] text-seal border border-seal/30' : 'hidden');
+    msg.textContent = text;
+    msg.classList.remove('hidden');
+  }
+
+  // Post form vs sign-in gate
+  var cmForm = document.getElementById('stallCommentForm');
+  var cmGate = document.getElementById('stallCommentGate');
+  var cmLoginLink = document.getElementById('stallCommentLogin');
+  var stallBackUrl = 'stall.html?id=' + encodeURIComponent(stallId || '') +
+    (stallBiz ? '&biz=' + stallBiz : '') + (stallEx ? '&ex=' + stallEx : '');
+  if (cmLoginLink) cmLoginLink.href = 'login.html?next=' + encodeURIComponent(stallBackUrl);
+  if (signedIn) cmForm.classList.remove('hidden'); else cmGate.classList.remove('hidden');
+
+  cmForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var bodyTxt = document.getElementById('scBody').value.trim();
+    if (bodyTxt.length < 3) { showCmMsg('Please write at least a few words.', 'err', 'stallCommentMsg'); return; }
+    var verdict = document.getElementById('scVerdict').value;
+    fetch(API + '/api/suppliers/' + encodeURIComponent(stallId) + '/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ body: bodyTxt, verdict: verdict })
+    })
+    .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, data: d }; }); })
+    .then(function (r) {
+      if (!r.ok) { showCmMsg(r.data.error || 'Could not post the comment.', 'err', 'stallCommentMsg'); return; }
+      cmForm.reset();
+      document.getElementById('scVerdict').value = 'positive';
+      showCmMsg('Comment posted.', 'ok', 'stallCommentMsg');
+      loadStallComments();
+    })
+    .catch(function () { showCmMsg('Could not post the comment. Try again.', 'err', 'stallCommentMsg'); });
+  });
+
+  loadStallComments();
   
   function scrollProducts(direction) {
     var container = document.getElementById('productList');

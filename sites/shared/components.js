@@ -167,13 +167,23 @@
     login: function (user, redirect) {
       setAuthenticated(true);
       setUser(user);
-      /* role-based redirect */
-      if (redirect) {
-        location.href = redirect;
-      } else if (user.role === 'admin' || user.role === 'employee') {
+      /* Role-based redirect. A `?next=` passed from a public page wins for
+         non-admin roles. */
+      var nextParam = null;
+      try {
+        var np = new URLSearchParams(location.search).get('next');
+        if (np && /^[A-Za-z0-9._~-]+\.html([?&][A-Za-z0-9._%+=~-]*)?$/.test(np)) nextParam = np;
+      } catch (e) {}
+      if (user.role === 'admin' || user.role === 'employee') {
         location.href = 'admin.html';
       } else if (user.role === 'supplier') {
-        location.href = 'supplier-portal.html';
+        if (nextParam) location.href = nextParam;
+        else if (redirect) location.href = redirect;
+        else location.href = 'supplier-portal.html';
+      } else if (nextParam) {
+        location.href = nextParam;
+      } else if (redirect) {
+        location.href = redirect;
       } else {
         location.href = 'index.html';
       }
