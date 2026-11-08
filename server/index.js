@@ -630,16 +630,17 @@ app.post('/api/auth/register', rateLimit, async (req, res, next) => {
    so the last 5 digits (the login verification) are never shown. */
 function maskPhone(phone) {
   const digits = String(phone || '').replace(/\D/g, '');
-  if (!digits) return phone;
-  // Keep the first few digits; everything after is masked, so the
-  // last 5 digits (the login verification) are never revealed.
-  const keep = Math.max(1, Math.min(4, digits.length - 6));
+  if (!digits || digits.length < 3) return phone;
+  // Keep the first few digits, mask the middle, and show the LAST 2 digits:
+  // the user recognizes which number is on file (they may have updated it),
+  // while the last 5 used for verification are still never fully revealed.
+  const keep = Math.max(1, Math.min(4, digits.length - 5));
   let out = '';
   let seen = 0;
   for (const ch of String(phone)) {
     if (/\d/.test(ch)) {
       seen += 1;
-      out += seen <= keep ? ch : '•';
+      out += (seen <= keep || seen > digits.length - 2) ? ch : '•';
     } else {
       out += ch;
     }
