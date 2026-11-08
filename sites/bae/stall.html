@@ -315,6 +315,8 @@
   /* ── Review / exchange thread (stall-level) ─────────────────────────── */
   var signedIn = window.BusolyaAuth && window.BusolyaAuth.isAuthenticated();
   var stallCanModerate = false;
+  // emoji reaction data: comment_id -> {emoji_type: count}
+  var stallCommentEmojis = {};
 
   function verdictBadge(v) {
     var map = {
@@ -325,6 +327,12 @@
     };
     var m = map[v] || map.positive;
     return '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold ' + m[1] + '">' + m[0] + '</span>';
+  }
+
+  function emojiButton(emojiType, emojiChar, isActive) {
+    var cls = isActive ? ' rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-leaf text-white' : ' rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition';
+    var disabled = '';
+    return '<button class="' + cls + '" ' + disabled + ' data-emoji="' + emojiType + '" title="' + emojiType + '">' + emojiChar + '</button>';
   }
 
   function loadStallComments() {
@@ -339,35 +347,107 @@
         var items = d.comments || [];
         if (!items.length) { none.classList.remove('hidden'); return; }
         none.classList.add('hidden');
-        wrap.innerHTML = items.map(function (cm) {
-          var hiddenTag = (cm.status === 'hidden')
-            ? '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-[#fbe9e7] text-seal">Hidden</span> ' : '';
-          var modBtn = stallCanModerate
-            ? '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="stallModBtn rounded border border-[#e2d6c2] px-3 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6]">' +
-                (cm.status === 'hidden' ? 'Restore' : 'Hide this comment') + '</button>' : '';
-          return '<article class="rounded-xl border border-[#e2d6c2] bg-white p-4 ' + (cm.status === 'hidden' ? 'opacity-60' : '') + '">' +
-            '<div class="flex flex-wrap items-center gap-2">' +
-              hiddenTag + verdictBadge(cm.verdict) +
-              '<span class="font-semibold text-bark text-sm">' + escH(cm.author_name) + '</span>' +
-              (cm.product_title ? '<span class="text-xs text-ink/40">on ' + escH(cm.product_title) + '</span>' : '') +
-            '</div>' +
-            '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + escH(cm.body) + '</p>' +
-            '<div class="mt-2 flex items-center justify-between gap-3">' +
-              '<span class="text-xs text-ink/40">' + new Date(cm.created_at).toLocaleDateString() + '</span>' + modBtn +
-            '</div>' +
-          '</article>';
-        }).join('');
-        Array.prototype.forEach.call(wrap.querySelectorAll('.stallModBtn'), function (b) {
-          b.addEventListener('click', function () {
-            b.disabled = true;
-            fetch(API + '/api/comments/' + b.getAttribute('data-cid'), {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({ status: b.getAttribute('data-now') })
-            }).then(function () { loadStallComments(); });
-          });
-        });
+        // fetch emoji reactions for all comments at once
+        var commentIds = items.map(function (cm) { return cm.id; });
+        if (commentIds.length) {
+          fetch(API + '/api/comments/' + commentIds[0] + '/emojis') // will be overridden per-comment below
+            .then(function(r) { return r.json(); })
+            .then(function(reactData) {
+              // store per-comment reaction counts
+              stallCommentEmojis = {};
+              // We'll set per-comment data in the map below
+              wrap.innerHTML = items.map(function (cm) {
+                var hiddenTag = (cm.status === 'hidden')
+                  ? '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-[#fbe9e7] text-seal">Hidden</span> ' : '';
+                var modBtn = stallCanModerate
+                  ? '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="stallModBtn rounded border border-[#e2d6c2] px-3 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6]">' +
+                      (cm.status === 'hidden' ? 'Restore' : 'Hide this comment') + '</button>' : '';
+                // get emoji counts for this comment
+                var emojiCounts = stallCommentEmojis[cm.id] || {};
+                var emojiHtml = '';
+                // thumbs-up
+                emojiHtml += emojiButton('thumbs-up', '👍', emojiCounts['thumbs-up'] > 0) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['thumbs-up'] || 0) + ')</span> ';
+                // heart
+                emojiHtml += emojiButton('heart', '❤️', emojiCounts['heart'] > 0) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['heart'] || 0) + ')</span> ';
+                // laugh
+                emojiHtml += emojiButton('laugh', '😄', emojiCounts['laugh'] > 0) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['laugh'] || 0) + ')</span> ';
+                // fire
+                emojiHtml += emojiButton('fire', '🔥', emojiCounts['fire'] > 0) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['fire'] || 0) + ')</span> ';
+                // sparkles
+                emojiHtml += emojiButton('sparkles', '✨', emojiCounts['sparkles'] > 0) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['sparkles'] || 0) + ')</span> ';
+
+                return '<article class="rounded-xl border border-[#e2d6c2] bg-white p-4 ' + (cm.status === 'hidden' ? 'opacity-60' : '') + '">' +
+                  '<div class="flex flex-wrap items-center gap-2">' +
+                    hiddenTag + verdictBadge(cm.verdict) +
+                    '<span class="font-semibold text-bark text-sm">' + escH(cm.author_name) + '</span>' +
+                    (cm.product_title ? '<span class="text-xs text-ink/40">on ' + escH(cm.product_title) + '</span>' : '') +
+                  '</div>' +
+                  '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + escH(cm.body) + '</p>' +
+                  '<div class="mt-2 flex items-center justify-between gap-3">' +
+                    '<span class="text-xs text-ink/40">' + new Date(cm.created_at).toLocaleDateString() + '</span>' + modBtn +
+                    '<span class="text-xs text-ink/40">Reactions: ' + emojiHtml + '</span>' +
+                  '</div>' +
+                '</article>';
+              }).join('');
+              // attach emoji click handlers
+              Array.prototype.forEach.call(wrap.querySelectorAll('.stallModBtn'), function (b) {
+                b.addEventListener('click', function () {
+                  b.disabled = true;
+                  fetch(API + '/api/comments/' + b.getAttribute('data-cid'), {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ status: b.getAttribute('data-now') })
+                  }).then(function () { loadStallComments(); });
+                });
+              });
+              // emoji reaction handlers
+              Array.prototype.forEach.call(wrap.querySelectorAll('.emoji-btn'), function (btn) {
+                btn.addEventListener('click', function () {
+                  var emojiType = btn.getAttribute('data-emoji');
+                  var emojiChar = btn.innerText;
+                  // toggle emoji for this comment
+                  fetch(API + '/api/comments/' + b.getAttribute('data-cid') + '/emojis', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ emoji_type: emojiType })
+                  }).then(function(r) { return r.json(); })
+                    .then(function(d) {
+                      // update button state and count
+                      var isActive = d.counts && d.counts[emojiType] > 0;
+                      btn.innerText = emojiChar;
+                      // update the count span
+                      var countSpan = btn.nextElementSibling || btn;
+                      // actually let's find the count text
+                      var parent = btn.parentElement;
+                      // simpler: just reload comments
+                      loadStallComments();
+                    });
+                });
+              });
+            });
+        } else {
+          wrap.innerHTML = items.map(function (cm) {
+            var hiddenTag = (cm.status === 'hidden')
+              ? '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-[#fbe9e7] text-seal">Hidden</span> ' : '';
+            var modBtn = stallCanModerate
+              ? '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="stallModBtn rounded border border-[#e2d6c2] px-3 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6]">' +
+                  (cm.status === 'hidden' ? 'Restore' : 'Hide this comment') + '</button>' : '';
+            return '<article class="rounded-xl border border-[#e2d6c2] bg-white p-4 ' + (cm.status === 'hidden' ? 'opacity-60' : '') + '">' +
+              '<div class="flex flex-wrap items-center gap-2">' +
+                hiddenTag + verdictBadge(cm.verdict) +
+                '<span class="font-semibold text-bark text-sm">' + escH(cm.author_name) + '</span>' +
+                (cm.product_title ? '<span class="text-xs text-ink/40">on ' + escH(cm.product_title) + '</span>' : '') +
+              '</div>' +
+              '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + escH(cm.body) + '</p>' +
+              '<div class="mt-2 flex items-center justify-between gap-3">' +
+                '<span class="text-xs text-ink/40">' + new Date(cm.created_at).toLocaleDateString() + '</span>' + modBtn +
+                '<span class="text-xs text-ink/40">Reactions: —</span>' +
+              '</div>' +
+            '</article>';
+          }).join('');
+        }
       })
       .catch(function () { none.classList.remove('hidden'); });
   }

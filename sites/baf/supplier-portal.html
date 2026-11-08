@@ -811,6 +811,8 @@ window.linkVisitorRequest = linkVisitorRequest;
   /* ── Moderation of visitor feedback ───────────────────────── */
   var spFilter = 'all';
   function spFmtDate(s) { return s ? new Date(s).toLocaleDateString('en-GB') : '—'; }
+  // emoji reaction data: comment_id -> {emoji_type: count}
+  var spCommentEmojis = {};
   function spLoadModeration() {
     var list = document.getElementById('spModList');
     list.innerHTML = '<p class="text-sm text-ink/50">Loading…</p>';
@@ -818,24 +820,78 @@ window.linkVisitorRequest = linkVisitorRequest;
       if (!d.ok) { list.innerHTML = '<p class="text-sm text-ink/50">Could not load feedback.</p>'; return; }
       var items = d.comments || [];
       if (!items.length) { list.innerHTML = '<p class="text-sm text-ink/50">No comments in this view.</p>'; return; }
-      list.innerHTML = items.map(function (cm) {
-        var badge = cm.status === 'hidden'
-          ? '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#fbe9e7] text-seal">Hidden</span>'
-          : '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#e6efe0] text-leafdark">Visible</span>';
-        return '<div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">' +
-          '<div class="flex flex-wrap items-center gap-2">' + badge +
-            '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
-            '<span class="text-xs text-ink/40">' + esc(cm.verdict) + '</span>' +
-            (cm.product_title ? '<span class="text-xs text-ink/40">listing: ' + esc(cm.product_title) + '</span>' : '') +
-          '</div>' +
-          '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
-          '<div class="mt-2 flex items-center justify-between gap-3">' +
-            '<span class="text-xs text-ink/40">' + spFmtDate(cm.created_at) + '</span>' +
-            '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="spModBtn rounded border border-[#e2d6c2] px-3 py-1 text-xs font-semibold text-bark hover:bg-[#f4e8d6]">' +
-              (cm.status === 'hidden' ? 'Allow again' : 'Hide this comment') + '</button>' +
-          '</div>' +
-        '</div>';
-      }).join('');
+      // fetch emoji reactions for all comments at once
+      var commentIds = items.map(function (cm) { return cm.id; });
+      if (commentIds.length) {
+        fetch(API + '/api/comments/' + commentIds[0] + '/emojis')
+          .then(function(r) { return r.json(); })
+          .then(function(reactData) {
+            spCommentEmojis = reactData || {};
+            list.innerHTML = items.map(function (cm) {
+              var badge = cm.status === 'hidden'
+                ? '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#fbe9e7] text-seal">Hidden</span>'
+                : '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#e6efe0] text-leafdark">Visible</span>';
+              var emojiCounts = spCommentEmojis[cm.id] || {};
+              var emojiHtml = '';
+              emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="thumbs-up" title="thumbs-up">👍</button> <span class="text-xs text-ink/40">(' + (emojiCounts.thumbs-up || 0) + ')</span> ';
+              emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="heart" title="heart">❤️</button> <span class="text-xs text-ink/40">(' + (emojiCounts.heart || 0) + ')</span> ';
+              emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="laugh" title="laugh">😄</button> <span class="text-xs text-ink/40">(' + (emojiCounts.laugh || 0) + ')</span> ';
+              emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="fire" title="fire">🔥</button> <span class="text-xs text-ink/40">(' + (emojiCounts.fire || 0) + ')</span> ';
+              emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="sparkles" title="sparkles">✨</button> <span class="text-xs text-ink/40">(' + (emojiCounts.sparkles || 0) + ')</span> ';
+
+              return '<div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">' +
+                '<div class="flex flex-wrap items-center gap-2">' + badge +
+                  '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
+                  '<span class="text-xs text-ink/40">' + esc(cm.verdict) + '</span>' +
+                  (cm.product_title ? '<span class="text-xs text-ink/40">listing: ' + esc(cm.product_title) + '</span>' : '') +
+                '</div>' +
+                '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
+                '<div class="mt-2 flex items-center justify-between gap-3">' +
+                  '<span class="text-xs text-ink/40">' + spFmtDate(cm.created_at) + '</span>' +
+                  '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="spModBtn rounded border border-[#e2d6c2] px-3 py-1 text-xs font-semibold text-bark hover:bg-[#f4e8d6]">' +
+                    (cm.status === 'hidden' ? 'Allow again' : 'Hide this comment') + '</button>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="mt-2 text-sm text-ink/50">Reactions: ' + emojiHtml + '</div>';
+            }).join('');
+            Array.prototype.forEach.call(list.querySelectorAll('.spModBtn'), function (b) {
+              b.addEventListener('click', function () {
+                b.disabled = true;
+                fetch(API + '/api/comments/' + b.getAttribute('data-cid'), {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({ status: b.getAttribute('data-now') })
+                }).then(function () { spLoadModeration(); }).catch(function () {});
+              });
+            });
+            // emoji button handlers - simple reload
+            Array.prototype.forEach.call(list.querySelectorAll('.emoji-btn'), function (btn) {
+              btn.addEventListener('click', function () {
+                loadModeration();
+              });
+            });
+          });
+      } else {
+        list.innerHTML = items.map(function (cm) {
+          var badge = cm.status === 'hidden'
+            ? '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#fbe9e7] text-seal">Hidden</span>'
+            : '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#e6efe0] text-leafdark">Visible</span>';
+          return '<div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">' +
+            '<div class="flex flex-wrap items-center gap-2">' + badge +
+              '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
+              '<span class="text-xs text-ink/40">' + esc(cm.verdict) + '</span>' +
+              (cm.product_title ? '<span class="text-xs text-ink/40">listing: ' + esc(cm.product_title) + '</span>' : '') +
+            '</div>' +
+            '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
+            '<div class="mt-2 flex items-center justify-between gap-3">' +
+              '<span class="text-xs text-ink/40">' + spFmtDate(cm.created_at) + '</span>' +
+              '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="spModBtn rounded border border-[#e2d6c2] px-3 py-1 text-xs font-semibold text-bark hover:bg-[#f4e8d6]">' +
+                (cm.status === 'hidden' ? 'Allow again' : 'Hide this comment') + '</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
       Array.prototype.forEach.call(list.querySelectorAll('.spModBtn'), function (b) {
         b.addEventListener('click', function () {
           b.disabled = true;

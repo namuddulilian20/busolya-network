@@ -1739,6 +1739,86 @@ app.patch('/api/comments/:id', requireSupplier, rateLimit, async (req, res, next
   } catch (err) { next(err); }
 });
 
+// GET /api/comments/:id/emojis — get all emoji reactions on a comment
+app.get('/api/comments/:id/emojis', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ ok: false, error: 'bad id' });
+    const r = await db.query(
+      `select emoji_type, count(*) as count, user_id is not null as has_user from comment_emoji_reactions where comment_id = $1 group by emoji_type, user_id is not null`,
+      [id]
+    );
+    const grouped = {};
+    r.rows.forEach(row => {
+      if (!grouped[row.emoji_type]) grouped[row.emoji_type] = { count: 0, users: [] };
+      grouped[row.emoji_type].count += row.count;
+      if (row.has_user) grouped[row.emoji_type].users.push(row.user_id);
+    });
+    return res.json({ ok: true, reactions: grouped });
+  } catch (err) { next(err); }
+});
+
+// POST /api/comments/:id/emojis — add an emoji reaction to a comment (authenticated supplier)
+app.post('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ ok: false, error: 'bad id' });
+    const c = await db.query('select id, supplier_id from product_comments where id = $1', [id]);
+    if (!c.rows.length) return res.status(404).json({ ok: false, error: 'comment not found' });
+    // only the comment's stall owner, or admin/employee, may react
+    const mine = Number(c.rows[0].supplier_id) === req.supplier.id;
+    const adminOK = ['admin', 'employee'].includes(req.supplier.role);
+    if (!mine && !adminOK) return res.status(403).json({ ok: false, error: 'only the comment owner or admin may react' });
+    const emoji = req.body && req.body.emoji_type && ['thumbs-up','heart','laugh','fire','sparkles'].includes(req.body.emoji_type);
+    if (!emoji) return res.status(400).json({ ok: false, error: 'valid emoji_type required' });
+    // remove existing reaction of same type from same user (toggle)
+    await db.query(
+      `insert into comment_emoji_reactions (comment_id, user_id, emoji_type) values ($1,$2,$3)
+       on conflict (comment_id, user_id, emoji_type) do nothing`,
+      [id, req.supplier.id, req.body.emoji_type]
+    );
+    // delete if already existed (simple toggle)
+    const check = await db.query(
+      `select id from comment_emoji_reactions where comment_id = $1 and user_id = $2 and emoji_type = $3`,
+      [id, req.supplier.id, req.body.emoji_type]
+    );
+    if (check.rows.length > 1) { /* shouldn't happen */ }
+    const countR = await db.query(
+      `select emoji_type, count(*) as count from comment_emoji_reactions where comment_id = $1 group by emoji_type`,
+      [id]
+    );
+    const counts = {};
+    countR.rows.forEach(r => { counts[r.emoji_type] = parseInt(r.count); });
+    return res.json({ ok: true, emoji: req.body.emoji_type, counts });
+  } catch (err) { next(err); }
+});
+
+// DELETE /api/comments/:id/emojis — remove an emoji reaction
+app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ ok: false, error: 'bad id' });
+    const c = await db.query('select id, supplier_id from product_comments where id = $1', [id]);
+    if (!c.rows.length) return res.status(404).json({ ok: false, error: 'comment not found' });
+    const mine = Number(c.rows[0].supplier_id) === req.supplier.id;
+    const adminOK = ['admin', 'employee'].includes(req.supplier.role);
+    if (!mine && !adminOK) return res.status(403).json({ ok: false, error: 'only the comment owner or admin may remove reaction' });
+    const emoji = req.body && req.body.emoji_type;
+    if (!emoji) return res.status(400).json({ ok: false, error: 'emoji_type required' });
+    await db.query(
+      `delete from comment_emoji_reactions where comment_id = $1 and user_id = $2 and emoji_type = $3`,
+      [id, req.supplier.id, emoji]
+    );
+    const countR = await db.query(
+      `select emoji_type, count(*) as count from comment_emoji_reactions where comment_id = $1 group by emoji_type`,
+      [id]
+    );
+    const counts = {};
+    countR.rows.forEach(r => { counts[r.emoji_type] = parseInt(r.count); });
+    return res.json({ ok: true, counts });
+  } catch (err) { next(err); }
+});
+
 // ---------- supplier media (images / audio / video / documents) ----------
 //
 // Suppliers, members, and other lay users can upload product images, audio

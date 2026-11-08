@@ -517,3 +517,15 @@ create table if not exists product_comments (
 create index if not exists product_comments_product_idx  on product_comments (product_id);
 create index if not exists product_comments_supplier_idx on product_comments (supplier_id);
 create index if not exists product_comments_status_idx   on product_comments (status);
+
+-- ---------- emoji reactions on comments ----------
+create table if not exists comment_emoji_reactions (
+  id          bigserial primary key,
+  comment_id  bigint not null references product_comments (id) on delete cascade,
+  user_id     bigint references participants (id) on delete set null,
+  emoji_type  text not null check (emoji_type in ('thumbs-up','heart','laugh','fire','sparkles')),
+  created_at  timestamptz not null default now(),
+  unique_comment_user unique (comment_id, user_id, emoji_type)
+);
+create index if not exists comment_emoji_comment_idx on comment_emoji_reactions (comment_id);
+create index if not exists comment_emoji_user_idx   on comment_emoji_reactions (user_id);

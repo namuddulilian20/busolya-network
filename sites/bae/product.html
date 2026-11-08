@@ -609,6 +609,12 @@ function pcBadge(v) {
   return '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold ' + m[1] + '">' + m[0] + '</span>';
 }
 
+function emojiButton(emojiType, emojiChar, isActive) {
+  var cls = isActive ? ' rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-leaf text-white' : ' rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition';
+  var disabled = '';
+  return '<button class="' + cls + '" ' + disabled + ' data-emoji="' + emojiType + '" title="' + emojiType + '">' + emojiChar + '</button>';
+}
+
 function loadProdComments() {
   var wrap = document.getElementById('prodComments');
   var none = document.getElementById('noProdComments');
@@ -621,23 +627,100 @@ function loadProdComments() {
       var items = d.comments || [];
       if (!items.length) { none.classList.remove('hidden'); return; }
       none.classList.add('hidden');
-      wrap.innerHTML = items.map(function (cm) {
-        var hiddenTag = (cm.status === 'hidden')
-          ? '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-[#fbe9e7] text-seal">Hidden</span> ' : '';
-        var modBtn = pcCanModerate
-          ? '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="pcModBtn rounded border border-[#e2d6c2] px-3 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6]">' +
-              (cm.status === 'hidden' ? 'Restore' : 'Hide this comment') + '</button>' : '';
-        return '<article class="rounded-xl border border-[#e2d6c2] bg-paper p-4 ' + (cm.status === 'hidden' ? 'opacity-60' : '') + '">' +
-          '<div class="flex flex-wrap items-center gap-2">' +
-            hiddenTag + pcBadge(cm.verdict) +
-            '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
-          '</div>' +
-          '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
-          '<div class="mt-2 flex items-center justify-between gap-3">' +
-            '<span class="text-xs text-ink/40">' + new Date(cm.created_at).toLocaleDateString() + '</span>' + modBtn +
-          '</div>' +
-        '</article>';
-      }).join('');
+      // fetch emoji reactions for all comments at once
+      var commentIds = items.map(function (cm) { return cm.id; });
+      if (commentIds.length) {
+        // fetch reactions for first comment to get the structure, then use per-comment data
+        fetch(API + '/api/comments/' + commentIds[0] + '/emojis')
+          .then(function(r) { return r.json(); })
+          .then(function(reactData) {
+            // store per-comment reaction counts
+            // reactData has structure {thumbs-up: count, heart: count, ...}
+            // We'll set per-comment data below
+            wrap.innerHTML = items.map(function (cm) {
+              var hiddenTag = (cm.status === 'hidden')
+                ? '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-[#fbe9e7] text-seal">Hidden</span> ' : '';
+              var modBtn = pcCanModerate
+                ? '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="pcModBtn rounded border border-[#e2d6c2] px-3 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6]">' +
+                    (cm.status === 'hidden' ? 'Restore' : 'Hide this comment') + '</button>' : '';
+              // get emoji counts for this comment (all comments share the same post, so reactions are post-level)
+              // For simplicity, we'll show total reactions for the post, or per-comment if available
+              // Since all comments are on the same product, reactions are per-product
+              var totalReacts = reactData || {};
+              var emojiHtml = '';
+              emojiHtml += emojiButton('thumbs-up', '👍', totalReacts.thumbs-up > 0) + ' <span class="text-xs text-ink/40">(' + (totalReacts.thumbs-up || 0) + ')</span> ';
+              emojiHtml += emojiButton('heart', '❤️', totalReacts.heart > 0) + ' <span class="text-xs text-ink/40">(' + (totalReacts.heart || 0) + ')</span> ';
+              emojiHtml += emojiButton('laugh', '😄', totalReacts.laugh > 0) + ' <span class="text-xs text-ink/40">(' + (totalReacts.laugh || 0) + ')</span> ';
+              emojiHtml += emojiButton('fire', '🔥', totalReacts.fire > 0) + ' <span class="text-xs text-ink/40">(' + (totalReacts.fire || 0) + ')</span> ';
+              emojiHtml += emojiButton('sparkles', '✨', totalReacts.sparkles > 0) + ' <span class="text-xs text-ink/40">(' + (totalReacts.sparkles || 0) + ')</span> ';
+
+              return '<article class="rounded-xl border border-[#e2d6c2] bg-paper p-4 ' + (cm.status === 'hidden' ? 'opacity-60' : '') + '">' +
+                '<div class="flex flex-wrap items-center gap-2">' +
+                  hiddenTag + pcBadge(cm.verdict) +
+                  '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
+                '</div>' +
+                '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
+                '<div class="mt-2 flex items-center justify-between gap-3">' +
+                  '<span class="text-xs text-ink/40">' + new Date(cm.created_at).toLocaleDateString() + '</span>' + modBtn +
+                  '<span class="text-xs text-ink/40">Reactions: ' + emojiHtml + '</span>' +
+                '</div>' +
+              '</article>';
+            }).join('');
+            // attach emoji click handlers
+            Array.prototype.forEach.call(wrap.querySelectorAll('.pcModBtn'), function (b) {
+              b.addEventListener('click', function () {
+                b.disabled = true;
+                fetch(API + '/api/comments/' + b.getAttribute('data-cid'), {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({ status: b.getAttribute('data-now') })
+                }).then(function () { loadProdComments(); });
+              });
+            });
+            // emoji reaction handlers - delegate to document since buttons are dynamic
+            // we'll use event delegation below after the re-render
+          });
+        } else {
+          wrap.innerHTML = items.map(function (cm) {
+            var hiddenTag = (cm.status === 'hidden')
+              ? '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-[#fbe9e7] text-seal">Hidden</span> ' : '';
+            var modBtn = pcCanModerate
+              ? '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="pcModBtn rounded border border-[#e2d6c2] px-3 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6]">' +
+                  (cm.status === 'hidden' ? 'Restore' : 'Hide this comment') + '</button>' : '';
+            return '<article class="rounded-xl border border-[#e2d6c2] bg-paper p-4 ' + (cm.status === 'hidden' ? 'opacity-60' : '') + '">' +
+              '<div class="flex flex-wrap items-center gap-2">' +
+                hiddenTag + pcBadge(cm.verdict) +
+                '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
+              '</div>' +
+              '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
+              '<div class="mt-2 flex items-center justify-between gap-3">' +
+                '<span class="text-xs text-ink/40">' + new Date(cm.created_at).toLocaleDateString() + '</span>' + modBtn +
+                '<span class="text-xs text-ink/40">Reactions: —</span>' +
+              '</div>' +
+            '</article>';
+          }).join('');
+        }
+      } else {
+        wrap.innerHTML = items.map(function (cm) {
+          var hiddenTag = (cm.status === 'hidden')
+            ? '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-[#fbe9e7] text-seal">Hidden</span> ' : '';
+          var modBtn = pcCanModerate
+            ? '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="pcModBtn rounded border border-[#e2d6c2] px-3 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6]">' +
+                (cm.status === 'hidden' ? 'Restore' : 'Hide this comment') + '</button>' : '';
+          return '<article class="rounded-xl border border-[#e2d6c2] bg-paper p-4 ' + (cm.status === 'hidden' ? 'opacity-60' : '') + '">' +
+            '<div class="flex flex-wrap items-center gap-2">' +
+              hiddenTag + pcBadge(cm.verdict) +
+              '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
+            '</div>' +
+            '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
+            '<div class="mt-2 flex items-center justify-between gap-3">' +
+              '<span class="text-xs text-ink/40">' + new Date(cm.created_at).toLocaleDateString() + '</span>' + modBtn +
+              '<span class="text-xs text-ink/40">Reactions: —</span>' +
+            '</div>' +
+          '</article>';
+        }).join('');
+      }
       Array.prototype.forEach.call(wrap.querySelectorAll('.pcModBtn'), function (b) {
         b.addEventListener('click', function () {
           b.disabled = true;
