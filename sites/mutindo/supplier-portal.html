@@ -306,8 +306,8 @@ function loadMedia(){
       if(!items.length){none.classList.remove('hidden');grid.innerHTML='';return;}
       none.classList.add('hidden');
       grid.innerHTML=items.map(function(m){
-        var thumb=m.media_type==='image'?'<img src="'+esc(absMedia(m.storage_url||''))+'" alt="" class="w-full h-28 object-cover rounded-t-xl">':'<div class="w-full h-28 bg-[#e6efe0] rounded-t-xl flex items-center justify-center text-3xl">'+(m.media_type==='audio'?'🎵':m.media_type==='video'?'🎬':'📄')+'</div>';
-        return '<div class="rounded-xl border border-[#e2d6c2] bg-paper overflow-hidden">'+thumb+
+        var thumbHTML=BusolyaMedia.thumb(m);
+        return '<div class="rounded-xl border border-[#e2d6c2] bg-paper overflow-hidden">'+thumbHTML+
           '<div class="p-2"><p class="text-xs font-semibold text-bark truncate">'+esc(m.title||m.filename||'—')+'</p>'+
           '<p class="text-[.65rem] text-ink/45 mt-0.5">'+esc(m.media_type)+'</p>'+
           '<button data-mid="'+m.id+'" class="del-media mt-2 text-[.65rem] text-seal hover:underline">Remove</button></div></div>';

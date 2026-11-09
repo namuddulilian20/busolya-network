@@ -94,7 +94,7 @@ tailwind.config = {
         <!-- Main image -->
         <div id="mainImgWrap" class="relative overflow-hidden rounded-2xl border border-[#e2d6c2] bg-paper"
           style="aspect-ratio:4/3">
-          <img id="mainImg" src="" alt="" class="h-full w-full object-cover hidden" loading="eager">
+          <img id="mainImg" src="" alt="" class="h-full w-full object-cover hidden" loading="eager" onerror="this.replaceWith(BusolyaMedia.placeholder()); this.onerror=null">
           <div id="noImgPlaceholder"
             class="flex h-full w-full items-center justify-center bg-[#e6efe0] text-7xl">🌱</div>
           <!-- media type badge -->
@@ -335,6 +335,7 @@ function activateMedia(idx) {
       mainImg.src = /^https?:|^data:/.test(m.storage_url)
         ? m.storage_url
         : 'https://busolya-api.onrender.com' + (m.storage_url.charAt(0) === '/' ? m.storage_url : '/' + m.storage_url);
+      mainImg.onerror = function () { this.replaceWith(BusolyaMedia.placeholder()); this.onerror = null; };
       mainImg.alt = m.title || _product.title || '';
       mainImg.classList.remove('hidden');
     } else {
@@ -368,11 +369,7 @@ function buildThumbs(media) {
   var strip = document.getElementById('thumbStrip');
   if (!media.length) { strip.style.display='none'; return; }
   strip.innerHTML = media.map(function(m, i){
-    var icon = m.media_type === 'image'
-      ? (m.storage_url ? '<img src="'+esc(absMedia(m.storage_url))+'" alt="" class="h-full w-full object-cover">' : '<span class="text-2xl">🌱</span>')
-      : (m.media_type === 'audio' ? '<span class="text-xl">🎵</span>' :
-         m.media_type === 'video' ? '<span class="text-xl">🎬</span>' : '<span class="text-xl">📄</span>');
-    return '<div class="thumb flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-xl overflow-hidden border-2 border-[#e2d6c2] bg-paper" data-idx="'+i+'">'+icon+'</div>';
+    return '<div class="thumb bsl-media-detail flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-xl overflow-hidden border-2 border-[#e2d6c2] bg-paper" data-idx="'+i+'">'+BusolyaMedia.thumb(m)+'</div>';
   }).join('');
   strip.querySelectorAll('.thumb').forEach(function(t){
     t.addEventListener('click', function(){ activateMedia(Number(t.getAttribute('data-idx'))); });
@@ -648,7 +645,7 @@ function loadProdComments() {
               // Since all comments are on the same product, reactions are per-product
               var totalReacts = reactData || {};
               var emojiHtml = '';
-              emojiHtml += emojiButton('thumbs-up', '👍', totalReacts.thumbs-up > 0) + ' <span class="text-xs text-ink/40">(' + (totalReacts.thumbs-up || 0) + ')</span> ';
+              emojiHtml += emojiButton('thumbs-up', '👍', totalReacts['thumbs-up'] > 0) + ' <span class="text-xs text-ink/40">(' + (totalReacts['thumbs-up'] || 0) + ')</span> ';
               emojiHtml += emojiButton('heart', '❤️', totalReacts.heart > 0) + ' <span class="text-xs text-ink/40">(' + (totalReacts.heart || 0) + ')</span> ';
               emojiHtml += emojiButton('laugh', '😄', totalReacts.laugh > 0) + ' <span class="text-xs text-ink/40">(' + (totalReacts.laugh || 0) + ')</span> ';
               emojiHtml += emojiButton('fire', '🔥', totalReacts.fire > 0) + ' <span class="text-xs text-ink/40">(' + (totalReacts.fire || 0) + ')</span> ';
@@ -701,26 +698,6 @@ function loadProdComments() {
             '</article>';
           }).join('');
         }
-      } else {
-        wrap.innerHTML = items.map(function (cm) {
-          var hiddenTag = (cm.status === 'hidden')
-            ? '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-[#fbe9e7] text-seal">Hidden</span> ' : '';
-          var modBtn = pcCanModerate
-            ? '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="pcModBtn rounded border border-[#e2d6c2] px-3 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6]">' +
-                (cm.status === 'hidden' ? 'Restore' : 'Hide this comment') + '</button>' : '';
-          return '<article class="rounded-xl border border-[#e2d6c2] bg-paper p-4 ' + (cm.status === 'hidden' ? 'opacity-60' : '') + '">' +
-            '<div class="flex flex-wrap items-center gap-2">' +
-              hiddenTag + pcBadge(cm.verdict) +
-              '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
-            '</div>' +
-            '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
-            '<div class="mt-2 flex items-center justify-between gap-3">' +
-              '<span class="text-xs text-ink/40">' + new Date(cm.created_at).toLocaleDateString() + '</span>' + modBtn +
-              '<span class="text-xs text-ink/40">Reactions: —</span>' +
-            '</div>' +
-          '</article>';
-        }).join('');
-      }
       Array.prototype.forEach.call(wrap.querySelectorAll('.pcModBtn'), function (b) {
         b.addEventListener('click', function () {
           b.disabled = true;
