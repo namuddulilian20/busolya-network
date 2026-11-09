@@ -105,16 +105,9 @@ img, video {
         <input id="q" type="search" placeholder="Business name or contact" class="mt-1 w-full rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
       </div>
       <div>
-        <label for="sector" class="block text-sm font-semibold text-bark">Sector</label>
+        <label for="sector" class="block text-sm font-semibold text-bark">District</label>
         <select id="sector" class="mt-1 rounded-lg border border-[#e2d6c2] bg-white px-3 py-2.5 text-sm focus:border-leaf focus:outline-none focus:ring-4 focus:ring-leaf/20">
-          <option value="">All sectors</option>
-          <option>Agro inputs</option>
-          <option>Farm / production</option>
-          <option>Distribution &amp; trade</option>
-          <option>Food, catering &amp; processing</option>
-          <option>Crafts &amp; cultural products</option>
-          <option>Health &amp; wellness</option>
-          <option>Community &amp; institutions</option>
+          <option value="">All districts</option>
         </select>
       </div>
       <p id="count" class="ml-auto text-sm text-ink/60"></p>
@@ -126,28 +119,12 @@ img, video {
           <tr>
             <th class="px-4 py-3">Business / company</th>
             <th class="px-4 py-3">Exhibitor contact</th>
-            <th class="px-4 py-3">Sector <span class="normal-case opacity-70">(provisional)</span></th>
+            <th class="px-4 py-3">District</th>
+            <th class="px-4 py-3 text-center">Listings</th>
           </tr>
         </thead>
         <tbody id="rows" class="divide-y divide-[#e2d6c2] bg-paper">
-          <tr data-sector="Distribution &amp; trade"><td class="px-4 py-3 font-semibold text-bark">Kkabra Gold INRL</td><td class="px-4 py-3">Ssemirembe J. RON</td><td class="px-4 py-3"><span class="rounded-full bg-[#f7ecd6] px-2.5 py-1 text-xs font-semibold text-[#8a5a12]">Distribution &amp; trade</span></td></tr>
-          <tr data-sector="Agro inputs"><td class="px-4 py-3 font-semibold text-bark">Happy Dur / Tasma-Organic</td><td class="px-4 py-3">Okwad stell</td><td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">Agro inputs</span></td></tr>
-          <tr data-sector="Food, catering &amp; processing"><td class="px-4 py-3 font-semibold text-bark">Zukula catering services</td><td class="px-4 py-3">Namuddu Zikula</td><td class="px-4 py-3"><span class="rounded-full bg-[#f7e2dd] px-2.5 py-1 text-xs font-semibold text-[#8a2716]">Food &amp; catering</span></td></tr>
-          <tr data-sector="Distribution &amp; trade"><td class="px-4 py-3 font-semibold text-bark">Crocs Distributors</td><td class="px-4 py-3">Nehal Zubam</td><td class="px-4 py-3"><span class="rounded-full bg-[#f7ecd6] px-2.5 py-1 text-xs font-semibold text-[#8a5a12]">Distribution &amp; trade</span></td></tr>
-          <tr data-sector="Farm / production"><td class="px-4 py-3 font-semibold text-bark">Mukyunyu Umbrella Farm</td><td class="px-4 py-3">Mukyunyu</td><td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">Farm / production</span></td></tr>
-          <tr data-sector="Health &amp; wellness"><td class="px-4 py-3 font-semibold text-bark">Sky Dental Care and Dental Services</td><td class="px-4 py-3">Mbabazi Maliza</td><td class="px-4 py-3"><span class="rounded-full bg-[#e8eef5] px-2.5 py-1 text-xs font-semibold text-[#2b4a6b]">Health</span></td></tr>
-          <tr data-sector="Agro inputs"><td class="px-4 py-3 font-semibold text-bark">Kkata Agro Agri Chemicals and Supplies</td><td class="px-4 py-3">Kimbowa James</td><td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">Agro inputs</span></td></tr>
-          <tr data-sector="Health &amp; wellness"><td class="px-4 py-3 font-semibold text-bark">Global Fitness International</td><td class="px-4 py-3">Ali Rehan</td><td class="px-4 py-3"><span class="rounded-full bg-[#e8eef5] px-2.5 py-1 text-xs font-semibold text-[#2b4a6b]">Wellness</span></td></tr>
-          <tr data-sector="Farm / production"><td class="px-4 py-3 font-semibold text-bark">Muyinzi Tasubwa</td><td class="px-4 py-3">Muyizi Tasubwa</td><td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">Farm / production</span></td></tr>
-          <tr data-sector="Crafts &amp; cultural products"><td class="px-4 py-3 font-semibold text-bark">Jeus Loves You Art and Crafts</td><td class="px-4 py-3">Liz Bakyayita</td><td class="px-4 py-3"><span class="rounded-full bg-[#f3e9f7] px-2.5 py-1 text-xs font-semibold text-[#5b2d6b]">Crafts</span></td></tr>
-          <tr data-sector="Health &amp; wellness"><td class="px-4 py-3 font-semibold text-bark">Indian Neelambari (Herbal)</td><td class="px-4 py-3">Krishna Kumri</td><td class="px-4 py-3"><span class="rounded-full bg-[#e8eef5] px-2.5 py-1 text-xs font-semibold text-[#2b4a6b]">Herbal</span></td></tr>
-          <tr data-sector="Distribution &amp; trade"><td class="px-4 py-3 font-semibold text-bark">Abida Naisargi</td><td class="px-4 py-3">Abida</td><td class="px-4 py-3"><span class="rounded-full bg-[#f7ecd6] px-2.5 py-1 text-xs font-semibold text-[#8a5a12]">Trade</span></td></tr>
-          <tr data-sector="Distribution &amp; trade"><td class="px-4 py-3 font-semibold text-bark">Anika Overseas India</td><td class="px-4 py-3">Kabir Ahmad</td><td class="px-4 py-3"><span class="rounded-full bg-[#f7ecd6] px-2.5 py-1 text-xs font-semibold text-[#8a5a12]">Import / export</span></td></tr>
-          <tr data-sector="Food, catering &amp; processing"><td class="px-4 py-3 font-semibold text-bark">Jojo Catering and Ice Cream</td><td class="px-4 py-3">Nankunda Dhoreen</td><td class="px-4 py-3"><span class="rounded-full bg-[#f7e2dd] px-2.5 py-1 text-xs font-semibold text-[#8a2716]">Food &amp; catering</span></td></tr>
-          <tr data-sector="Community &amp; institutions"><td class="px-4 py-3 font-semibold text-bark">God's Favour</td><td class="px-4 py-3">Kabugo Rosemary</td><td class="px-4 py-3"><span class="rounded-full bg-[#eef0e6] px-2.5 py-1 text-xs font-semibold text-[#4a5a2b]">Community</span></td></tr>
-          <tr data-sector="Farm / production"><td class="px-4 py-3 font-semibold text-bark">Samuel Mbogo</td><td class="px-4 py-3">Samuel Mbogo</td><td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">Farm / production</span></td></tr>
-          <tr data-sector="Community &amp; institutions"><td class="px-4 py-3 font-semibold text-bark">Good Samaritan Hoima</td><td class="px-4 py-3">Kabugo Davis</td><td class="px-4 py-3"><span class="rounded-full bg-[#eef0e6] px-2.5 py-1 text-xs font-semibold text-[#4a5a2b]">Community</span></td></tr>
-          <tr data-sector="Farm / production"><td class="px-4 py-3 font-semibold text-bark">Gava Organic</td><td class="px-4 py-3">Gava Philip</td><td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">Organic</span></td></tr>
+          <tr><td colspan="4" class="px-4 py-8 text-center text-ink/50">Loading directory…</td></tr>
         </tbody>
       </table>
     </div>
@@ -182,30 +159,82 @@ img, video {
 <script src="assets/network.js"></script>
 <script>
 (function () {
+  var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+    ? 'http://localhost:10000' : 'https://busolya-api.onrender.com';
+  var BAE = 'https://bataka-agro-expo.onrender.com';
   var q = document.getElementById('q');
   var sector = document.getElementById('sector');
-  var rows = Array.prototype.slice.call(document.querySelectorAll('#rows tr'));
+  var rowsEl = document.getElementById('rows');
   var count = document.getElementById('count');
+  var all = [];
 
-  function apply() {
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function render() {
     var term = q.value.trim().toLowerCase();
     var want = sector.value;
     var shown = 0;
-    rows.forEach(function (row) {
-      var text = row.textContent.toLowerCase();
-      var ok = (!term || text.indexOf(term) > -1) && (!want || row.dataset.sector === want);
-      row.style.display = ok ? '' : 'none';
-      if (ok) shown++;
+    var html = '';
+    all.forEach(function (e) {
+      var matchTerm = !term
+        || String(e.business || '').toLowerCase().indexOf(term) > -1
+        || String(e.contact || '').toLowerCase().indexOf(term) > -1
+        || String(e.district || '').toLowerCase().indexOf(term) > -1;
+      var matchDistrict = !want || String(e.district || '').toLowerCase() === want.toLowerCase();
+      if (!matchTerm || !matchDistrict) return;
+      shown++;
+      var stallUrl = BAE + '/stall.html?id=' + encodeURIComponent(e.id) + '&biz=' + encodeURIComponent(e.business || '') + '&ex=' + encodeURIComponent(e.contact || '');
+      var badge = Number(e.listings) > 0
+        ? '<span class="inline-block rounded-full bg-leaf px-2 py-0.5 text-[.68rem] font-bold text-white">' + e.listings + ' listing' + (e.listings > 1 ? 's' : '') + '</span>'
+        : '<span class="inline-block rounded-full bg-seal/20 px-2 py-0.5 text-[.68rem] font-bold text-seal">No listings</span>';
+      html += '<tr>'
+        + '<td class="px-4 py-3 font-semibold text-bark"><a href="' + esc(stallUrl) + '" class="underline hover:text-gold" target="_blank" rel="noopener">' + esc(e.business || 'Exhibitor') + '</a></td>'
+        + '<td class="px-4 py-3">' + esc(e.contact || '') + '</td>'
+        + '<td class="px-4 py-3"><span class="rounded-full bg-[#e6efe0] px-2.5 py-1 text-xs font-semibold text-leafdark">' + esc(e.district || '—') + '</span></td>'
+        + '<td class="px-4 py-3 text-center">' + badge + '</td>'
+        + '</tr>';
     });
-    count.textContent = shown + ' of ' + rows.length + ' listings';
+    if (!shown) {
+      html = '<tr><td colspan="4" class="px-4 py-8 text-center text-ink/50">No listings match your search.</td></tr>';
+    }
+    rowsEl.innerHTML = html;
+    count.textContent = shown + ' of ' + all.length + ' listings';
   }
 
-  q.addEventListener('input', apply);
-  sector.addEventListener('change', apply);
-  apply();
+  /* Build the district dropdown from the data */
+  function buildDistrictFilter() {
+    var districts = {};
+    all.forEach(function (e) { if (e.district) districts[e.district] = true; });
+    var opts = '<option value="">All districts</option>';
+    Object.keys(districts).sort().forEach(function (d) {
+      opts += '<option value="' + esc(d) + '">' + esc(d) + '</option>';
+    });
+    sector.innerHTML = opts;
+  }
+
+  fetch(API + '/api/stall-directory')
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (d) {
+      all = (d && d.ok && d.stalls) ? d.stalls : [];
+      if (!all.length) {
+        rowsEl.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-ink/50">No exhibitors registered yet. Listings appear here as exhibitors add products.</td></tr>';
+        count.textContent = '0 listings';
+        return;
+      }
+      all.sort(function (a, b) { return String(a.business || '').localeCompare(String(b.business || '')); });
+      buildDistrictFilter();
+      render();
+    })
+    .catch(function (err) {
+      console.error('[directory] fetch failed:', err);
+      rowsEl.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-ink/50">Could not load the directory. Try again later.</td></tr>';
+      count.textContent = '—';
+    });
+
+  q.addEventListener('input', render);
+  sector.addEventListener('change', render);
 })();
 </script>
-<script src="assets/network.js"></script>
 <script src="assets/components.js"></script>
 </body>
 </html>
