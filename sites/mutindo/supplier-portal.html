@@ -156,8 +156,17 @@ img, video {
             <input id="pTitle" type="text" required class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" placeholder="e.g. Certified maize seed — 50 kg bags">
           </div>
           <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Type</label>
+            <select id="pItemType" class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf">
+              <option value="product">Product</option>
+              <option value="service">Service</option>
+              <option value="experience">Experience</option>
+            </select>
+          </div>
+          <div>
             <label class="mb-1 block text-sm font-semibold text-bark">Category</label>
-            <input id="pCategory" type="text" class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" placeholder="e.g. Agro inputs">
+            <input id="pCategory" type="text" list="pCategoryList" class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" placeholder="Select or type a category">
+            <datalist id="pCategoryList"></datalist>
           </div>
           <div>
             <label class="mb-1 block text-sm font-semibold text-bark">Unit of sale</label>
@@ -309,7 +318,7 @@ function renderProducts(products){
     card.className='flex flex-wrap items-start justify-between gap-3 rounded-xl border border-[#e2d6c2] bg-paper p-4';
     card.setAttribute('data-pid',p.id);
     card.innerHTML='<div class="flex-1 min-w-0"><p class="font-semibold text-bark">'+esc(p.title)+'</p>'+
-      '<p class="text-xs text-ink/55">'+[p.category,p.district,p.location].filter(Boolean).map(esc).join(' · ')+'</p>'+
+      '<p class="text-xs text-ink/55 flex flex-wrap items-center gap-1"><span class="rounded px-1.5 py-0.5 text-[.65rem] font-semibold uppercase tracking-wide bg-[#e6efe0] text-leafdark">'+esc(p.item_type||'product')+'</span> '+[p.category,p.district,p.location].filter(Boolean).map(esc).join(' · ')+'</p>'+
       (p.description?'<p class="mt-1 text-sm text-ink/70">'+esc(p.description)+'</p>':'')+
       '<div class="mt-2 flex flex-wrap gap-3 text-xs"><span class="rounded bg-[#e6efe0] px-2 py-1 text-leafdark">'+(p.unit?'UGX '+fmt(p.price)+' / '+esc(p.unit):'UGX '+fmt(p.price))+'</span>'+
       '<span class="rounded bg-[#f4e8d6] px-2 py-1 text-bark">Stock: '+fmt(p.quantity_stock)+'</span></div></div>'+
@@ -351,7 +360,8 @@ document.getElementById('addProductForm').addEventListener('submit',function(e){
     quantity_stock:Number(document.getElementById('pStock').value)||0,
     description:document.getElementById('pDescription').value.trim()||undefined,
     location:document.getElementById('pLocation').value.trim()||undefined,
-    district:document.getElementById('pDistrict').value.trim()||undefined};
+    district:document.getElementById('pDistrict').value.trim()||undefined,
+    item_type:document.getElementById('pItemType').value||'product'};
   if(!body.title){showMsg(msgEl,'Product name is required.','err');return;}
   fetch(API+'/api/suppliers/products',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(body)})
     .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
@@ -443,6 +453,22 @@ function loadStats(){fetch(API+'/api/stats').then(function (r) { if (!r.ok) thro
 function shareStore(pl){var n=(me&&me.name)||'Supplier',u=location.origin+'/mutindo/index.html#store-'+me.id,t=n+'\nAbataka Mutindo SACCO · '+u;
   if(pl==='wa')window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
   else if(pl==='tg')window.open('https://t.me/share/url?url='+encodeURIComponent(u)+'&text='+encodeURIComponent(t),'_blank');}
+
+/* Category presets per type */
+var CATEGORY_PRESETS_M = {
+  product:    ['seeds', 'produce', 'agro inputs', 'livestock', 'equipment', 'processed food', 'crafts', 'minerals', 'other'],
+  service:    ['health & wellness', 'catering & food', 'consulting & training', 'financial', 'transport & logistics', 'legal', 'other'],
+  experience: ['tours', 'tasting & sampling', 'demonstrations', 'workshops', 'other']
+};
+function updateCategoryListM() {
+  var typeVal = document.getElementById('pItemType').value || 'product';
+  var dl = document.getElementById('pCategoryList');
+  if (!dl) return;
+  var opts = CATEGORY_PRESETS_M[typeVal] || CATEGORY_PRESETS_M.product;
+  dl.innerHTML = opts.map(function(c){ return '<option value="'+c.replace(/&/g,'&amp;')+'">'; }).join('');
+}
+document.getElementById('pItemType').addEventListener('change', updateCategoryListM);
+updateCategoryListM();
 
 loadProducts(); loadStats(); loadDirectory();
 window.shareStore = shareStore;

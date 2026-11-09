@@ -250,7 +250,10 @@ img, video {
             '<div id="pimg-' + p.id + '" class="flex h-36 w-36 items-center justify-center bg-[#e6efe0] text-5xl rounded-l-full overflow-hidden">🌱</div>' +
             '<div class="p-4">' +
               '<a href="' + detailUrl + '" class="block font-display text-lg font-bold text-bark hover:text-leaf">' + escH(p.title || 'Product') + '</a>' +
-              '<p class="mt-1 text-sm text-ink/60">' + escH(p.category || '') + (p.unit ? ' · ' + escH(p.unit) : '') + '</p>' +
+              '<p class="mt-1 text-sm text-ink/60 flex flex-wrap items-center gap-1">' +
+                (p.item_type && p.item_type !== 'product' ? '<span class="rounded px-1.5 py-0.5 text-[.65rem] font-semibold uppercase tracking-wide bg-[#e6efe0] text-leafdark">' + escH(p.item_type) + '</span> ' : '') +
+                escH(p.category || '') + (p.unit ? ' · ' + escH(p.unit) : '') +
+              '</p>' +
               (p.price ? '<p class="mt-1 text-sm font-bold text-leaf">UGX ' + Number(p.price).toLocaleString() + (p.unit ? ' / ' + escH(p.unit) : '') + '</p>' : '') +
               (p.description ? '<p class="mt-2 text-xs text-ink/55 line-clamp-2">' + escH(p.description) + '</p>' : '') +
               '<p class="mt-2 text-xs text-ink/40">Stock: ' + (p.quantity_stock || 0) + ' · ' + escH(p.district || '—') + '</p>' +

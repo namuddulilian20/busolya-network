@@ -25,38 +25,16 @@ tailwind.config = {
 }
 </script>
 <style>
-/* ── Horizontal scroll strips ── */
+/* ── Wrapping product grid ── */
 .stall-strip {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: calc((100% - 1rem * (var(--cols) - 1)) / var(--cols));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 1rem;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  --cols: 2;
+  flex-wrap: wrap;
 }
-.stall-strip::-webkit-scrollbar { display: none; }
-.stall-strip > * { scroll-snap-align: start; }
 
-@media (min-width: 640px)  { .stall-strip { --cols: 3; } }
-@media (min-width: 1024px) { .stall-strip { --cols: 5; } }
-
-/* ── Strip nav arrows ── */
-.strip-wrap { position: relative; }
-.arrow-btn {
-  position: absolute; top: 50%; transform: translateY(-50%);
-  z-index: 10; display: flex; align-items: center; justify-content: center;
-  width: 2.25rem; height: 2.25rem; border-radius: 50%;
-  background: rgba(255,255,255,.92); border: 1px solid #e2d6c2;
-  box-shadow: 0 2px 8px rgba(0,0,0,.12);
-  cursor: pointer; transition: background .15s;
-}
-.arrow-btn:hover { background: #fff; }
-.arrow-btn.prev { left: -1.1rem; }
-.arrow-btn.next { right: -1.1rem; }
-@media (max-width: 639px) { .arrow-btn { display: none; } }
+/* ── Strip nav arrows — hidden (grid wraps instead of scrolling) ── */
+.arrow-btn { display: none !important; }
 
 /* ── Hero ticker ── */
 @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
@@ -505,7 +483,7 @@ function buildProductCard(p, stallId, biz) {
     '<div class="overflow-hidden">' + imgHtml + '</div>' +
     '<div class="flex flex-col flex-1 p-3">' +
       '<p class="font-semibold text-bark text-sm leading-snug line-clamp-2">' + esc(p.title) + '</p>' +
-      (p.category ? '<p class="mt-0.5 text-[.65rem] text-ink/50 uppercase tracking-[.08em]">' + esc(p.category) + '</p>' : '') +
+      (p.category ? '<p class="mt-0.5 text-[.65rem] text-ink/50 uppercase tracking-[.08em]">' + esc(p.category) + (p.item_type && p.item_type !== 'product' ? ' · <span class="rounded px-1.5 py-0.5 text-[.65rem] font-semibold uppercase tracking-wide bg-[#e6efe0] text-leafdark">' + esc(p.item_type) + '</span>' : '') + '</p>' : (p.item_type && p.item_type !== 'product' ? '<p class="mt-0.5"><span class="rounded px-1.5 py-0.5 text-[.65rem] font-semibold uppercase tracking-wide bg-[#e6efe0] text-leafdark">' + esc(p.item_type) + '</span></p>' : '')) +
       '<div class="mt-auto pt-2 flex items-end justify-between gap-1">' +
         (p.price ? '<p class="font-bold text-leaf text-sm">UGX ' + fmt(p.price) + (p.unit ? '<span class="font-normal text-ink/50 text-[.65rem]"> / ' + esc(p.unit) + '</span>' : '') + '</p>' : '<p class="text-[.7rem] text-ink/40 italic">Ask for price</p>') +
         (p.quantity_stock ? '<span class="rounded bg-[#e6efe0] px-1.5 py-0.5 text-[.6rem] font-semibold text-leafdark">' + fmt(p.quantity_stock) + ' ' + esc(p.unit || 'in stock') + '</span>' : '') +
@@ -529,9 +507,9 @@ function buildStallBlock(stall, products, idx) {
   var hdClass  = HDCLASSES[idx % HDCLASSES.length];
   var stallUrl = 'stall.html?id=' + stallId + '&biz=' + encodeURIComponent(biz) + '&ex=' + encodeURIComponent(stall.ex);
 
-  // Decide what to show: up to 5 products, or a contact card if none
+  // Show ALL products, or a contact card if none
   var cards = products.length
-    ? products.slice(0, 10).map(function (p) { return buildProductCard(p, stallId, biz); }).join('')
+    ? products.map(function (p) { return buildProductCard(p, stallId, biz); }).join('')
     : buildContactCard(stallId, biz) + buildContactCard(stallId, biz);
 
   var productCount = products.length

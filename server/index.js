@@ -1499,11 +1499,12 @@ app.post('/api/suppliers/products', requireSupplier, rateLimit, async (req, res,
     const description = clean(b.description, 800);
     const location = clean(b.location, 160);
     const district = clean(b.district, 80);
+    const item_type = clean(b.item_type, 40) || 'product';
     if (!title) return res.status(400).json({ ok: false, error: 'product title is required' });
     const r = await db.query(
-      `insert into supplier_products (supplier_id, title, category, unit, price, quantity_stock, description, location, district)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning *`,
-      [req.supplier.id, title, category, unit, price, quantity_stock, description, location, district]
+      `insert into supplier_products (supplier_id, title, category, unit, price, quantity_stock, description, location, district, item_type)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning *`,
+      [req.supplier.id, title, category, unit, price, quantity_stock, description, location, district, item_type]
     );
     return res.status(201).json({ ok: true, product: r.rows[0] });
   } catch (err) { next(err); }
@@ -1523,6 +1524,18 @@ app.patch('/api/suppliers/products/:id', requireSupplier, rateLimit, async (req,
       if (k === 'price' || k === 'quantity_stock') params.push(Number(v) || 0);
       else params.push(clean(String(v), k === 'description' ? 800 : 160));
       sets.push(`${k} = $${idx}`);
+      idx += 1;
+    }
+    // available (boolean)
+    if (b.available !== undefined) {
+      params.push(bool(b.available));
+      sets.push(`available = $${idx}`);
+      idx += 1;
+    }
+    // item_type
+    if (b.item_type !== undefined) {
+      params.push(clean(String(b.item_type), 40));
+      sets.push(`item_type = $${idx}`);
       idx += 1;
     }
     if (!sets.length) return res.status(400).json({ ok: false, error: 'nothing to update' });
@@ -1843,6 +1856,10 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
   db.query('ALTER TABLE supplier_media ADD COLUMN IF NOT EXISTS thumb_storage_path text')
     .catch(function (err) {
       console.error('[media] thumb_storage_path migration skipped (local JSONL or already exists):', err.message);
+    });
+  db.query("ALTER TABLE supplier_products ADD COLUMN IF NOT EXISTS item_type text DEFAULT 'product'")
+    .catch(function (err) {
+      console.error('[products] item_type migration skipped (local JSONL or already exists):', err.message);
     });
 
   const multer = require('multer');
