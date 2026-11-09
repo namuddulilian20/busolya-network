@@ -203,6 +203,8 @@ img, video {
           <input id="quDistrict" type="text" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
         <div><label class="mb-1 block text-xs font-semibold text-bark">Organisation</label>
           <input id="quOrg" type="text" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
+        <div><label class="mb-1 block text-xs font-semibold text-bark">Password <span class="text-ink/50">(admin / staff only)</span></label>
+          <input id="quPassword" type="password" minlength="6" autocomplete="new-password" class="w-full rounded-lg border border-[#e2d6c2] px-3 py-2 text-sm"></div>
         <div class="md:col-span-3 flex gap-2">
           <button type="submit" class="rounded-full bg-leaf px-5 py-2 text-sm font-bold text-white hover:bg-leafdark">Save</button>
           <button type="button" onclick="document.getElementById('addUserForm').classList.add('hidden')"
@@ -715,27 +717,30 @@ img, video {
 
   /* ── Users ───────────────────────────────────────────────── */
   function loadUsers(role) {
-    var url = API + '/api/users' + (role ? '?role=' + role : '');
+    var url = API + '/api/admin/users' + (role ? '?role=' + role : '');
     authedFetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); }).then(function (d) {
       var tbody = document.getElementById('usersTableBody');
       tbody.innerHTML = '';
       (d.users || []).forEach(function (u) {
         var tr = document.createElement('tr');
+        var badges = (u.is_superuser ? ' 👑' : '') +
+          (u.is_active === false ? ' <span class="rounded-full bg-[#f8e3dd] px-2 py-0.5 text-xs font-semibold text-[#9a3b2c]">suspended</span>' : '');
+        var controls = u.is_superuser
+          ? '<span class="text-xs text-ink/50">protected</span>'
+          : '<select class="role-select rounded border border-[#e2d6c2] px-1.5 py-1 text-xs" data-uid="' + esc(u.id) + '">' +
+              ['admin','employee','supplier','member','customer'].map(function (r) {
+                return '<option value="' + r + '"' + (u.role === r ? ' selected' : '') + '>' + r + '</option>';
+              }).join('') +
+            '</select>' +
+            '<button class="reset-pw-btn rounded border border-[#e2d6c2] px-2 py-1 text-xs font-semibold text-bark hover:bg-[#f4e8d6]" data-uid="' + esc(u.id) + '" data-name="' + esc(u.name) + '">Reset password</button>';
         tr.innerHTML =
-          '<td class="px-4 py-3">' + esc(u.name) + '</td>' +
+          '<td class="px-4 py-3">' + esc(u.name) + badges + '</td>' +
           '<td class="px-4 py-3">' + esc(u.phone) + '</td>' +
           '<td class="px-4 py-3">' + esc(u.email) + '</td>' +
           '<td class="px-4 py-3"><span class="rounded-full bg-[#f4e8d6] px-2 py-0.5 text-xs font-semibold text-bark">' + esc(u.role) + '</span></td>' +
           '<td class="px-4 py-3">' + esc(u.district) + '</td>' +
           '<td class="px-4 py-3 text-ink/50">' + fmtDate(u.created_at) + '</td>' +
-          '<td class="px-4 py-3"><div class="flex items-center gap-1">' +
-            '<select class="role-select rounded border border-[#e2d6c2] px-1.5 py-1 text-xs" data-uid="' + esc(u.id) + '">' +
-              ['admin','employee','supplier','member','customer'].map(function (r) {
-                return '<option value="' + r + '"' + (u.role === r ? ' selected' : '') + '>' + r + '</option>';
-              }).join('') +
-            '</select>' +
-            '<button class="reset-pw-btn rounded border border-[#e2d6c2] px-2 py-1 text-xs font-semibold text-bark hover:bg-[#f4e8d6]" data-uid="' + esc(u.id) + '" data-name="' + esc(u.name) + '">Reset password</button>' +
-          '</div></td>';
+          '<td class="px-4 py-3"><div class="flex items-center gap-1">' + controls + '</div></td>';
         tbody.appendChild(tr);
       });
       document.getElementById('sUsers').textContent = (d.users || []).length;
@@ -794,7 +799,8 @@ img, video {
       email: document.getElementById('quEmail').value.trim() || undefined,
       role: document.getElementById('quRole').value,
       district: document.getElementById('quDistrict').value.trim() || undefined,
-      org: document.getElementById('quOrg').value.trim() || undefined
+      org: document.getElementById('quOrg').value.trim() || undefined,
+      password: (document.getElementById('quPassword') || {}).value || undefined
     };
     authedFetch(API + '/api/users', {
       method: 'POST',
@@ -803,7 +809,7 @@ img, video {
     }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
     .then(function (r) {
       if (!r.ok) { showMsg('addUserMsg', r.data.error || 'Failed', 'err'); return; }
-      showMsg('addUserMsg', 'User registered — temp password: last 6 digits of phone.', 'ok');
+      showMsg('addUserMsg', 'User registered. Public accounts sign in by phone; administrators and staff use the password you set.', 'ok');
       this.reset && this.reset();
       loadUsers();
     }.bind(this)).catch(function () { showMsg('addUserMsg', 'Server error.', 'err'); });

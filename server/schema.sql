@@ -529,3 +529,12 @@ create table if not exists comment_emoji_reactions (
 );
 create index if not exists comment_emoji_comment_idx on comment_emoji_reactions (comment_id);
 create index if not exists comment_emoji_user_idx   on comment_emoji_reactions (user_id);
+
+-- ---------- auth upgrades: DB-backed superuser, active flag, OTP ----------
+ALTER TABLE participants ADD COLUMN is_superuser boolean not null default false;
+ALTER TABLE participants ADD COLUMN is_active    boolean not null default true;
+ALTER TABLE participants ADD COLUMN otp_hash        text;
+ALTER TABLE participants ADD COLUMN otp_expires_at  timestamptz;
+ALTER TABLE participants ADD COLUMN otp_attempts    integer not null default 0;
+ALTER TABLE participants ADD COLUMN otp_issued_at   timestamptz;
+CREATE INDEX IF NOT EXISTS participants_superuser_idx ON participants (is_superuser);

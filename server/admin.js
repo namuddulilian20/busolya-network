@@ -30,6 +30,7 @@ header.top nav{display:flex;gap:12px;flex-wrap:wrap;font-size:13px}
 header.top nav a{color:#f2e7d6}
 header.top nav a.on{color:#fff;border-bottom:2px solid #fff}
 header.top .spacer{flex:1}
+header.top .who{font-size:12px;color:#e3d3bf}
 header.top form button{background:none;border:1px solid #8d7360;color:#f2e7d6;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px}
 main{max-width:1200px;margin:0 auto;padding:22px 20px 60px}
 h1{font-size:24px;margin:0 0 4px}
@@ -77,6 +78,7 @@ const NAV = [
   ['/admin/submissions?kind=supply', 'Supply log'],
   ['/admin/submissions?kind=linkage', 'Linkages'],
   ['/admin/visitors', 'Visitors'],
+  ['/admin/users', 'Users & roles'],
   ['/admin/suppliers', 'Suppliers'],
   ['/admin/directory', 'Directory'],
   ['/admin/questions', 'Questionnaires'],
@@ -108,9 +110,16 @@ function layout({ title, body, active = '' }) {
   <span class="brand">Busolya network · admin</span>
   <nav>${links}</nav>
   <span class="spacer"></span>
+  <span class="who" id="who"></span>
   <form method="post" action="/admin/logout"><button type="submit">Sign out</button></form>
 </div></header>
 <main>${body}</main>
+<script>
+  (function () {
+    var m = document.cookie.match(/(?:^|; )bsl_admin_name=([^;]*)/);
+    if (m) document.getElementById('who').textContent = decodeURIComponent(m[1]);
+  })();
+</script>
 </body>
 </html>`;
 }
@@ -131,10 +140,11 @@ function loginPage(error) {
   <p class="sub">Demand, supply, linkages and the directory.</p>
   ${error ? `<div class="err">${esc(error)}</div>` : ''}
   <form method="post" action="/admin/login">
-    <label>Password<input type="password" name="password" required autofocus autocomplete="current-password"></label>
+    <label>Phone or email <span class="muted">(administrator account)</span><input type="text" name="phone" autocomplete="username" placeholder="+256…"></label>
+    <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
     <div class="row"><button class="btn" type="submit">Sign in</button></div>
   </form>
-  <p class="muted">The password is the <code>ADMIN_PASSWORD</code> value set on the Render service.</p>
+  <p class="muted">Use your own administrator/staff account. If no per-user account exists yet, leave the phone blank and enter the shared <code>ADMIN_PASSWORD</code>.</p>
 </div>
 </body>
 </html>`;
@@ -526,6 +536,148 @@ function contactsPage({ rows }) {
   });
 }
 
+const ROLE_OPTIONS = ['supplier', 'member', 'customer', 'employee', 'admin'];
+
+function usersPage({ rows, role = '', q = '' }) {
+  const body = rows.map((u) => [
+    `<a href="/admin/users/${u.id}">${esc(u.name || '(no name)')}</a>${u.is_superuser ? ' <span title="Superuser">👑</span>' : ''}`,
+    esc(u.phone),
+    esc(u.email),
+    `<span class="pill">${esc(u.role)}</span>`,
+    esc(u.district || u.org || ''),
+    u.is_active === false
+      ? '<span class="pill new">suspended</span>'
+      : '<span class="pill ok">active</span>',
+    `<span class="muted">${fmtDate(u.created_at)}</span>`
+  ]);
+
+  return layout({
+    title: 'Users & roles',
+    active: '/admin/users',
+    body: `
+      <h1>Users &amp; roles</h1>
+      <p class="sub">Everyone with an account: members, suppliers, customers, staff and administrators.</p>
+      <form method="get" action="/admin/users" class="row">
+        <label>Role
+          <select name="role">
+            <option value="">All roles</option>
+            ${ROLE_OPTIONS.map((r) => `<option value="${r}"${role === r ? ' selected' : ''}>${r}</option>`).join('')}
+          </select>
+        </label>
+        <label>Search
+          <input type="search" name="q" value="${esc(q)}" placeholder="name, phone, email or org">
+        </label>
+        <button class="btn small" type="submit">Filter</button>
+        <a class="btn small dark" style="color:#fff" href="/admin/users/new">New user</a>
+      </form>
+      ${table(['Name', 'Phone', 'Email', 'Role', 'District / org', 'Status', 'Created'], body)}
+      <p class="muted">👑 marks the superuser account. Public accounts sign in with phone verification; administrators and staff sign in with their password.</p>`
+  });
+}
+
+function userNewPage({ error = '' }) {
+  return layout({
+    title: 'New user',
+    active: '/admin/users',
+    body: `
+      <h1>New user</h1>
+      <p class="sub"><a href="/admin/users">← Back to users</a></p>
+      ${error ? `<div class="err">${esc(error)}</div>` : ''}
+      <div class="panel">
+        <form method="post" action="/admin/users">
+          <div class="grid2">
+            <label>Full name *<input type="text" name="name" required></label>
+            <label>Phone number *<input type="tel" name="phone" required placeholder="+256…"></label>
+            <label>Email<input type="email" name="email"></label>
+            <label>Role
+              <select name="role">
+                ${ROLE_OPTIONS.map((r) => `<option value="${r}"${r === 'customer' ? ' selected' : ''}>${r}</option>`).join('')}
+              </select>
+            </label>
+            <label>District<input type="text" name="district"></label>
+            <label>Organisation<input type="text" name="org"></label>
+          </div>
+          <label>Password <span class="muted">(required for administrator / staff roles; leave blank for public accounts)</span>
+            <input type="password" name="password" autocomplete="new-password">
+          </label>
+          <div class="row"><button class="btn" type="submit">Create user</button></div>
+        </form>
+      </div>`
+  });
+}
+
+function userEditPage({ row, canManage = false, message = '' }) {
+  const roleForm = canManage && !row.is_superuser ? `
+    <div class="panel">
+      <h2>Role</h2>
+      <form method="post" action="/admin/users/${row.id}/role" class="row">
+        <label>Role
+          <select name="role">
+            ${ROLE_OPTIONS.map((r) => `<option value="${r}"${row.role === r ? ' selected' : ''}>${r}</option>`).join('')}
+          </select>
+        </label>
+        <button class="btn small" type="submit">Save role</button>
+      </form>
+      <p class="muted">Administrators and staff need a password before they can hold that role.</p>
+    </div>` : '';
+
+  const passwordForm = canManage ? `
+    <div class="panel">
+      <h2>Reset password</h2>
+      <form method="post" action="/admin/users/${row.id}/password" class="row">
+        <label>New password<input type="password" name="password" minlength="6" autocomplete="new-password" required></label>
+        <button class="btn small warn" type="submit">Set password</button>
+      </form>
+      <p class="muted">${row.has_password ? 'This account already has a password.' : 'No password set — this account signs in with phone verification.'}</p>
+    </div>` : '';
+
+  const statusForm = canManage && !row.is_superuser ? `
+    <div class="panel">
+      <h2>Access</h2>
+      <form method="post" action="/admin/users/${row.id}/status" class="row">
+        <input type="hidden" name="active" value="${row.is_active === false ? 'true' : 'false'}">
+        <button class="btn small ${row.is_active === false ? '' : 'warn'}" type="submit">
+          ${row.is_active === false ? 'Reactivate account' : 'Suspend account'}
+        </button>
+      </form>
+      <p class="muted">Suspension blocks sign-in but keeps the record and its history.</p>
+    </div>` : '';
+
+  return layout({
+    title: row.name || 'User',
+    active: '/admin/users',
+    body: `
+      <h1>${esc(row.name || '(no name)')} ${row.is_superuser ? '<span title="Superuser">👑</span>' : ''}</h1>
+      <p class="sub"><a href="/admin/users">← Back to users</a></p>
+      ${message ? `<div class="note">${esc(message)}</div>` : ''}
+      ${!canManage ? '<div class="note">Your account can view users but not change roles, passwords or access.</div>' : ''}
+      <div class="panel">
+        <dl>
+          <dt>Phone</dt><dd>${esc(row.phone)}</dd>
+          <dt>Role</dt><dd><span class="pill">${esc(row.role)}</span></dd>
+          <dt>Status</dt><dd>${row.is_active === false ? '<span class="pill new">suspended</span>' : '<span class="pill ok">active</span>'}</dd>
+          <dt>Superuser</dt><dd>${row.is_superuser ? 'Yes — protected account' : 'No'}</dd>
+          <dt>Created</dt><dd>${fmtDate(row.created_at)}</dd>
+        </dl>
+      </div>
+      <div class="panel">
+        <h2>Profile</h2>
+        <form method="post" action="/admin/users/${row.id}">
+          <div class="grid2">
+            <label>Full name *<input type="text" name="name" value="${esc(row.name)}" required></label>
+            <label>Email<input type="email" name="email" value="${esc(row.email)}"></label>
+            <label>District<input type="text" name="district" value="${esc(row.district)}"></label>
+            <label>Organisation<input type="text" name="org" value="${esc(row.org)}"></label>
+          </div>
+          <div class="row"><button class="btn" type="submit">Save profile</button></div>
+        </form>
+      </div>
+      ${roleForm}
+      ${passwordForm}
+      ${statusForm}`
+  });
+}
+
 module.exports = {
   esc,
   fmtDate,
@@ -541,6 +693,9 @@ module.exports = {
   networksPage,
   visitorsPage,
   suppliersPage,
+  usersPage,
+  userNewPage,
+  userEditPage,
   contactsPage,
   saccoPage,
   farmAidPage

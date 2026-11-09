@@ -12,6 +12,11 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'insecure-development-secret';
 const SESSION_HOURS = 8;
 const COOKIE = 'bsl_admin';
+const SUPERUSER_PHONE = process.env.SUPERUSER_PHONE || '+256780698353';
+const SMS_PROVIDER_URL = process.env.SMS_PROVIDER_URL || '';
+const SMS_API_KEY = process.env.SMS_API_KEY || '';
+const OTP_TTL_MINUTES = Number(process.env.OTP_TTL_MINUTES || 10);
+const OTP_MAX_ATTEMPTS = 5;
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
@@ -106,7 +111,11 @@ function currentSession(req) {
 }
 
 function requireAdmin(req, res, next) {
-  if (currentSession(req)) return next();
+  const session = currentSession(req);
+  if (session) {
+    req.admin = session;
+    return next();
+  }
   if (req.path.startsWith('/api/')) return res.status(401).json({ ok: false, error: 'unauthorised' });
   return res.redirect('/admin/login');
 }
@@ -479,7 +488,65 @@ app.post('/api/contact', rateLimit, async (req, res, next) => {
 const SUPPLIER_COOKIE = 'bsl_supplier';
 
 function hashPwd(password) {
-  return crypto.createHash('sha256').update(String(password)).digest('hex');
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(String(password), salt, 100000, 64, 'sha512').toString('hex');
+  return salt + ':' + hash;
+}
+
+function verifyPwd(password, stored) {
+  if (!stored) return false;
+  if (!stored.includes(':')) {
+    // Legacy SHA-256 fallback
+    return stored === crypto.createHash('sha256').update(String(password)).digest('hex');
+  }
+  const [salt, hash] = stored.split(':');
+  const attempt = crypto.pbkdf2Sync(String(password), salt, 100000, 64, 'sha512').toString('hex');
+  return attempt === hash;
+}
+
+/* ── One-time codes (OTP) ─────────────────────────────────────────
+   Issued by /api/auth/challenge when an SMS provider is configured.
+   Verification is bound to the account phone so a code cannot be
+   reused against a different account. Falls back to last-5 digits
+   when no SMS provider is set, so existing users are never locked out. */
+function makeOtp() {
+  return String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+}
+
+function otpMaterial(code, phone) {
+  return String(code) + '|' + String(phone || '').replace(/\D/g, '').slice(-5);
+}
+
+function otpHash(code, phone) {
+  return hashPwd(otpMaterial(code, phone));
+}
+
+function otpMatches(code, stored, phone) {
+  return !!stored && verifyPwd(otpMaterial(code, phone), stored);
+}
+
+async function sendOtpSms(phone, code) {
+  if (!SMS_PROVIDER_URL) return false;
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (SMS_API_KEY) headers.Authorization = 'Bearer ' + SMS_API_KEY;
+    const response = await fetch(SMS_PROVIDER_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        to: phone,
+        message: `Your Busolya verification code is ${code}. It expires in ${OTP_TTL_MINUTES} minutes.`
+      })
+    });
+    if (!response.ok) {
+      console.error('[otp] sms provider returned', response.status);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[otp] sms send failed:', err.message);
+    return false;
+  }
 }
 
 function signSupplier(payload) {
@@ -611,6 +678,12 @@ app.post('/api/auth/register', rateLimit, async (req, res, next) => {
       }
     }
 
+    // The designated superuser phone is promoted whenever it registers.
+    if (String(phone).replace(/\D/g, '') === String(SUPERUSER_PHONE).replace(/\D/g, '')) {
+      await db.query('update participants set is_superuser = $2, role = $3 where id = $1', [participantId, true, 'admin']);
+      role = 'admin';
+    }
+
     return res.status(isNew ? 201 : 200).json({
       ok: true,
       id: participantId,
@@ -648,8 +721,10 @@ function maskPhone(phone) {
   return out;
 }
 
-// POST /api/auth/challenge — step 1 of phone verification login.
+// POST /api/auth/challenge — step 1 of login.
 // Confirms the account exists and returns the masked phone + the prompt.
+// When SMS is configured it issues a 6-digit OTP; otherwise the existing
+// "last 5 digits of the phone number" check is used.
 app.post('/api/auth/challenge', rateLimit, async (req, res, next) => {
   try {
     const b = req.body || {};
@@ -660,26 +735,54 @@ app.post('/api/auth/challenge', rateLimit, async (req, res, next) => {
     const isEmail = loginId.includes('@');
     const col = isEmail ? 'email' : 'phone';
     const p = await db.query(
-      `select id, phone from participants where ${col} = $1 limit 1`,
+      `select id, phone, role, is_active from participants where ${col} = $1 limit 1`,
       [loginId]
     );
     let row = p.rows[0] || null;
+    let table = 'participants';
     if (!row) {
       const s = await db.query(
         'select id, phone from suppliers where phone = $1 limit 1', [loginId]
       );
       row = s.rows[0] || null;
+      table = 'suppliers';
     }
     if (!row || !row.phone) {
       return res.status(404).json({ ok: false, error: 'no account found for that phone number' });
     }
+    if (row.is_active === false) {
+      return res.status(403).json({ ok: false, error: 'this account is suspended — contact an administrator' });
+    }
     if (['admin', 'employee'].includes(row.role)) {
       return res.status(403).json({ ok: false, error: 'administrator accounts sign in with their password' });
     }
+
+    // Issue an OTP only for participant accounts (not legacy supplier rows).
+    let otpSent = false;
+    if (table === 'participants' && SMS_PROVIDER_URL) {
+      const code = makeOtp();
+      try {
+        const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
+        await db.query(
+          `update participants
+              set otp_hash = $2, otp_expires_at = $3, otp_attempts = $4, otp_issued_at = $5
+            where id = $1`,
+          [row.id, otpHash(code, row.phone), expiresAt, 0, new Date()]
+        );
+        otpSent = await sendOtpSms(row.phone, code);
+      } catch (err) {
+        console.error('[otp] issue failed:', err.message);
+      }
+    }
+
     return res.json({
       ok: true,
       masked_phone: maskPhone(row.phone),
-      prompt: 'Enter the last 5 digits of the phone number of this account'
+      method: otpSent ? 'otp' : 'last5',
+      otp_sent: otpSent,
+      prompt: otpSent
+        ? 'Enter the 6-digit code we sent to this number'
+        : 'Enter the last 5 digits of the phone number of this account'
     });
   } catch (err) {
     return res.status(500).json({ ok: false, debug: true, error: 'AUTHDBG: ' + (err && err.message) });
@@ -693,6 +796,7 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
     const b = req.body || {};
     const loginId  = clean(b.login_id || b.phone || b.email, 160);
     const last5    = String(b.last5 || '').replace(/\D/g, '');
+    const otp      = String(b.otp || b.code || '').replace(/\D/g, '');
     const password = String(b.password || '');
     if (!loginId) {
       return res.status(400).json({ ok: false, error: 'phone number or email is required' });
@@ -701,7 +805,9 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
     const isEmail = loginId.includes('@');
     const col = isEmail ? 'email' : 'phone';
     const p = await db.query(
-      `select id, name, phone, email, password_hash, password_is_phone, role, org from participants where ${col} = $1`,
+      `select id, name, phone, email, password_hash, password_is_phone, role, org,
+              is_active, is_superuser, otp_hash, otp_expires_at, otp_attempts
+         from participants where ${col} = $1`,
       [loginId]
     );
     let row = p.rows[0] || null;
@@ -718,26 +824,65 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
     if (!row) {
       return res.status(401).json({ ok: false, error: 'no account found for that phone number' });
     }
+    if (row.is_active === false) {
+      return res.status(403).json({ ok: false, error: 'this account is suspended — contact an administrator' });
+    }
 
     const privileged = ['admin', 'employee'].includes(row.role);
 
     if (privileged) {
       // Administrator and staff: password sign-in only (still used by admin.html gate)
-      const hashMatch = row.password_hash && row.password_hash === hashPwd(password);
+      const hashMatch = row.password_hash && verifyPwd(password, row.password_hash);
       if (!hashMatch) {
         return res.status(401).json({ ok: false, error: 'wrong password' });
       }
+      // Re-hash legacy SHA-256 passwords to PBKDF2 on first successful login
+      if (row.password_hash && !row.password_hash.includes(':')) {
+        try {
+          await db.query('update participants set password_hash = $1 where id = $2', [hashPwd(password), row.id]);
+        } catch (_) {}
+      }
     } else {
-      // Public users: phone verification — enter the last 5 digits of this account's phone.
-      if (!last5) {
-        return res.status(400).json({ ok: false, error: 'phone verification required', verify: 'start at /api/auth/challenge, then send last5 (the last 5 digits of your phone number)' });
+      // Public users: prefer a live OTP, then fall back to the last 5 digits
+      // of the account phone (works with or without an SMS provider).
+      let verified = false;
+
+      if (otp) {
+        const expires = row.otp_expires_at ? new Date(row.otp_expires_at).getTime() : 0;
+        if (!row.otp_hash || !expires || expires < Date.now()) {
+          return res.status(401).json({ ok: false, error: 'that code has expired — request a new one' });
+        }
+        if (Number(row.otp_attempts || 0) >= OTP_MAX_ATTEMPTS) {
+          return res.status(429).json({ ok: false, error: 'too many incorrect codes — request a new one' });
+        }
+        if (otpMatches(otp, row.otp_hash, row.phone)) {
+          verified = true;
+          await db.query(
+            'update participants set otp_hash = null, otp_expires_at = null, otp_attempts = 0 where id = $1',
+            [row.id]
+          );
+        } else {
+          await db.query('update participants set otp_attempts = coalesce(otp_attempts,0) + 1 where id = $1', [row.id])
+            .catch(() => {});
+          return res.status(401).json({ ok: false, error: 'that code is not correct' });
+        }
       }
-      if (last5.length !== 5) {
-        return res.status(400).json({ ok: false, error: 'enter exactly 5 digits — the last 5 digits of your phone number' });
-      }
-      const digits = String(row.phone || '').replace(/\D/g, '');
-      if (!digits || digits.slice(-5) !== last5) {
-        return res.status(401).json({ ok: false, error: 'those digits do not match this account' });
+
+      if (!verified) {
+        if (!last5) {
+          return res.status(400).json({
+            ok: false,
+            error: 'verification required',
+            verify: 'send otp (the 6-digit code) or last5 (the last 5 digits of your phone number)'
+          });
+        }
+        if (last5.length !== 5) {
+          return res.status(400).json({ ok: false, error: 'enter exactly 5 digits — the last 5 digits of your phone number' });
+        }
+        const digits = String(row.phone || '').replace(/\D/g, '');
+        if (!digits || digits.slice(-5) !== last5) {
+          return res.status(401).json({ ok: false, error: 'those digits do not match this account' });
+        }
       }
     }
 
@@ -746,6 +891,7 @@ app.post('/api/auth/login', rateLimit, async (req, res, next) => {
       phone: row.phone || loginId,
       name:  row.name || '',
       role:  row.role || 'customer',
+      superuser: !!row.is_superuser,
       exp:   Date.now() + SESSION_HOURS * 3600 * 1000
     };
     res.cookie(SUPPLIER_COOKIE, signSupplier(payload), {
@@ -780,8 +926,8 @@ app.post('/api/auth/logout', async (req, res) => {
 // PATCH /api/admin/users/:id/password — superuser only: reset any user's password
 app.patch('/api/admin/users/:id/password', requireSupplier, rateLimit, async (req, res, next) => {
   try {
-    const caller = await db.query('select id, phone, role from participants where id = $1', [req.supplier.id]);
-    if (!caller.rows.length || caller.rows[0].role !== 'admin') {
+    const caller = await db.query('select id, phone, role, is_superuser from participants where id = $1', [req.supplier.id]);
+    if (!caller.rows.length || !caller.rows[0].is_superuser) {
       return res.status(403).json({ ok: false, error: 'superuser only' });
     }
     const targetId = Number(req.params.id);
@@ -789,11 +935,11 @@ app.patch('/api/admin/users/:id/password', requireSupplier, rateLimit, async (re
     if (!password || password.length < 6) {
       return res.status(400).json({ ok: false, error: 'password must be at least 6 characters' });
     }
-    // Protect superuser
-    const target = await db.query('select phone from participants where id = $1', [targetId]);
+    // Protect the superuser account from other operators
+    const target = await db.query('select phone, is_superuser from participants where id = $1', [targetId]);
     if (!target.rows.length) return res.status(404).json({ ok: false, error: 'user not found' });
-    if (target.rows[0].phone === '+256780698353') {
-      return res.status(403).json({ ok: false, error: 'superuser password cannot be changed' });
+    if (target.rows[0].is_superuser && targetId !== req.supplier.id) {
+      return res.status(403).json({ ok: false, error: 'superuser password cannot be changed by another operator' });
     }
     await db.query('update participants set password_hash = $1, password_is_phone = false where id = $2', [hashPwd(password), targetId]);
     return res.json({ ok: true, message: 'password updated' });
@@ -803,8 +949,8 @@ app.patch('/api/admin/users/:id/password', requireSupplier, rateLimit, async (re
 // PATCH /api/admin/users/:id/role — superuser only: change any user's role
 app.patch('/api/admin/users/:id/role', requireSupplier, rateLimit, async (req, res, next) => {
   try {
-    const caller = await db.query('select id, phone, role from participants where id = $1', [req.supplier.id]);
-    if (!caller.rows.length || caller.rows[0].role !== 'admin') {
+    const caller = await db.query('select id, phone, role, is_superuser from participants where id = $1', [req.supplier.id]);
+    if (!caller.rows.length || !caller.rows[0].is_superuser) {
       return res.status(403).json({ ok: false, error: 'superuser only' });
     }
     const targetId = Number(req.params.id);
@@ -812,10 +958,10 @@ app.patch('/api/admin/users/:id/role', requireSupplier, rateLimit, async (req, r
     if (!['admin','employee','supplier','member','customer'].includes(role)) {
       return res.status(400).json({ ok: false, error: 'invalid role' });
     }
-    const target = await db.query('select phone, role from participants where id = $1', [targetId]);
+    const target = await db.query('select phone, role, is_superuser from participants where id = $1', [targetId]);
     if (!target.rows.length) return res.status(404).json({ ok: false, error: 'user not found' });
     // The superuser account must stay an admin.
-    if (target.rows[0].phone === '+256780698353' && role !== 'admin') {
+    if (target.rows[0].is_superuser && role !== 'admin') {
       return res.status(403).json({ ok: false, error: 'superuser must remain an administrator' });
     }
     await db.query('update participants set role = $1 where id = $2', [role, targetId]);
@@ -1006,25 +1152,75 @@ app.get('/admin/login', (req, res) => {
   res.type('html').send(ui.loginPage(''));
 });
 
-app.post('/admin/login', (req, res) => {
-  const password = (req.body && req.body.password) || '';
-  const expected = ADMIN_PASSWORD;
-  const a = crypto.createHash('sha256').update(password).digest();
-  const b = crypto.createHash('sha256').update(expected).digest();
-  const ok = expected.length > 0 && crypto.timingSafeEqual(a, b);
-  if (!ok) return res.status(401).type('html').send(ui.loginPage('Wrong password.'));
-  const token = sign({ u: 'admin', exp: Date.now() + SESSION_HOURS * 3600 * 1000 });
-  res.cookie(COOKIE, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: req.secure,
-    maxAge: SESSION_HOURS * 3600 * 1000
-  });
-  return res.redirect('/admin');
+/* Two ways in:
+   - a participant account with an administrator/employee role signs in with
+     phone (or email) + its own password;
+   - the shared ADMIN_PASSWORD remains a fallback for break-glass access. */
+app.post('/admin/login', async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const loginId  = clean(b.phone || b.login_id || b.email, 160);
+    const password = String(b.password || '');
+    const expires  = Date.now() + SESSION_HOURS * 3600 * 1000;
+    let payload = null;
+
+    if (loginId) {
+      const cols = `id, name, phone, role, password_hash, is_active, is_superuser`;
+      let found = await db.query(
+        `select ${cols} from participants where phone = $1 limit 1`, [loginId]
+      );
+      if (!found.rows.length && loginId.includes('@')) {
+        found = await db.query(
+          `select ${cols} from participants where email = $1 limit 1`, [loginId]
+        );
+      }
+      const row = found.rows[0];
+      if (row && ['admin', 'employee'].includes(row.role) && row.is_active !== false &&
+          row.password_hash && verifyPwd(password, row.password_hash)) {
+        if (!row.password_hash.includes(':')) {
+          await db.query('update participants set password_hash = $1 where id = $2', [hashPwd(password), row.id]).catch(() => {});
+        }
+        payload = {
+          u: 'admin', id: row.id, name: row.name || row.phone,
+          role: row.role, superuser: !!row.is_superuser, exp: expires
+        };
+      }
+    }
+
+    if (!payload) {
+      // Shared-password fallback (also used when no per-user admin exists yet).
+      const expected = ADMIN_PASSWORD;
+      const a = crypto.createHash('sha256').update(password).digest();
+      const c = crypto.createHash('sha256').update(expected).digest();
+      const ok = expected.length > 0 && crypto.timingSafeEqual(a, c);
+      if (!ok) {
+        return res.status(401).type('html').send(ui.loginPage(
+          loginId ? 'Wrong phone number or password, or that account is not an administrator.' : 'Wrong password.'
+        ));
+      }
+      payload = { u: 'admin', id: null, name: 'Shared admin', role: 'admin', superuser: true, exp: expires };
+    }
+
+    res.cookie(COOKIE, sign(payload), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: req.secure,
+      maxAge: SESSION_HOURS * 3600 * 1000
+    });
+    // Display-only name for the header. Not a credential.
+    res.cookie('bsl_admin_name', payload.name || 'admin', {
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: req.secure,
+      maxAge: SESSION_HOURS * 3600 * 1000
+    });
+    return res.redirect('/admin');
+  } catch (err) { next(err); }
 });
 
 app.post('/admin/logout', (req, res) => {
   res.clearCookie(COOKIE);
+  res.clearCookie('bsl_admin_name');
   res.redirect('/admin/login');
 });
 
@@ -1046,7 +1242,7 @@ app.get('/admin', async (req, res, next) => {
         (select count(*)::int from members) as members
     `);
     const recent = await db.query('select id, ref, kind, name, phone, district, status, created_at from submissions order by id desc limit 12');
-    const note = ADMIN_PASSWORD ? '' : 'ADMIN_PASSWORD is not set on this service. Sign-in is disabled until it is.';
+    const note = ADMIN_PASSWORD ? '' : 'ADMIN_PASSWORD is not set. Sign in with a per-user administrator account (phone + password); the shared-password fallback is off.';
     res.type('html').send(ui.dashboard({ counts: counts.rows[0], recent: recent.rows, registerNote: note }));
   } catch (err) { next(err); }
 });
@@ -1107,6 +1303,176 @@ app.get('/admin/suppliers', async (req, res, next) => {
   try {
     const r = await db.query('select * from suppliers order by id desc limit 500');
     res.type('html').send(ui.suppliersPage({ rows: r.rows }));
+  } catch (err) { next(err); }
+});
+
+/* ── Users & roles ───────────────────────────────────────────────
+   Server-rendered account management. Any administrator can browse;
+   role changes, password resets and suspensions are superuser-only. */
+function requireSuperuserPage(req, res, next) {
+  if (req.admin && req.admin.superuser) return next();
+  return res.status(403).type('html').send(ui.layout({
+    title: 'Not allowed',
+    active: '/admin/users',
+    body: '<h1>Superuser only</h1><p class="sub">Your account can view users but not change roles, passwords or access.</p><p><a href="/admin/users">Back to users</a></p>'
+  }));
+}
+
+app.get('/admin/users', async (req, res, next) => {
+  try {
+    const role = clean(req.query.role, 20);
+    const q = clean(req.query.q, 80);
+    const params = [];
+    const where = [];
+    if (role && ['admin','employee','supplier','member','customer'].includes(role)) {
+      params.push(role);
+      where.push(`role = $${params.length}`);
+    }
+    if (q) {
+      params.push(`%${q}%`);
+      where.push(`(name ilike $${params.length} or phone ilike $${params.length} or email ilike $${params.length} or org ilike $${params.length})`);
+    }
+    const sql = `select id, name, phone, email, role, district, org, is_active, is_superuser, created_at
+                   from participants ${where.length ? 'where ' + where.join(' and ') : ''}
+                   order by is_superuser desc, id desc limit 500`;
+    const r = await db.query(sql, params);
+    res.type('html').send(ui.usersPage({ rows: r.rows, role, q }));
+  } catch (err) { next(err); }
+});
+
+app.get('/admin/users/new', async (req, res) => {
+  res.type('html').send(ui.userNewPage({ error: '' }));
+});
+
+app.post('/admin/users', requireSuperuserPage, rateLimit, async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const phone = clean(b.phone, 40);
+    const name  = clean(b.name, 120);
+    const email = clean(b.email, 160);
+    const role  = ['admin','employee','supplier','member','customer'].includes(b.role) ? b.role : 'customer';
+    const district = clean(b.district, 80);
+    const org = clean(b.org, 160);
+    const password = String(b.password || '');
+
+    if (!phoneOk(phone)) return res.status(400).type('html').send(ui.userNewPage({ error: 'A valid phone number (9–15 digits) is required.' }));
+    if (!name) return res.status(400).type('html').send(ui.userNewPage({ error: 'Full name is required.' }));
+    if (['admin','employee'].includes(role) && password.length < 6) {
+      return res.status(400).type('html').send(ui.userNewPage({ error: 'Administrator and staff accounts need a password of at least 6 characters.' }));
+    }
+    const existing = await db.query('select id from participants where phone = $1', [phone]);
+    if (existing.rows.length) {
+      return res.status(409).type('html').send(ui.userNewPage({ error: 'That phone number already has an account.' }));
+    }
+    const ins = await db.query(
+      `insert into participants (phone, email, name, role, district, org, password_hash, password_is_phone)
+       values ($1,$2,$3,$4,$5,$6,$7,false) returning id`,
+      [phone, email, name, role, district, org, password ? hashPwd(password) : null]
+    );
+    return res.redirect('/admin/users/' + ins.rows[0].id);
+  } catch (err) { next(err); }
+});
+
+app.get('/admin/users/:id', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).send('bad id');
+    const r = await db.query(
+      `select id, name, phone, email, role, district, org, is_active, is_superuser,
+              password_hash, created_at
+         from participants where id = $1`,
+      [id]
+    );
+    if (!r.rows.length) return res.status(404).send('user not found');
+    const row = r.rows[0];
+    row.has_password = !!row.password_hash;
+    res.type('html').send(ui.userEditPage({
+      row,
+      canManage: !!(req.admin && req.admin.superuser),
+      message: clean(req.query.msg, 200) || ''
+    }));
+  } catch (err) { next(err); }
+});
+
+app.post('/admin/users/:id', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).send('bad id');
+    const b = req.body || {};
+    const name  = clean(b.name, 120);
+    const email = clean(b.email, 160);
+    const district = clean(b.district, 80);
+    const org = clean(b.org, 160);
+    if (!name) return res.redirect('/admin/users/' + id + '?msg=' + encodeURIComponent('Name is required.'));
+    await db.query(
+      `update participants set
+         name = $2,
+         email = nullif($3,''),
+         district = nullif($4,''),
+         org = nullif($5,''),
+         updated_at = now()
+       where id = $1`,
+      [id, name, email || '', district || '', org || '']
+    );
+    return res.redirect('/admin/users/' + id + '?msg=' + encodeURIComponent('Profile saved.'));
+  } catch (err) { next(err); }
+});
+
+app.post('/admin/users/:id/role', requireSuperuserPage, rateLimit, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const role = clean(req.body.role, 20);
+    if (!Number.isInteger(id) || !['admin','employee','supplier','member','customer'].includes(role)) {
+      return res.status(400).send('bad role');
+    }
+    const target = await db.query('select is_superuser from participants where id = $1', [id]);
+    if (!target.rows.length) return res.status(404).send('not found');
+    if (target.rows[0].is_superuser && role !== 'admin') {
+      return res.redirect('/admin/users/' + id + '?msg=' + encodeURIComponent('The superuser must remain an administrator.'));
+    }
+    if (['admin','employee'].includes(role)) {
+      const pw = await db.query('select password_hash from participants where id = $1', [id]);
+      if (!pw.rows.length || !pw.rows[0].password_hash) {
+        return res.redirect('/admin/users/' + id + '?msg=' + encodeURIComponent('Set a password before giving this account an admin/staff role.'));
+      }
+    }
+    await db.query('update participants set role = $1, updated_at = now() where id = $2', [role, id]);
+    return res.redirect('/admin/users/' + id + '?msg=' + encodeURIComponent('Role updated.'));
+  } catch (err) { next(err); }
+});
+
+app.post('/admin/users/:id/password', requireSuperuserPage, rateLimit, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const password = String((req.body || {}).password || '');
+    if (!Number.isInteger(id)) return res.status(400).send('bad id');
+    if (password.length < 6) {
+      return res.redirect('/admin/users/' + id + '?msg=' + encodeURIComponent('Password must be at least 6 characters.'));
+    }
+    const target = await db.query('select is_superuser from participants where id = $1', [id]);
+    if (!target.rows.length) return res.status(404).send('not found');
+    // Only a superuser reaches this route, so they may reset the protected
+    // account (including their own) — no other operator can.
+    await db.query(
+      'update participants set password_hash = $1, password_is_phone = false, updated_at = now() where id = $2',
+      [hashPwd(password), id]
+    );
+    return res.redirect('/admin/users/' + id + '?msg=' + encodeURIComponent('Password updated.'));
+  } catch (err) { next(err); }
+});
+
+app.post('/admin/users/:id/status', requireSuperuserPage, rateLimit, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const active = bool((req.body || {}).active);
+    if (!Number.isInteger(id)) return res.status(400).send('bad id');
+    const target = await db.query('select is_superuser from participants where id = $1', [id]);
+    if (!target.rows.length) return res.status(404).send('not found');
+    if (target.rows[0].is_superuser && !active) {
+      return res.redirect('/admin/users/' + id + '?msg=' + encodeURIComponent('The superuser account cannot be suspended.'));
+    }
+    await db.query('update participants set is_active = $1, updated_at = now() where id = $2', [active, id]);
+    return res.redirect('/admin/users/' + id + '?msg=' + encodeURIComponent(active ? 'Account reactivated.' : 'Account suspended.'));
   } catch (err) { next(err); }
 });
 
@@ -1335,20 +1701,36 @@ function requireAdminOrEmployee (req, res, next) {
   return next();
 }
 
-app.get('/api/users', requireAdminOrEmployee, async (req, res, next) => {
+const listUsersHandler = async (req, res, next) => {
   try {
     const role = clean(req.query.role, 20);
+    const q = clean(req.query.q, 80);
     const params = [];
-    let sql = 'select id, phone, email, name, role, district, org, created_at from participants';
+    const where = [];
     if (role && ['admin','supplier','member','customer','employee'].includes(role)) {
       params.push(role);
-      sql += ' where role = $1';
+      where.push(`role = $${params.length}`);
     }
-    sql += ' order by id desc limit 500';
+    if (q) {
+      params.push(`%${q}%`);
+      where.push(`(name ilike $${params.length} or phone ilike $${params.length} or email ilike $${params.length} or org ilike $${params.length})`);
+    }
+    let sql = `select id, phone, email, name, role, district, org, is_active, is_superuser, created_at from participants`;
+    if (where.length) sql += ' where ' + where.join(' and ');
+    sql += ' order by is_superuser desc, id desc limit 500';
     const r = await db.query(sql, params);
-    return res.json({ ok: true, users: r.rows });
+    const users = (r.rows || []).map((u) => ({
+      id: u.id, phone: u.phone, email: u.email, name: u.name, role: u.role,
+      district: u.district, org: u.org, is_active: u.is_active,
+      is_superuser: !!u.is_superuser, created_at: u.created_at
+    }));
+    return res.json({ ok: true, users });
   } catch (err) { next(err); }
-});
+};
+
+app.get('/api/users', requireAdminOrEmployee, listUsersHandler);
+// Alias used by the three site admin panels.
+app.get('/api/admin/users', requireAdminOrEmployee, listUsersHandler);
 
 // POST /api/users — admin creates a participant directly (e.g. quick counter registration)
 app.post('/api/users', requireAdminOrEmployee, rateLimit, async (req, res, next) => {
@@ -1363,10 +1745,13 @@ app.post('/api/users', requireAdminOrEmployee, rateLimit, async (req, res, next)
     const district = clean(b.district, 80);
     const org      = clean(b.org, 160);
     const email    = clean(b.email, 160);
-    // Default password = last 6 digits of phone (or the phone itself if shorter)
-    const rawPwd      = String(b.password || '');
-    const usePhone    = !rawPwd;
-    const effectivePwd = usePhone ? phone : rawPwd;
+    // Public accounts are passwordless (phone verification). Administrator
+    // and staff accounts need an explicit password for the /admin gate.
+    const rawPwd = String(b.password || '');
+    if (['admin', 'employee'].includes(role) && rawPwd.length < 6) {
+      return res.status(400).json({ ok: false, error: 'administrator and staff accounts need a password of at least 6 characters' });
+    }
+    const passwordHash = rawPwd ? hashPwd(rawPwd) : null;
 
     if (!phoneOk(phone)) return res.status(400).json({ ok: false, error: 'valid phone required' });
     if (!name) return res.status(400).json({ ok: false, error: 'name required' });
@@ -1374,18 +1759,18 @@ app.post('/api/users', requireAdminOrEmployee, rateLimit, async (req, res, next)
     const r = await db.query(
       `insert into participants
          (phone, email, name, role, district, org, password_hash, password_is_phone)
-       values ($1,$2,$3,$4,$5,$6,$7,$8)
+       values ($1,$2,$3,$4,$5,$6,$7,false)
        on conflict (phone) do update set
          name              = excluded.name,
          email             = coalesce(excluded.email, participants.email),
          role              = excluded.role,
          district          = coalesce(excluded.district, participants.district),
-         org               = coalesce(excluded.org, participants.org)
+         org               = coalesce(excluded.org, participants.org),
+         password_hash     = coalesce(excluded.password_hash, participants.password_hash)
        returning id, phone, name, role, created_at`,
-      [phone, email || null, name, role, district || null, org || null,
-       hashPwd(effectivePwd), usePhone]
+      [phone, email || null, name, role, district || null, org || null, passwordHash]
     );
-    return res.status(201).json({ ok: true, user: r.rows[0], password_is_phone: usePhone });
+    return res.status(201).json({ ok: true, user: r.rows[0], password_is_phone: false });
   } catch (err) { next(err); }
 });
 
@@ -2797,12 +3182,37 @@ app.use((err, req, res, next) => {
 
 // ---------- boot ----------
 
+/* Promote the designated superuser account by flag, not by a hardcoded
+   comparison sprinkled through the routes. Runs after every migration so a
+   fresh or restored database converges on the same state. */
+async function ensureSuperuser() {
+  try {
+    const digits = String(SUPERUSER_PHONE).replace(/\D/g, '');
+    const all = await db.query('select id, phone from participants');
+    const match = (all.rows || []).find(
+      (p) => String(p.phone || '').replace(/\D/g, '') === digits
+    );
+    if (!match) {
+      console.warn(`[auth] no participant account for superuser phone ${SUPERUSER_PHONE} yet; it is promoted on registration.`);
+      return;
+    }
+    await db.query(
+      'update participants set is_superuser = $2, role = $3 where id = $1',
+      [match.id, true, 'admin']
+    );
+    console.log('[auth] superuser flag ensured');
+  } catch (err) {
+    console.warn('[auth] superuser seed skipped:', err.message);
+  }
+}
+
 async function start() {
   let ready = false;
   for (let attempt = 1; attempt <= 10 && !ready; attempt += 1) {
     try {
       await db.migrate();
       await db.seedIfEmpty();
+      await ensureSuperuser();
       ready = true;
     } catch (err) {
       console.error(`database not ready (attempt ${attempt}):`, err.message);
@@ -2813,7 +3223,7 @@ async function start() {
     console.error('starting anyway: the API will report 503 until the database is reachable');
   }
   if (!ADMIN_PASSWORD) {
-    console.warn('ADMIN_PASSWORD is not set: /admin sign-in is disabled.');
+    console.warn('ADMIN_PASSWORD is not set: shared-password sign-in is off; per-user admin accounts still work.');
   }
   app.listen(PORT, () => {
     console.log(`busolya api listening on ${PORT}`);

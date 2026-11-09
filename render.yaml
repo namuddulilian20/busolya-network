@@ -69,6 +69,19 @@ services:
       # Remove or set to false when upgrading to a paid plan.
       - key: KEEP_ALIVE
         value: "true"
+      # ---- auth: superuser + optional SMS one-time codes ----
+      # The registered account with this phone is promoted to superuser on boot.
+      - key: SUPERUSER_PHONE
+        value: "+256780698353"
+      - key: OTP_TTL_MINUTES
+        value: "10"
+      # Leave both blank to keep the last-5-digits phone verification.
+      # Set SMS_PROVIDER_URL to an HTTP endpoint that accepts
+      # { "to": "...", "message": "..." }; the key goes in the dashboard.
+      - key: SMS_PROVIDER_URL
+        value: ""
+      - key: SMS_API_KEY
+        sync: false
 
   # ---- public sites (plain HTML — multi-page, no SPA rewrite needed) ----
   # No buildCommand: Render serves the files directly from staticPublishPath.
