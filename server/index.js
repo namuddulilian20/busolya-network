@@ -1830,6 +1830,13 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
 // swap MEDIA_BASE_URL + MEDIA_STORAGE_PATH or integrate with an object store.
 
 (function mediaRoutes() {
+  // Idempotent: add thumb_url column if it does not already exist.
+  // ALTER TABLE ... ADD COLUMN IF NOT EXISTS is a no-op when the column exists.
+  db.query('ALTER TABLE supplier_media ADD COLUMN IF NOT EXISTS thumb_url text')
+    .catch(function (err) {
+      console.error('[media] thumb_url migration skipped (local JSONL or already exists):', err.message);
+    });
+
   const multer = require('multer');
   const path   = require('path');
   const fs     = require('fs');
@@ -1840,22 +1847,122 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
 
   const MEDIA_BASE_URL = process.env.MEDIA_BASE_URL || '/media';
 
-  // Multer storage: organise by supplier id
-  const storage = multer.diskStorage({
-    destination(req, file, cb) {
-      const dir = path.join(UPLOADS_DIR, String(req.supplier.id));
-      fs.mkdirSync(dir, { recursive: true });
-      cb(null, dir);
-    },
-    filename(req, file, cb) {
-      const ext  = path.extname(file.originalname) || '';
-      const base = path.basename(file.originalname, ext)
-        .replace(/[^a-zA-Z0-9_-]/g, '_')
-        .slice(0, 60);
-      const ts   = Date.now();
-      cb(null, `${base}_${ts}${ext}`);
+  // Object-store mode is enabled only when the bucket + both credentials are
+  // set; unconfigured boots never load @aws-sdk/client-s3.
+  const USE_OBJECT_STORE = !!(process.env.MEDIA_S3_BUCKET
+    && process.env.MEDIA_S3_ACCESS_KEY_ID
+    && process.env.MEDIA_S3_SECRET_ACCESS_KEY);
+
+  // S3-compatible client (R2/S3/MinIO). Required and constructed only inside
+  // this branch so a default/local boot stays dependency-free.
+  let s3Client = null;
+  let PutObjectCommand = null;
+  let DeleteObjectCommand = null;
+  if (USE_OBJECT_STORE) {
+    const { S3Client, PutObjectCommand: POC, DeleteObjectCommand: DOC } =
+      require('@aws-sdk/client-s3');
+    s3Client = new S3Client({
+      region: process.env.MEDIA_S3_REGION || 'auto',
+      ...(process.env.MEDIA_S3_ENDPOINT
+        ? { endpoint: process.env.MEDIA_S3_ENDPOINT, forcePathStyle: true }
+        : {}),
+      credentials: {
+        accessKeyId: process.env.MEDIA_S3_ACCESS_KEY_ID,
+        secretAccessKey: process.env.MEDIA_S3_SECRET_ACCESS_KEY
+      }
+    });
+    PutObjectCommand = POC;
+    DeleteObjectCommand = DOC;
+  }
+
+  // sharp is lazy-required only when processing an image upload.
+  // If it is not installed or fails to load, we fall back to storing the
+  // original file and log the error — the upload is never rejected.
+  let sharpLib = null;
+  function getSharp() {
+    if (sharpLib) return sharpLib;
+    try { sharpLib = require('sharp'); } catch (_) { sharpLib = false; }
+    return sharpLib;
+  }
+
+  // Shared key: <supplier_id>/<sanitized-base>_<timestamp><ext>. Reused for
+  // both the disk destination filename and the object-store key so the two
+  // storage modes stay in sync.
+  function buildKey(req, file) {
+    const ext  = path.extname(file.originalname) || '';
+    const base = path.basename(file.originalname, ext)
+      .replace(/[^a-zA-Z0-9_-]/g, '_')
+      .slice(0, 60);
+    const ts   = Date.now();
+    return `${req.supplier.id}/${base}_${ts}${ext}`;
+  }
+
+  // Resize an image upload to a web variant (max 1920px, WebP q82) and a
+  // thumbnail (max 400px, WebP q75).  Returns { webpBuffer, thumbBuffer } for
+  // object-store mode, or overwrites files in place for disk mode.
+  // On any error logs and returns null — caller falls back to original.
+  async function resizeImageDisk(diskFilePath, key) {
+    const sharp = getSharp();
+    if (!sharp) return null;
+    try {
+      const extlessKey = key.replace(/\.[^.]+$/, '');
+      const dir = require('path').dirname(diskFilePath);
+      const webpPath = diskFilePath.replace(/\.[^.]+$/, '') + '.webp';
+      const thumbPath = diskFilePath.replace(/\.[^.]+$/, '') + '_thumb.webp';
+      await sharp(diskFilePath)
+        .resize({ width: 1920, withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toFile(webpPath);
+      await sharp(diskFilePath)
+        .resize({ width: 400, withoutEnlargement: true })
+        .webp({ quality: 75 })
+        .toFile(thumbPath);
+      // Remove the original non-webp file if it differs from webpPath
+      if (diskFilePath !== webpPath) {
+        try { require('fs').unlinkSync(diskFilePath); } catch (_) {}
+      }
+      return { webpPath, thumbPath };
+    } catch (err) {
+      console.error('[media] sharp disk resize failed, using original:', err.message);
+      return null;
     }
-  });
+  }
+
+  async function resizeImageBuffer(buffer, mimetype) {
+    const sharp = getSharp();
+    if (!sharp) return null;
+    try {
+      const webpBuffer = await sharp(buffer)
+        .resize({ width: 1920, withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toBuffer();
+      const thumbBuffer = await sharp(buffer)
+        .resize({ width: 400, withoutEnlargement: true })
+        .webp({ quality: 75 })
+        .toBuffer();
+      return { webpBuffer, thumbBuffer };
+    } catch (err) {
+      console.error('[media] sharp buffer resize failed, using original:', err.message);
+      return null;
+    }
+  }
+
+  // Multer storage: hold the file in memory when uploading to the object
+  // store, otherwise write it to disk organised by supplier id.
+  const storage = USE_OBJECT_STORE
+    ? multer.memoryStorage()
+    : multer.diskStorage({
+        destination(req, file, cb) {
+          const key = buildKey(req, file);
+          file._mediaKey = key; // reuse in filename()
+          const dir = path.join(UPLOADS_DIR, path.dirname(key));
+          fs.mkdirSync(dir, { recursive: true });
+          cb(null, dir);
+        },
+        filename(req, file, cb) {
+          cb(null, path.basename(file._mediaKey));
+        }
+      });
 
   const ALLOWED_MIME = /^(image|audio|video|application\/pdf|application\/octet-stream)/;
   const MAX_FILE_MB  = Number(process.env.MEDIA_MAX_MB || 50);
@@ -1898,25 +2005,81 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
       if (!req.file) return res.status(400).json({ ok: false, error: 'no file received' });
       const b         = req.body || {};
       const suppId    = req.supplier.id;
-      const relPath   = path.relative(UPLOADS_DIR, req.file.path).replace(/\\/g, '/');
-      // media_base may be a relative path (/media): on the deployed static
-      // sites that would resolve against the site origin and 404, so store
-      // an absolute URL built from this request's host.
-      const mediaBase = /^https?:\/\//i.test(MEDIA_BASE_URL)
-        ? MEDIA_BASE_URL
-        : `${req.protocol}://${req.get('host')}${MEDIA_BASE_URL}`;
-      const publicUrl = `${mediaBase}/${relPath}`;
       const mtype     = mediaType(req.file.mimetype);
       const productId = b.product_id ? Number(b.product_id) : null;
+
+      let relPath, publicUrl;
+      let thumbUrl = null;
+      if (USE_OBJECT_STORE) {
+        const key = buildKey(req, req.file);
+        let uploadBuffer = req.file.buffer;
+        let uploadMime = req.file.mimetype;
+        let thumbKey = null;
+
+        if (/^image\//.test(req.file.mimetype)) {
+          const resized = await resizeImageBuffer(req.file.buffer, req.file.mimetype);
+          if (resized) {
+            uploadBuffer = resized.webpBuffer;
+            uploadMime   = 'image/webp';
+            thumbKey     = key.replace(/\.[^.]+$/, '') + '_thumb.webp';
+            // Upload thumbnail
+            await s3Client.send(new PutObjectCommand({
+              Bucket: process.env.MEDIA_S3_BUCKET,
+              Key:    thumbKey,
+              Body:   resized.thumbBuffer,
+              ContentType: 'image/webp',
+              CacheControl: 'public, max-age=86400'
+            }));
+            const base = process.env.MEDIA_S3_PUBLIC_BASE_URL
+              ? process.env.MEDIA_S3_PUBLIC_BASE_URL.replace(/\/$/, '')
+              : MEDIA_BASE_URL;
+            thumbUrl = `${base}/${thumbKey}`;
+          }
+        }
+
+        await s3Client.send(new PutObjectCommand({
+          Bucket: process.env.MEDIA_S3_BUCKET,
+          Key: key,
+          Body: uploadBuffer,
+          ContentType: uploadMime,
+          CacheControl: 'public, max-age=86400'
+        }));
+        relPath = key;
+        const base = process.env.MEDIA_S3_PUBLIC_BASE_URL
+          ? process.env.MEDIA_S3_PUBLIC_BASE_URL.replace(/\/$/, '')
+          : MEDIA_BASE_URL;
+        publicUrl = `${base}/${key}`;
+      } else {
+        relPath = path.relative(UPLOADS_DIR, req.file.path).replace(/\\/g, '/');
+        // media_base may be a relative path (/media): on the deployed static
+        // sites that would resolve against the site origin and 404, so store
+        // an absolute URL built from this request's host.
+        const mediaBase = /^https?:\/\//i.test(MEDIA_BASE_URL)
+          ? MEDIA_BASE_URL
+          : `${req.protocol}://${req.get('host')}${MEDIA_BASE_URL}`;
+        publicUrl = `${mediaBase}/${relPath}`;
+
+        if (/^image\//.test(req.file.mimetype)) {
+          const resized = await resizeImageDisk(req.file.path, relPath);
+          if (resized) {
+            // Repoint relPath and publicUrl to the webp variant
+            const webpRel = path.relative(UPLOADS_DIR, resized.webpPath).replace(/\\/g, '/');
+            const thumbRel = path.relative(UPLOADS_DIR, resized.thumbPath).replace(/\\/g, '/');
+            relPath   = webpRel;
+            publicUrl = `${mediaBase}/${webpRel}`;
+            thumbUrl  = `${mediaBase}/${thumbRel}`;
+          }
+        }
+      }
 
       const r = await db.query(
         `insert into supplier_media
            (supplier_id, media_type, title, description, filename, mime_type,
-            size_bytes, storage_path, storage_url, product_id)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning *`,
+            size_bytes, storage_path, storage_url, thumb_url, product_id)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) returning *`,
         [suppId, mtype, clean(b.title, 160), clean(b.description, 500),
          req.file.originalname, req.file.mimetype, req.file.size,
-         relPath, publicUrl, productId || null]
+         relPath, publicUrl, thumbUrl, productId || null]
       );
       return res.status(201).json({ ok: true, media: r.rows[0] });
     } catch (err) { next(err); }
@@ -1928,7 +2091,7 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
       const id = Number(req.params.id);
       if (!Number.isInteger(id)) return res.status(400).json({ ok: false, error: 'bad id' });
       const r = await db.query(
-        'select storage_path from supplier_media where id = $1 and supplier_id = $2',
+        'select storage_path, thumb_url from supplier_media where id = $1 and supplier_id = $2',
         [id, req.supplier.id]
       );
       if (!r.rows.length) return res.status(404).json({ ok: false, error: 'media not found' });
@@ -1938,10 +2101,34 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
         "update supplier_media set status = 'deleted', updated_at = now() where id = $1",
         [id]
       );
-      // Remove file from disk (best-effort)
+      // Remove the backing file/object and its thumbnail sibling (best-effort)
       try {
-        const diskPath = path.join(UPLOADS_DIR, r.rows[0].storage_path);
-        if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath);
+        if (USE_OBJECT_STORE) {
+          await s3Client.send(new DeleteObjectCommand({
+            Bucket: process.env.MEDIA_S3_BUCKET,
+            Key: r.rows[0].storage_path
+          }));
+          // Delete the thumbnail object if one was stored
+          if (r.rows[0].thumb_url) {
+            const thumbKey = r.rows[0].thumb_url.replace(/^https?:\/\/[^/]+\//, '');
+            if (thumbKey && thumbKey !== r.rows[0].storage_path) {
+              await s3Client.send(new DeleteObjectCommand({
+                Bucket: process.env.MEDIA_S3_BUCKET,
+                Key: thumbKey
+              })).catch(() => {});
+            }
+          }
+        } else {
+          const diskPath = path.join(UPLOADS_DIR, r.rows[0].storage_path);
+          if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath);
+          // Delete the thumbnail file if one was stored
+          if (r.rows[0].thumb_url) {
+            // thumb_url is stored as a relative path (e.g. /media/xxx_thumb.webp); strip the leading /media/
+            const thumbRel = r.rows[0].thumb_url.replace(/^\/media\//, '');
+            const thumbPath = path.join(UPLOADS_DIR, thumbRel);
+            if (thumbRel && fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+          }
+        }
       } catch (_) { /* ignore */ }
 
       return res.json({ ok: true });
@@ -2599,6 +2786,24 @@ async function start() {
   app.listen(PORT, () => {
     console.log(`busolya api listening on ${PORT}`);
   });
+
+  // Keep the free-tier Render service warm to avoid spin-down (idle timeout
+  // after ~15 min on the free plan briefly removes DNS records on some
+  // resolvers, causing DNS_PROBE_FINISHED_NXDOMAIN on client devices).
+  // Gated by KEEP_ALIVE=true so it only runs in production and can be
+  // disabled at any time.  The proper long-term fix is upgrading to a paid
+  // Render plan, which eliminates spin-down entirely.
+  if (process.env.KEEP_ALIVE === 'true') {
+    const http = require('http');
+    setInterval(() => {
+      http.get(`http://localhost:${PORT}/api/health`, (res) => {
+        res.resume(); // consume response to free socket
+      }).on('error', (err) => {
+        console.warn('[keepalive] self-ping failed:', err.message);
+      });
+    }, 14 * 60 * 1000); // every 14 minutes
+    console.log('[keepalive] self-ping enabled (every 14 min)');
+  }
 }
 
 if (process.env.NO_BOOT !== '1') start();
