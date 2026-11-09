@@ -396,11 +396,6 @@ img, video {
   var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
     ? '' : 'https://busolya-api.onrender.com';
 
-  // Resolve media stored as a relative /media URL against the API origin.
-  function absMedia(u) {
-    if (!u) return '';
-    return /^https?:|^data:/.test(u) ? u : 'https://busolya-api.onrender.com' + (u.charAt(0) === '/' ? u : '/' + u);
-  }
 
   /* ── Auth guard ──────────────────────────────────────────────── */
   if (!window.BusolyaAuth || !window.BusolyaAuth.isAuthenticated()) {

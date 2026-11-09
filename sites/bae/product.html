@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" data-site="bae">
 <head>
 <meta charset="utf-8">
@@ -42,6 +42,72 @@ tailwind.config = {
 /* ── Gallery scroll hint on mobile ── */
 .media-strip { scrollbar-width: none; }
 .media-strip::-webkit-scrollbar { display: none; }
+</style>
+<style>
+/* ── FEAT-004: Busolya UI polish ──────────────────────────── */
+
+/* Bouncy buttons and interactive elements */
+button, a.rounded-full, a[class*="rounded"], input[type="submit"] {
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.25s ease;
+}
+button:hover, a.rounded-full:hover, a[class*="rounded"]:hover,
+input[type="submit"]:hover {
+  transform: scale(1.05);
+}
+button:active, a.rounded-full:active {
+  transform: scale(0.97);
+}
+
+/* Glassmorphism hero and dark sections */
+section[class*="bg-bark"], section[class*="bg-leaf"],
+div[class*="bg-bark"], div[class*="bg-seal"] {
+  background-image: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.08) 0%,
+    transparent 60%
+  ) !important;
+  backdrop-filter: blur(2px);
+}
+
+/* Glass card edge */
+.rounded-xl, .rounded-2xl {
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* Vibrant hero headings */
+h1[class*="text-white"], h2[class*="text-white"] {
+  text-shadow: 0 2px 8px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Stat/metric cards: soft emboss */
+.stat-card, [class*="stat"] > div {
+  box-shadow: 0 2px 8px rgba(26,13,6,0.08), 0 8px 20px -8px rgba(26,13,6,0.18);
+  transition: box-shadow 0.25s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.stat-card:hover, [class*="stat"] > div:hover {
+  box-shadow: 0 4px 16px rgba(26,13,6,0.12), 0 14px 30px -10px rgba(26,13,6,0.28);
+  transform: translateY(-2px);
+}
+
+/* Responsive images */
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Responsive grids */
+@media (max-width: 640px) {
+  .grid.grid-cols-2 { grid-template-columns: 1fr !important; }
+  .grid.grid-cols-3 { grid-template-columns: 1fr 1fr !important; }
+  h1 { font-size: clamp(1.5rem, 6vw, 2.25rem); }
+  h2 { font-size: clamp(1.1rem, 4vw, 1.5rem); }
+}
+
+/* Horizontal scroll tables on mobile */
+@media (max-width: 768px) {
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+}
 </style>
 </head>
 <body class="bg-cream font-body text-ink antialiased">
@@ -280,12 +346,6 @@ tailwind.config = {
 var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
   ? '' : 'https://busolya-api.onrender.com';
 
-// Media lives on the API origin (at /media/*) but may be stored as a
-// relative URL — resolve it against the API so it can't 404 on the static site.
-function absMedia(u) {
-  if (!u) return '';
-  return /^https?:|^data:/.test(u) ? u : 'https://busolya-api.onrender.com' + (u.charAt(0) === '/' ? u : '/' + u);
-}
 
 var params     = new URLSearchParams(location.search);
 var productId  = Number(params.get('id'));
@@ -332,9 +392,7 @@ function activateMedia(idx) {
 
   if (m.media_type === 'image') {
     if (m.storage_url) {
-      mainImg.src = /^https?:|^data:/.test(m.storage_url)
-        ? m.storage_url
-        : 'https://busolya-api.onrender.com' + (m.storage_url.charAt(0) === '/' ? m.storage_url : '/' + m.storage_url);
+      mainImg.src = BusolyaMedia.absMedia(m.storage_url);
       mainImg.onerror = function () { this.replaceWith(BusolyaMedia.placeholder()); this.onerror = null; };
       mainImg.alt = m.title || _product.title || '';
       mainImg.classList.remove('hidden');
@@ -343,12 +401,12 @@ function activateMedia(idx) {
     }
   } else if (m.media_type === 'audio') {
     noImg.classList.remove('hidden');
-    audioEl.src = absMedia(m.storage_url || '');
+    audioEl.src = BusolyaMedia.absMedia(m.storage_url || '');
     audioEl.classList.remove('hidden');
     playerWrap.classList.remove('hidden');
     badge.textContent = '🎵 Audio'; badge.classList.remove('hidden');
   } else if (m.media_type === 'video') {
-    videoEl.src = absMedia(m.storage_url || '');
+    videoEl.src = BusolyaMedia.absMedia(m.storage_url || '');
     videoEl.classList.remove('hidden');
     playerWrap.classList.remove('hidden');
     badge.textContent = '🎬 Video'; badge.classList.remove('hidden');
@@ -511,7 +569,7 @@ function loadMoreFromStall(supplierId, excludeId) {
             if (!imgs.length) return;
             var el = document.getElementById('more-thumb-' + p.id);
             if (!el) return;
-            el.innerHTML = '<img src="'+esc(absMedia(imgs[0].storage_url))+'" alt="" class="h-full w-full object-cover">';
+            el.innerHTML = '<img src="'+esc(BusolyaMedia.absMedia(imgs[0].storage_url))+'" alt="" class="h-full w-full object-cover">';
           }).catch(function (err) { console.error('FETCH ERROR in sites\bae\product.html:', err); });
       });
     }).catch(function (err) { console.error('FETCH ERROR in sites\bae\product.html:', err); });

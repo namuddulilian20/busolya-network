@@ -15,3 +15,6 @@ uploads/
 
 # Backup files
 backups/
+
+# Agent workflow artifacts (plans, reviews, verdicts — not production code)
+.agents/

@@ -836,7 +836,7 @@ window.linkDemand = linkDemand;
                 : '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#e6efe0] text-leafdark">Visible</span>';
               var emojiCounts = spCommentEmojis[cm.id] || {};
               var emojiHtml = '';
-              emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="thumbs-up" title="thumbs-up">👍</button> <span class="text-xs text-ink/40">(' + (emojiCounts.thumbs-up || 0) + ')</span> ';
+              emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="thumbs-up" title="thumbs-up">👍</button> <span class="text-xs text-ink/40">(' + (emojiCounts['thumbs-up'] || 0) + ')</span> ';
               emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="heart" title="heart">❤️</button> <span class="text-xs text-ink/40">(' + (emojiCounts.heart || 0) + ')</span> ';
               emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="laugh" title="laugh">😄</button> <span class="text-xs text-ink/40">(' + (emojiCounts.laugh || 0) + ')</span> ';
               emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="fire" title="fire">🔥</button> <span class="text-xs text-ink/40">(' + (emojiCounts.fire || 0) + ')</span> ';

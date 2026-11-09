@@ -198,6 +198,64 @@
     }
   };
 
+  /* ── Media helper ─────────────────────────────────────────── */
+  window.BusolyaMedia = {
+    /* Resolve storage_url to absolute URL. Absolute URLs pass through. */
+    absMedia: function (url) {
+      if (!url) return '';
+      if (/^https?:\/\//i.test(url)) return url;
+      var API = (location.hostname === 'localhost' ||
+                 location.hostname === '127.0.0.1' ||
+                 location.protocol === 'file:')
+        ? '' : 'https://busolya-api.onrender.com';
+      return API + url;
+    },
+
+    /* Return placeholder HTML string for missing/broken media. */
+    placeholderHTML: function () {
+      return '<div class="bsl-media-card bsl-media-placeholder">\uD83C\uDF31</div>';
+    },
+
+    /* Return a DOM element placeholder for use in onerror handlers. */
+    placeholder: function () {
+      var el = document.createElement('div');
+      el.className = 'bsl-media-card bsl-media-placeholder';
+      el.innerHTML = '\uD83C\uDF31';
+      return el;
+    },
+
+    /* Return an HTML string thumbnail for a media item object.
+       item = { media_type, storage_url, thumb_url, title, filename }
+       video  -> <video muted loop playsinline>
+       image  -> <img> with onerror fallback; prefers thumb_url when present
+       audio  -> placeholder with note icon
+       other  -> placeholder with doc icon */
+    thumb: function (item) {
+      var type = (item && item.media_type) || '';
+      var url  = window.BusolyaMedia.absMedia((item && item.storage_url) || '');
+      var turl = item && item.thumb_url
+        ? window.BusolyaMedia.absMedia(item.thumb_url)
+        : url;
+      var alt  = ((item && (item.title || item.filename)) || '').replace(/"/g, '&quot;');
+
+      if (type === 'video') {
+        return url
+          ? '<video class="bsl-media-card" muted loop playsinline preload="metadata" src="' + url + '"></video>'
+          : window.BusolyaMedia.placeholderHTML();
+      }
+      if (type === 'image') {
+        return turl
+          ? '<img class="bsl-media-card" src="' + turl + '" alt="' + alt +
+            '" loading="lazy" onerror="this.outerHTML=\'\uD83C\uDF31\';this.onerror=null">'
+          : window.BusolyaMedia.placeholderHTML();
+      }
+      if (type === 'audio') {
+        return '<div class="bsl-media-card bsl-media-placeholder">&#127925;</div>';
+      }
+      return '<div class="bsl-media-card bsl-media-placeholder">&#128196;</div>';
+    }
+  };
+
   /* ── Path helpers ────────────────────────────────────────── */
   /* Each page is served from sites/<site>/*.html
      The shared folder is at sites/shared/ so the relative prefix
@@ -691,6 +749,74 @@
       '  background: linear-gradient(90deg, ' + cfg.ctaBg + ', ' + gold + ', ' + hexMix(cfg.adminBg, 'd', 30) + ');',
       '  box-shadow: 0 1px 2px rgba(26,13,6,.25);',
       '  z-index: 10;',
+      '}'
+      /* ── Media card + detail classes ── */,
+      '.bsl-media-card {',
+      '  display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover;',
+      '  border-radius: 0.5rem 0.5rem 0 0; overflow: hidden; background: #f4e8d6;',
+      '}',
+      'video.bsl-media-card { border-radius: 0.5rem 0.5rem 0 0; }',
+      '.bsl-media-detail {',
+      '  display: block; max-width: 100%; aspect-ratio: 16/9; object-fit: cover;',
+      '  border-radius: 0.5rem; overflow: hidden; background: #f4e8d6;',
+      '}',
+      '.bsl-media-placeholder {',
+      '  display: flex; align-items: center; justify-content: center;',
+      '  font-size: 2rem; color: #c68a2e; background: #fdf6ec;',
+      '}',
+
+      /* ── Card grid: bouncy hover + glass depth ── */
+      '.rounded-xl.border.bg-paper, .rounded-xl.border.overflow-hidden, [class*="rounded-xl"][class*="border"] {',
+      '  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease;',
+      '  cursor: pointer;',
+      '}',
+      '.rounded-xl.border.bg-paper:hover, .rounded-xl.border.overflow-hidden:hover, [class*="rounded-xl"][class*="border"]:hover {',
+      '  transform: translateY(-4px) scale(1.02);',
+      '  box-shadow: 0 12px 32px -8px rgba(26,13,6,.28), 0 2px 4px rgba(26,13,6,.08);',
+      '}',
+
+      /* ── Hero / dark section gradients ── */
+      '.bg-bark, [class~="bg-bark"] {',
+      '  background-image: linear-gradient(135deg, #4a2311 0%, #6b3318 50%, #3a1a0c 100%) !important;',
+      '}',
+      '.bg-leaf, [class~="bg-leaf"] {',
+      '  background-image: linear-gradient(135deg, #2f7d32 0%, #388e3c 50%, #1b5e20 100%) !important;',
+      '}',
+      '.bg-seal, [class~="bg-seal"] {',
+      '  background-image: linear-gradient(135deg, #9a3b2c 0%, #b5402f 50%, #7a2c1e 100%) !important;',
+      '}',
+      '.bg-maroon, [class~="bg-maroon"] {',
+      '  background-image: linear-gradient(135deg, #8a2f24 0%, #a0362a 50%, #5e1f18 100%) !important;',
+      '}',
+
+      /* ── Heading text-shadow for depth ── */
+      'h1, h2, h3 { text-shadow: 0 1px 2px rgba(26,13,6,.08); }',
+
+      /* ── Responsive images and videos ── */
+      'img, video { max-width: 100%; height: auto; }',
+
+      /* ── Responsive card grids ── */
+      '#mediaGrid, #productList, #stallProducts, .media-grid, .product-grid {',
+      '  display: grid !important;',
+      '  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;',
+      '  gap: 1rem !important;',
+      '}',
+
+      /* ── Glassmorphism panels ── */
+      '.bg-paper {',
+      '  backdrop-filter: blur(8px);',
+      '  border: 1px solid rgba(255,255,255,0.15) !important;',
+      '}',
+
+      /* ── Clamp headings on mobile ── */
+      '@media (max-width: 640px) {',
+      '  h1 { font-size: clamp(1.4rem, 5vw, 2rem); }',
+      '  h2 { font-size: clamp(1.1rem, 4vw, 1.5rem); }',
+      '}',
+
+      /* ── Mobile nav: ensure hamburger expands cleanly ── */
+      '@media (max-width: 768px) {',
+      '  #hdr-nav.flex { display: flex !important; flex-direction: column; width: 100%; }',
       '}'
     ].join('\n');
 

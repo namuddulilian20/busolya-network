@@ -1830,11 +1830,19 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
 // swap MEDIA_BASE_URL + MEDIA_STORAGE_PATH or integrate with an object store.
 
 (function mediaRoutes() {
-  // Idempotent: add thumb_url column if it does not already exist.
-  // ALTER TABLE ... ADD COLUMN IF NOT EXISTS is a no-op when the column exists.
+  // Idempotent: add thumb_url and thumb_storage_path columns if they do not
+  // already exist.  ALTER TABLE ... ADD COLUMN IF NOT EXISTS is a no-op when
+  // the column exists.
   db.query('ALTER TABLE supplier_media ADD COLUMN IF NOT EXISTS thumb_url text')
     .catch(function (err) {
       console.error('[media] thumb_url migration skipped (local JSONL or already exists):', err.message);
+    });
+  // thumb_storage_path stores the storage-layer key/path of the thumbnail so
+  // that DELETE can find it without reconstructing the path from thumb_url,
+  // which would fail if MEDIA_BASE_URL changes between upload and delete.
+  db.query('ALTER TABLE supplier_media ADD COLUMN IF NOT EXISTS thumb_storage_path text')
+    .catch(function (err) {
+      console.error('[media] thumb_storage_path migration skipped (local JSONL or already exists):', err.message);
     });
 
   const multer = require('multer');
@@ -2010,6 +2018,7 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
 
       let relPath, publicUrl;
       let thumbUrl = null;
+      let thumbStoragePath = null;
       if (USE_OBJECT_STORE) {
         const key = buildKey(req, req.file);
         let uploadBuffer = req.file.buffer;
@@ -2021,6 +2030,8 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
           if (resized) {
             uploadBuffer = resized.webpBuffer;
             uploadMime   = 'image/webp';
+            // Update MIME so the DB insert records the actual stored format
+            req.file.mimetype = 'image/webp';
             thumbKey     = key.replace(/\.[^.]+$/, '') + '_thumb.webp';
             // Upload thumbnail
             await s3Client.send(new PutObjectCommand({
@@ -2034,6 +2045,7 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
               ? process.env.MEDIA_S3_PUBLIC_BASE_URL.replace(/\/$/, '')
               : MEDIA_BASE_URL;
             thumbUrl = `${base}/${thumbKey}`;
+            thumbStoragePath = thumbKey;
           }
         }
 
@@ -2051,13 +2063,10 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
         publicUrl = `${base}/${key}`;
       } else {
         relPath = path.relative(UPLOADS_DIR, req.file.path).replace(/\\/g, '/');
-        // media_base may be a relative path (/media): on the deployed static
-        // sites that would resolve against the site origin and 404, so store
-        // an absolute URL built from this request's host.
-        const mediaBase = /^https?:\/\//i.test(MEDIA_BASE_URL)
-          ? MEDIA_BASE_URL
-          : `${req.protocol}://${req.get('host')}${MEDIA_BASE_URL}`;
-        publicUrl = `${mediaBase}/${relPath}`;
+        // Store the relative URL path so it stays valid across hostname changes.
+        // BusolyaMedia.absMedia() on the client resolves relative paths against
+        // the API origin; the static /media/* express.static route serves them.
+        publicUrl = `${MEDIA_BASE_URL.replace(/\/$/, '')}/${relPath}`;
 
         if (/^image\//.test(req.file.mimetype)) {
           const resized = await resizeImageDisk(req.file.path, relPath);
@@ -2066,8 +2075,11 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
             const webpRel = path.relative(UPLOADS_DIR, resized.webpPath).replace(/\\/g, '/');
             const thumbRel = path.relative(UPLOADS_DIR, resized.thumbPath).replace(/\\/g, '/');
             relPath   = webpRel;
-            publicUrl = `${mediaBase}/${webpRel}`;
-            thumbUrl  = `${mediaBase}/${thumbRel}`;
+            publicUrl = `${MEDIA_BASE_URL.replace(/\/$/, '')}/${webpRel}`;
+            thumbUrl  = `${MEDIA_BASE_URL.replace(/\/$/, '')}/${thumbRel}`;
+            thumbStoragePath = thumbRel;
+            // File was converted to WebP — update MIME before the DB insert
+            req.file.mimetype = 'image/webp';
           }
         }
       }
@@ -2075,11 +2087,11 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
       const r = await db.query(
         `insert into supplier_media
            (supplier_id, media_type, title, description, filename, mime_type,
-            size_bytes, storage_path, storage_url, thumb_url, product_id)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) returning *`,
+            size_bytes, storage_path, storage_url, thumb_url, thumb_storage_path, product_id)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) returning *`,
         [suppId, mtype, clean(b.title, 160), clean(b.description, 500),
          req.file.originalname, req.file.mimetype, req.file.size,
-         relPath, publicUrl, thumbUrl, productId || null]
+         relPath, publicUrl, thumbUrl, thumbStoragePath, productId || null]
       );
       return res.status(201).json({ ok: true, media: r.rows[0] });
     } catch (err) { next(err); }
@@ -2091,7 +2103,7 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
       const id = Number(req.params.id);
       if (!Number.isInteger(id)) return res.status(400).json({ ok: false, error: 'bad id' });
       const r = await db.query(
-        'select storage_path, thumb_url from supplier_media where id = $1 and supplier_id = $2',
+        'select storage_path, thumb_url, thumb_storage_path from supplier_media where id = $1 and supplier_id = $2',
         [id, req.supplier.id]
       );
       if (!r.rows.length) return res.status(404).json({ ok: false, error: 'media not found' });
@@ -2108,25 +2120,28 @@ app.delete('/api/comments/:id/emojis', requireSupplier, rateLimit, async (req, r
             Bucket: process.env.MEDIA_S3_BUCKET,
             Key: r.rows[0].storage_path
           }));
-          // Delete the thumbnail object if one was stored
-          if (r.rows[0].thumb_url) {
-            const thumbKey = r.rows[0].thumb_url.replace(/^https?:\/\/[^/]+\//, '');
-            if (thumbKey && thumbKey !== r.rows[0].storage_path) {
-              await s3Client.send(new DeleteObjectCommand({
-                Bucket: process.env.MEDIA_S3_BUCKET,
-                Key: thumbKey
-              })).catch(() => {});
-            }
+          // Derive the thumbnail key from the main key using the same naming
+          // convention used at upload time: strip the extension and append
+          // _thumb.webp.  This is deterministic and immune to base-URL changes.
+          const mainKey = r.rows[0].storage_path;
+          const thumbKey = mainKey.replace(/\.[^.]+$/, '') + '_thumb.webp';
+          if (thumbKey && thumbKey !== mainKey) {
+            await s3Client.send(new DeleteObjectCommand({
+              Bucket: process.env.MEDIA_S3_BUCKET,
+              Key: thumbKey
+            })).catch(() => {});
           }
         } else {
           const diskPath = path.join(UPLOADS_DIR, r.rows[0].storage_path);
           if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath);
-          // Delete the thumbnail file if one was stored
-          if (r.rows[0].thumb_url) {
-            // thumb_url is stored as a relative path (e.g. /media/xxx_thumb.webp); strip the leading /media/
-            const thumbRel = r.rows[0].thumb_url.replace(/^\/media\//, '');
-            const thumbPath = path.join(UPLOADS_DIR, thumbRel);
-            if (thumbRel && fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+          // Delete the thumbnail file if one was stored.
+          // Use thumb_storage_path (stored as a path relative to UPLOADS_DIR
+          // at upload time) so that a change to MEDIA_BASE_URL between upload
+          // and delete cannot produce a wrong derived path.
+          const thumbStorPath = r.rows[0].thumb_storage_path;
+          if (thumbStorPath) {
+            const thumbPath = path.join(UPLOADS_DIR, thumbStorPath);
+            if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
           }
         }
       } catch (_) { /* ignore */ }
@@ -2796,9 +2811,14 @@ async function start() {
   if (process.env.KEEP_ALIVE === 'true') {
     const http = require('http');
     setInterval(() => {
-      http.get(`http://localhost:${PORT}/api/health`, (res) => {
+      const req = http.get(`http://localhost:${PORT}/api/health`, { timeout: 10000 }, (res) => {
         res.resume(); // consume response to free socket
-      }).on('error', (err) => {
+      });
+      req.on('timeout', () => {
+        console.warn('[keepalive] self-ping timed out, aborting request');
+        req.destroy();
+      });
+      req.on('error', (err) => {
         console.warn('[keepalive] self-ping failed:', err.message);
       });
     }, 14 * 60 * 1000); // every 14 minutes
