@@ -116,7 +116,7 @@ img, video {
   <!-- Stats -->
   <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
     <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
-      <p class="text-xs uppercase tracking-[.14em] text-ink/45">Listings</p>
+      <p class="text-xs uppercase tracking-[.14em] text-ink/45">Items</p>
       <p class="mt-1 font-display text-2xl font-bold text-bark" id="statListings">—</p>
     </div>
     <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
@@ -135,8 +135,8 @@ img, video {
 
   <!-- Tabs -->
   <div class="mb-6 flex flex-wrap border-b border-[#e2d6c2]">
-    <button class="tab-on  px-4 py-3" data-tab="products">My listings</button>
-    <button class="tab-off px-4 py-3" data-tab="add">Add listing</button>
+    <button class="tab-on  px-4 py-3" data-tab="products">My items</button>
+    <button class="tab-off px-4 py-3" data-tab="add">Add item</button>
     <button class="tab-off px-4 py-3" data-tab="media">Photos & media</button>
     <button class="tab-off px-4 py-3" data-tab="directory">Directory entry</button>
     <button class="tab-off px-4 py-3" data-tab="demand">Visitors looking for your products</button>
@@ -144,17 +144,17 @@ img, video {
     <button class="tab-off px-4 py-3 hidden" data-tab="password">Change password</button>
   </div>
 
-  <!-- ── Tab: My listings ────────────────────────────────── -->
+  <!-- ── Tab: My items ────────────────────────────────── -->
   <div id="tab-products" class="tab-panel">
     <div id="productList" class="space-y-3"></div>
-    <p id="noProducts" class="hidden text-sm text-ink/50 py-6">No listings yet. Use the "Add listing" tab to add your first product or service.</p>
+    <p id="noProducts" class="hidden text-sm text-ink/50 py-6">No items yet. Use the "Add item" tab to add your first product or service.</p>
   </div>
 
-  <!-- ── Tab: Add listing ───────────────────────────────── -->
+  <!-- ── Tab: Add item ───────────────────────────────── -->
   <div id="tab-add" class="tab-panel hidden">
     <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
       <h2 class="mb-1 font-display text-xl font-bold text-bark">Add a product or service</h2>
-      <p class="mb-4 text-sm text-ink/55">Every listing appears in the visitor request log and the directory. Add photos after saving.</p>
+      <p class="mb-4 text-sm text-ink/55">Every item appears in the visitor request log and the directory. Add photos after saving.</p>
       <form id="addProductForm" novalidate class="space-y-4">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div class="md:col-span-2">
@@ -369,7 +369,7 @@ img, video {
   </div>
 
 
-  <!-- ── Moderation: visitor feedback on my listings ── -->
+  <!-- ── Moderation: visitor feedback on my items ── -->
   <div id="tab-moderation" class="tab-panel hidden">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
       <h2 class="font-display text-xl font-bold text-bark">Visitor feedback &amp; moderation</h2>
@@ -475,7 +475,7 @@ img, video {
     });
     list.querySelectorAll('.del-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        if (!confirm('Remove this listing?')) return;
+        if (!confirm('Remove this item?')) return;
         fetch(API + '/api/suppliers/products/' + btn.getAttribute('data-id'), {
           method: 'DELETE', credentials: 'include'
         }).then(function () { loadProducts(); }).catch(function () { alert('Could not remove.'); });
@@ -552,8 +552,563 @@ img, video {
     })
     .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
     .then(function (r) {
-      if (!r.ok) { showMsg(msgEl, r.data.error || 'Could not add listing.', 'err'); return; }
-      showMsg(msgEl, 'Listing added! Now add a photo from the "Photos & media" tab.', 'ok');
+      if (!r.ok) { showMsg(msgEl, r.data.error || 'Could not add item.', 'err'); return; }
+      showMsg(msgEl,  <!DOCTYPE html>
+<html lang="en" data-site="baf">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supplier Portal — Busolya Agro Farmers Ltd</title>
+<meta name="description" content="Add and manage your products, services and visitor request leads in the Busolya network">
+<link rel="icon" href="assets/logo.jpg">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: { colors: {
+    bark:'#4a2311', bark2:'#63301a', cream:'#fbf6ec', paper:'#fffdf8',
+    leaf:'#2f7d32', leafdark:'#1f5523', seal:'#a8321e', gold:'#c68a2e', ink:'#2a1a10'
+  }, fontFamily: { display:['Georgia','Times New Roman','serif'], body:['Segoe UI','system-ui','sans-serif'] } } }
+}
+</script>
+<style type="text/tailwindcss">
+  @layer base { body { @apply bg-cream text-ink font-body antialiased; } }
+  .tab-on  { @apply border-b-2 border-leaf text-leaf font-bold; }
+  .tab-off { @apply border-b-2 border-transparent text-ink/50 hover:text-leafdark; }
+</style>
+<style>
+/* ── FEAT-004: Busolya UI polish ──────────────────────────── */
+
+/* Bouncy buttons and interactive elements */
+button, a.rounded-full, a[class*="rounded"], input[type="submit"] {
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.25s ease;
+}
+button:hover, a.rounded-full:hover, a[class*="rounded"]:hover,
+input[type="submit"]:hover {
+  transform: scale(1.05);
+}
+button:active, a.rounded-full:active {
+  transform: scale(0.97);
+}
+
+/* Glassmorphism hero and dark sections */
+section[class*="bg-bark"], section[class*="bg-leaf"],
+div[class*="bg-bark"], div[class*="bg-seal"] {
+  background-image: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.08) 0%,
+    transparent 60%
+  ) !important;
+  backdrop-filter: blur(2px);
+}
+
+/* Glass card edge */
+.rounded-xl, .rounded-2xl {
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* Vibrant hero headings */
+h1[class*="text-white"], h2[class*="text-white"] {
+  text-shadow: 0 2px 8px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Stat/metric cards: soft emboss */
+.stat-card, [class*="stat"] > div {
+  box-shadow: 0 2px 8px rgba(26,13,6,0.08), 0 8px 20px -8px rgba(26,13,6,0.18);
+  transition: box-shadow 0.25s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.stat-card:hover, [class*="stat"] > div:hover {
+  box-shadow: 0 4px 16px rgba(26,13,6,0.12), 0 14px 30px -10px rgba(26,13,6,0.28);
+  transform: translateY(-2px);
+}
+
+/* Responsive images */
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Responsive grids */
+@media (max-width: 640px) {
+  .grid.grid-cols-2 { grid-template-columns: 1fr !important; }
+  .grid.grid-cols-3 { grid-template-columns: 1fr 1fr !important; }
+  h1 { font-size: clamp(1.5rem, 6vw, 2.25rem); }
+  h2 { font-size: clamp(1.1rem, 4vw, 1.5rem); }
+}
+
+/* Horizontal scroll tables on mobile */
+@media (max-width: 768px) {
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+}
+</style>
+</head>
+<body>
+
+<div id="header-placeholder"></div>
+
+<main class="mx-auto max-w-5xl px-5 py-8">
+
+  <!-- Header -->
+  <div class="mb-7 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="font-display text-3xl font-bold text-bark">Your store, online</h1>
+      <p class="mt-1 text-sm text-ink/60">Add what you sell. Visitors who need it can find you here — before, during and after the expo.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <span id="supplierName" class="rounded-full bg-bark/10 px-3 py-1.5 text-sm font-semibold text-bark"></span>
+      <div class="flex items-center gap-2">
+        <button onclick="shareStore('wa')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition">WhatsApp</button>
+        <button onclick="shareStore('tg')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition">Telegram</button>
+        <button onclick="shareStore('fb')" class="rounded-full border border-[#e2d6c2] px-3 py-1.5 text-[.7rem] font-semibold text-bark hover:bg-[#f4e8d6] transition">Facebook</button>
+      </div>
+      <button onclick="window.BusolyaAuth&&window.BusolyaAuth.logout()"
+        class="rounded-full border border-bark px-4 py-2 text-sm font-bold text-bark hover:bg-bark hover:text-white transition">
+        Sign out
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
+      <p class="text-xs uppercase tracking-[.14em] text-ink/45">Items</p>
+      <p class="mt-1 font-display text-2xl font-bold text-bark" id="statListings">—</p>
+    </div>
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
+      <p class="text-xs uppercase tracking-[.14em] text-ink/45">With media</p>
+      <p class="mt-1 font-display text-2xl font-bold text-leaf" id="statMedia">—</p>
+    </div>
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
+      <p class="text-xs uppercase tracking-[.14em] text-ink/45">Visitor request leads</p>
+      <p class="mt-1 font-display text-2xl font-bold text-bark" id="statDemand">—</p>
+    </div>
+    <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
+      <p class="text-xs uppercase tracking-[.14em] text-ink/45">Directory</p>
+      <p class="mt-1 font-display text-2xl font-bold text-bark" id="statDir">—</p>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="mb-6 flex flex-wrap border-b border-[#e2d6c2]">
+    <button class="tab-on  px-4 py-3" data-tab="products">My items</button>
+    <button class="tab-off px-4 py-3" data-tab="add">Add item</button>
+    <button class="tab-off px-4 py-3" data-tab="media">Photos & media</button>
+    <button class="tab-off px-4 py-3" data-tab="directory">Directory entry</button>
+    <button class="tab-off px-4 py-3" data-tab="demand">Visitors looking for your products</button>
+    <button class="tab-off px-4 py-3" data-tab="moderation">Feedback &amp; moderation</button>
+    <button class="tab-off px-4 py-3 hidden" data-tab="password">Change password</button>
+  </div>
+
+  <!-- ── Tab: My items ────────────────────────────────── -->
+  <div id="tab-products" class="tab-panel">
+    <div id="productList" class="space-y-3"></div>
+    <p id="noProducts" class="hidden text-sm text-ink/50 py-6">No items yet. Use the "Add item" tab to add your first product or service.</p>
+  </div>
+
+  <!-- ── Tab: Add item ───────────────────────────────── -->
+  <div id="tab-add" class="tab-panel hidden">
+    <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
+      <h2 class="mb-1 font-display text-xl font-bold text-bark">Add a product or service</h2>
+      <p class="mb-4 text-sm text-ink/55">Every item appears in the visitor request log and the directory. Add photos after saving.</p>
+      <form id="addProductForm" novalidate class="space-y-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div class="md:col-span-2">
+            <label class="mb-1 block text-sm font-semibold text-bark">Product / service name <span class="text-seal">*</span></label>
+            <input id="pTitle" type="text" required
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="e.g. Certified maize seed — OPV 50 kg bags">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Category</label>
+            <input id="pCategory" type="text"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="e.g. Agro inputs">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Unit of sale</label>
+            <input id="pUnit" type="text"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="e.g. kg, bag, litre, head">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Price (UGX per unit)</label>
+            <input id="pPrice" type="number" min="0"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="0">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Stock available (units)</label>
+            <input id="pStock" type="number" min="0"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="0">
+          </div>
+          <div class="md:col-span-2">
+            <label class="mb-1 block text-sm font-semibold text-bark">Description</label>
+            <textarea id="pDescription" rows="3"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="Quality, grade, origin, payment terms, minimum order…"></textarea>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Location / village</label>
+            <input id="pLocation" type="text"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="e.g. Gayaza, Wakiso">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">District</label>
+            <input id="pDistrict" type="text"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="e.g. Wakiso">
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button type="submit"
+            class="rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">
+            Add listing
+          </button>
+          <span class="text-xs text-ink/40">You can add photos after saving</span>
+        </div>
+      </form>
+      <div id="addMsg" class="mt-3 hidden rounded-lg px-4 py-3 text-sm"></div>
+    </div>
+  </div>
+
+  <!-- ── Tab: Purchases ──────────────────────────────────────────── -->
+  <div id="tab-purchases" class="tab-panel">
+    <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
+      <h2 class="mb-1 font-display text-xl font-bold text-bark">Purchase orders</h2>
+      <p class="mb-4 text-sm text-ink/55">Track orders from placement to delivery.</p>
+      <form id="addPoForm" class="space-y-3 mb-6">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Product</label>
+            <select id="poProduct" class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" disabled><option value="">— Add a product first —</option></select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Quantity</label>
+            <input id="poQuantity" type="number" min="1" value="1"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Unit price (UGX)</label>
+            <input id="poUnitPrice" type="number" min="0" value="0"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Notes (optional)</label>
+            <input id="poNotes" type="text"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="Delivery notes, special requirements…">
+          </div>
+        </div>
+        <button type="submit"
+          class="rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">
+          Create purchase order
+        </button>
+      </form>
+      <div id="poList" class="space-y-2"></div>
+      <p id="noPo" class="hidden text-sm text-ink/50 py-6">No purchase orders yet.</p>
+    </div>
+  </div>
+
+  <!-- ── Tab: Inventory ──────────────────────────────────────────── -->
+  <div id="tab-inventory" class="tab-panel">
+    <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
+      <h2 class="mb-1 font-display text-xl font-bold text-bark">Inventory summary</h2>
+      <p class="mb-4 text-sm text-ink/55">Current stock, on-order, and available quantity per product.</p>
+      <div id="invSummary" class="space-y-4"></div>
+    </div>
+  </div>
+
+  <!-- ── Tab: Low-stock alerts ─────────────────────────────────────── -->
+  <div id="tab-alerts" class="tab-panel">
+    <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
+      <h2 class="mb-1 font-display text-xl font-bold text-bark">Low-stock alerts</h2>
+      <p class="mb-4 text-sm text-ink/55">Configure thresholds per product; receive alerts when stock falls below.</p>
+      <form id="addAlertForm" class="space-y-3 mb-6">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Product</label>
+            <select id="alertProduct" class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" disabled><option value="">— Add a product first —</option></select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Threshold (units)</label>
+            <input id="alertThreshold" type="number" min="0" value="5"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf">
+          </div>
+        </div>
+        <button type="submit"
+          class="rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">
+          Save alert threshold
+        </button>
+      </form>
+      <div id="alertList" class="space-y-3"></div>
+      <p id="noAlert" class="hidden text-sm text-ink/50 py-6">No active low-stock alerts.</p>
+    </div>
+  </div>
+
+  <!-- ── Tab: Photos & media ────────────────────────────────────────── -->
+  <div id="tab-media" class="tab-panel hidden">
+    <div class="max-w-2xl space-y-6">
+      <div class="rounded-xl border border-[#e2d6c2] bg-paper p-6">
+        <h2 class="mb-1 font-display text-xl font-bold text-bark">Upload photos, audio or video</h2>
+        <p class="mb-4 text-sm text-ink/55">Show buyers what you have. Images, audio descriptions, and short videos all work. Max 50 MB per file.</p>
+        <form id="uploadForm" class="space-y-4" enctype="multipart/form-data">
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">File <span class="text-seal">*</span></label>
+            <input id="mFile" type="file" required accept="image/*,audio/*,video/*,application/pdf"
+              class="w-full text-sm text-ink/70 file:mr-3 file:rounded-full file:border-0 file:bg-bark/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-bark hover:file:bg-bark/20">
+            <p class="mt-1 text-xs text-ink/40">Accepted: images (JPG/PNG/WEBP), audio (MP3/WAV), video (MP4), PDF</p>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Title / caption</label>
+            <input id="mTitle" type="text" maxlength="160"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="e.g. Freshly harvested maize, 2026 season">
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Link to product (optional)</label>
+            <select id="mProduct"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf">
+              <option value="">— All products / general store —</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-semibold text-bark">Description</label>
+            <textarea id="mDescription" rows="2" maxlength="500"
+              class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
+              placeholder="Optional details about this file"></textarea>
+          </div>
+          <div>
+            <button type="submit" id="uploadBtn"
+              class="rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">
+              Upload
+            </button>
+          </div>
+        </form>
+        <div id="uploadMsg" class="mt-3 hidden rounded-lg px-4 py-3 text-sm"></div>
+        <div id="uploadProgress" class="mt-3 hidden">
+          <div class="h-2 rounded-full bg-[#e2d6c2] overflow-hidden">
+            <div id="uploadBar" class="h-full bg-leaf rounded-full transition-all" style="width:0%"></div>
+          </div>
+          <p class="mt-1 text-xs text-ink/50" id="uploadPct">Uploading…</p>
+        </div>
+      </div>
+
+      <!-- Media gallery -->
+      <div>
+        <h3 class="mb-3 font-display text-lg font-semibold text-bark">Your uploaded media</h3>
+        <div id="mediaGrid" class="grid grid-cols-2 gap-3 sm:grid-cols-3"></div>
+        <p id="noMedia" class="hidden text-sm text-ink/50 py-4">No media uploaded yet.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab: Directory entry ───────────────────────────── -->
+  <div id="tab-directory" class="tab-panel hidden">
+    <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
+      <h2 class="mb-2 font-display text-xl font-bold text-bark">Your directory entry</h2>
+      <p class="mb-4 text-sm text-ink/65">This appears in the Busolya yellow pages. It was pre-populated when you registered.</p>
+      <div id="dirEntry" class="space-y-2 text-sm">
+        <p class="text-ink/40">Loading…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab: Visitor requests ─────────────────────────── -->
+  <div id="tab-demand" class="tab-panel hidden">
+    <h2 class="mb-2 font-display text-xl font-bold text-bark">Visitors looking for your products</h2>
+    <p class="mb-4 text-sm text-ink/60">These visitors asked for what you sell. Link your product to start a match.</p>
+    <div id="visitorRequestList" class="space-y-3"></div>
+    <p id="noVisitorRequests" class="hidden text-sm text-ink/50 py-4">No visitor requests for your products yet.</p>
+  </div>
+
+
+  <!-- ── Moderation: visitor feedback on my items ── -->
+  <div id="tab-moderation" class="tab-panel hidden">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <h2 class="font-display text-xl font-bold text-bark">Visitor feedback &amp; moderation</h2>
+      <div class="flex gap-2">
+        <button id="spModVisible" class="rounded-full border border-bark px-4 py-1.5 text-xs font-semibold text-bark">Visible</button>
+        <button id="spModHidden" class="rounded-full border border-bark px-4 py-1.5 text-xs font-semibold text-bark">Hidden</button>
+        <button id="spModAll" class="rounded-full border border-bark px-4 py-1.5 text-xs font-semibold text-bark">All</button>
+      </div>
+    </div>
+    <p class="text-sm text-ink/55 mb-4">Comments visitors leave on your products and stall. Good ones show automatically — you only need to act on unfair or bad ones. Hiding is reversible.</p>
+    <div id="spModList" class="space-y-2"></div>
+    <p id="spModMsg" class="mt-2 hidden rounded-lg px-4 py-3 text-sm"></p>
+  </div>
+
+</main>
+
+<div id="footer-placeholder"></div>
+<script src="assets/network.js"></script>
+<script src="assets/components.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:')
+    ? '' : 'https://busolya-api.onrender.com';
+
+
+  /* ── Auth guard ──────────────────────────────────────────────── */
+  if (!window.BusolyaAuth || !window.BusolyaAuth.isAuthenticated()) {
+    location.href = 'supplier-login.html';
+    return;
+  }
+  var me = window.BusolyaAuth.getUser();
+  if (me && me.role === 'customer') { location.href = 'login.html'; return; }
+  var nameEl = document.getElementById('supplierName');
+  if (nameEl && me) nameEl.textContent = me.name || me.phone;
+
+  /* ── Tab switching ───────────────────────────────────────────── */
+  function activateTab(name) {
+    document.querySelectorAll('[data-tab]').forEach(function (b) { b.className = 'tab-off px-4 py-3'; });
+    document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.add('hidden'); });
+    var btn = document.querySelector('[data-tab="' + name + '"]');
+    if (btn) btn.className = 'tab-on px-4 py-3';
+    var panel = document.getElementById('tab-' + name);
+    if (panel) panel.classList.remove('hidden');
+  }
+  document.querySelectorAll('[data-tab]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var name = btn.getAttribute('data-tab');
+      activateTab(name);
+      if (name === 'demand')   loadVisitorRequests();
+      if (name === 'media')    loadMedia();
+      if (name === 'products') loadProducts();
+      if (name === 'purchases') loadPurchaseOrders();
+      if (name === 'inventory') loadInventorySummary();
+      if (name === 'alerts')   loadLowStockAlerts();
+    });
+  });
+
+  function fmt(n) { return Number(n || 0).toLocaleString(); }
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function showMsg(el, text, type) {
+    el.className = 'mt-3 rounded-lg px-4 py-3 text-sm ' +
+      (type === 'ok' ? 'bg-[#e6efe0] text-leafdark border border-leaf/30' :
+       type === 'err' ? 'bg-[#fbe9e7] text-seal border border-seal/30' : 'hidden');
+    el.textContent = text;
+    el.classList.remove('hidden');
+  }
+
+  /* ── Products ────────────────────────────────────────────────── */
+  function renderProducts(products) {
+    var list = document.getElementById('productList');
+    var none = document.getElementById('noProducts');
+    list.innerHTML = '';
+    document.getElementById('statListings').textContent = products.length;
+    if (!products.length) { none.classList.remove('hidden'); return; }
+    none.classList.add('hidden');
+    products.forEach(function (p) {
+      var card = document.createElement('div');
+      card.className = 'flex flex-wrap items-start justify-between gap-3 rounded-xl border border-[#e2d6c2] bg-paper p-4';
+      card.setAttribute('data-pid', p.id);
+      card.innerHTML =
+        '<div class="flex-1 min-w-0">' +
+          '<p class="font-semibold text-bark">' + esc(p.title) + '</p>' +
+          '<p class="text-xs text-ink/55">' + [p.category, p.district, p.location].filter(Boolean).map(esc).join(' · ') + '</p>' +
+          (p.description ? '<p class="mt-1 text-sm text-ink/70">' + esc(p.description) + '</p>' : '') +
+          '<div class="mt-2 flex flex-wrap gap-3 text-xs">' +
+            '<span class="rounded bg-[#e6efe0] px-2 py-1 text-leafdark">' +
+              (p.unit ? 'UGX ' + fmt(p.price) + ' / ' + esc(p.unit) : 'UGX ' + fmt(p.price)) +
+            '</span>' +
+            '<span class="rounded bg-[#f4e8d6] px-2 py-1 text-bark">Stock: ' + fmt(p.quantity_stock) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="flex flex-wrap gap-2 shrink-0">' +
+          '<button data-id="' + p.id + '" class="add-media-btn rounded-full border border-leaf px-3 py-1.5 text-xs font-semibold text-leaf hover:bg-leaf hover:text-white transition">+ Photo</button>' +
+          '<button data-id="' + p.id + '" class="del-btn rounded-lg border border-[#e2d6c2] px-3 py-1.5 text-xs text-seal hover:bg-[#fbe9e7] transition">Remove</button>' +
+          '<button onclick="shareProduct(' + p.id + ',\'wa\')" class="rounded border border-[#e2d6c2] px-2 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6] transition">WhatsApp</button>' +
+          '<button onclick="shareProduct(' + p.id + ',\'tg\')" class="rounded border border-[#e2d6c2] px-2 py-1 text-[.65rem] font-semibold text-bark hover:bg-[#f4e8d6] transition">Telegram</button>' +
+        '</div>';
+      list.appendChild(card);
+    });
+    list.querySelectorAll('.del-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (!confirm('Remove this item?')) return;
+        fetch(API + '/api/suppliers/products/' + btn.getAttribute('data-id'), {
+          method: 'DELETE', credentials: 'include'
+        }).then(function () { loadProducts(); }).catch(function () { alert('Could not remove.'); });
+      });
+    });
+    list.querySelectorAll('.add-media-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var pid = btn.getAttribute('data-id');
+        activateTab('media');
+        loadMedia();
+        var sel = document.getElementById('mProduct');
+        if (sel) sel.value = pid;
+      });
+    });
+  }
+
+  function loadProducts() {
+    fetch(API + '/api/suppliers/products?supplier_id=' + me.id, { credentials: 'include' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
+      .then(function (d) {
+        renderProducts(d.products || []);
+        var sel = document.getElementById('mProduct');
+        sel.innerHTML = '<option value="">— All products / general store —</option>';
+        (d.products || []).forEach(function (p) {
+          var opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.title;
+          sel.appendChild(opt);
+        });
+        // Populate purchase order product selector
+        var poSel = document.getElementById('poProduct');
+        if (poSel) {
+          poSel.innerHTML = '<option value="">— Select product —</option>';
+          (d.products || []).forEach(function (p) {
+            var opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.title;
+            poSel.appendChild(opt);
+          });
+        }
+        // Populate alert product selector
+        var alertSel = document.getElementById('alertProduct');
+        if (alertSel) {
+          alertSel.innerHTML = '<option value="">— Select product —</option>';
+          (d.products || []).forEach(function (p) {
+            var opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.title;
+            alertSel.appendChild(opt);
+          });
+        }
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
+  }
+
+  /* ── Add product form ────────────────────────────────────────── */
+  document.getElementById('addProductForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var msgEl = document.getElementById('addMsg');
+    var body = {
+      title:          document.getElementById('pTitle').value.trim(),
+      category:       document.getElementById('pCategory').value.trim() || undefined,
+      unit:           document.getElementById('pUnit').value.trim() || undefined,
+      price:          Number(document.getElementById('pPrice').value) || 0,
+      quantity_stock: Number(document.getElementById('pStock').value) || 0,
+      description:    document.getElementById('pDescription').value.trim() || undefined,
+      location:       document.getElementById('pLocation').value.trim() || undefined,
+      district:       document.getElementById('pDistrict').value.trim() || undefined
+    };
+    if (!body.title) { showMsg(msgEl, 'Product name is required.', 'err'); return; }
+
+    fetch(API + '/api/suppliers/products', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', body: JSON.stringify(body)
+    })
+    .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+    .then(function (r) {
+      if (!r.ok) { showMsg(msgEl, r.data.error || 'Could not add item.', 'err'); return; }
+      showMsg(msgEl, 'Item added! Now add a photo from the "Photos & media" tab.', 'ok');
       document.getElementById('addProductForm').reset();
       loadProducts();
       setTimeout(function () { activateTab('products'); }, 1800);
@@ -902,7 +1457,7 @@ window.linkVisitorRequest = linkVisitorRequest;
                 '<div class="flex flex-wrap items-center gap-2">' + badge +
                   '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
                   '<span class="text-xs text-ink/40">' + esc(cm.verdict) + '</span>' +
-                  (cm.product_title ? '<span class="text-xs text-ink/40">listing: ' + esc(cm.product_title) + '</span>' : '') +
+                  (cm.product_title ? '<span class="text-xs text-ink/40">item: ' + esc(cm.product_title) + '</span>' : '') +
                 '</div>' +
                 '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
                 '<div class="mt-2 flex items-center justify-between gap-3">' +
@@ -940,7 +1495,433 @@ window.linkVisitorRequest = linkVisitorRequest;
             '<div class="flex flex-wrap items-center gap-2">' + badge +
               '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
               '<span class="text-xs text-ink/40">' + esc(cm.verdict) + '</span>' +
-              (cm.product_title ? '<span class="text-xs text-ink/40">listing: ' + esc(cm.product_title) + '</span>' : '') +
+              (cm.product_title ? '<span class="text-xs text-ink/40">item: ' + esc(cm.product_title) + '</span>' : '') +
+            '</div>' +
+            '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
+            '<div class="mt-2 flex items-center justify-between gap-3">' +
+              '<span class="text-xs text-ink/40">' + spFmtDate(cm.created_at) + '</span>' +
+              '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="spModBtn rounded border border-[#e2d6c2] px-3 py-1 text-xs font-semibold text-bark hover:bg-[#f4e8d6]">' +
+                (cm.status === 'hidden' ? 'Allow again' : 'Hide this comment') + '</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+      Array.prototype.forEach.call(list.querySelectorAll('.spModBtn'), function (b) {
+        b.addEventListener('click', function () {
+          b.disabled = true;
+          fetch(API + '/api/comments/' + b.getAttribute('data-cid'), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ status: b.getAttribute('data-now') })
+          }).then(function () { spLoadModeration(); }).catch(function () {});
+        });
+      });
+    }).catch(function () { list.innerHTML = '<p class="text-sm text-ink/50">Could not load feedback.</p>'; });
+  }
+  ['spModVisible', 'spModHidden', 'spModAll'].forEach(function (id, i) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', function () { spFilter = ['visible', 'hidden', 'all'][i]; spLoadModeration(); });
+  });
+  // lazy-load when the tab is first opened
+  var spTabs = document.querySelectorAll('[data-tab]');
+  Array.prototype.forEach.call(spTabs, function (tab) {
+    tab.addEventListener('click', function () {
+      if (tab.getAttribute('data-tab') === 'moderation') spLoadModeration();
+    });
+  });
+
+})();
+</script>
+</body>
+</html>.Value -replace 'Listing added','Item added' , 'ok');
+      document.getElementById('addProductForm').reset();
+      loadProducts();
+      setTimeout(function () { activateTab('products'); }, 1800);
+    })
+    .catch(function () { showMsg(msgEl, 'Server error. Try again.', 'err'); });
+  });
+
+  /* ── Purchase order form ────────────────────────────────────────── */
+  document.getElementById('addPoForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var msgEl = document.getElementById('addMsg');
+    var productId = document.getElementById('poProduct').value;
+    var quantity = Number(document.getElementById('poQuantity').value);
+    var unitPrice = Number(document.getElementById('poUnitPrice').value);
+    var notes = document.getElementById('poNotes').value.trim();
+    if (!productId || quantity <= 0 || unitPrice < 0) { showMsg(msgEl, 'Select a product and enter valid quantity/price.', 'err'); return; }
+    var total = quantity * unitPrice;
+    fetch(API + '/api/purchase-orders', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', body: JSON.stringify({ product_id: Number(productId), quantity, unit_price: unitPrice, notes })
+    })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
+    .then(function (d) {
+      if (!d.ok) { showMsg(msgEl, d.error || 'Could not create purchase order.', 'err'); return; }
+      showMsg(msgEl, 'Purchase order created! Order #'+d.po.id, 'ok');
+      document.getElementById('addPoForm').reset();
+      loadPurchaseOrders();
+    })
+    .catch(function () { showMsg(msgEl, 'Server error. Try again.', 'err'); });
+  });
+
+  function loadPurchaseOrders() {
+    fetch(API + '/api/purchase-orders?supplier_id=' + me.id, { credentials: 'include' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
+      .then(function (d) {
+        var list = document.getElementById('poList');
+        var none = document.getElementById('noPo');
+        var orders = d.orders || [];
+        document.getElementById('statListings').textContent = orders.length; // reuse stat
+        if (!orders.length) { none.classList.remove('hidden'); list.innerHTML = ''; return; }
+        none.classList.add('hidden');
+        list.innerHTML = orders.map(function (o) {
+          var statusClass = o.status;
+          var statusLabel = o.status;
+          return '<div class="border border-[#e2d6c2] rounded-xl p-3 flex items-start justify-between gap-2">' +
+            '<div class="font-semibold text-bark">' + (o.product_title || 'Product') + '</div>' +
+            '<div class="text-xs text-ink/55">' +
+              'Qty: ' + fmt(o.quantity) + ' @ UGX ' + fmt(o.unit_price) + ' = UGX ' + fmt(o.total) + '<br>' +
+              'Status: <span class="' + (o.status === 'delivered' ? 'text-leaf' : '') + ' font-medium">' + statusLabel + '</span>' +
+            '</div>' +
+            (o.delivered_at ? '<div class="text-[.65rem] text-ink/30">Delivered: ' + fmt(o.delivered_at) + '</div>' : '') +
+          '</div>';
+        }).join('');
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
+  }
+
+  /* ── Inventory summary ──────────────────────────────────────────── */
+  function loadInventorySummary() {
+    fetch(API + '/api/inventory-summary?supplier_id=' + me.id, { credentials: 'include' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
+      .then(function (d) {
+        var summary = d.summary || [];
+        var invDiv = document.getElementById('invSummary');
+        if (!summary.length) { invDiv.innerHTML = '<p class="text-sm text-ink/50">No inventory data available.</p>'; return; }
+        invDiv.innerHTML = summary.map(function (item) {
+          var statusClass = item.stock_status === 'low' ? 'text-leaf' : 'text-bark';
+          return '<div class="border border-[#e2d6c2] rounded-xl p-4 flex flex-col gap-2">' +
+            '<div class="font-semibold text-bark">' + item.product_title + '</div>' +
+            '<div class="grid grid-cols-2 gap-2 text-xs text-ink/60">' +
+              '<div><strong>Current stock:</strong> ' + fmt(item.current_stock) + '</div>' +
+              '<div><strong>On order:</strong> ' + fmt(item.on_order) + '</div>' +
+              '<div><strong>Available:</strong> ' + fmt(item.available_stock) + '</div>' +
+            '</div>' +
+            '<div class="mt-2 pt-2 border-t border-[#e2d6c2]">' +
+              '<strong class="' + statusClass + '">Status: ' + item.stock_status + '</strong>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
+  }
+
+  /* ── Low-stock alerts form ────────────────────────────────────────── */
+  document.getElementById('addAlertForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var msgEl = document.getElementById('addMsg');
+    var productId = document.getElementById('alertProduct').value;
+    var threshold = Number(document.getElementById('alertThreshold').value);
+    if (!productId || threshold < 0) { showMsg(msgEl, 'Select a product and enter a threshold.', 'err'); return; }
+    fetch(API + '/api/low-stock-alerts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', body: JSON.stringify({ product_id: Number(productId), threshold })
+    })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
+    .then(function (d) {
+      if (!d.ok) { showMsg(msgEl, d.error || 'Could not save alert.', 'err'); return; }
+      showMsg(msgEl, 'Low-stock alert saved for ' + d.alert.product_title + ' (threshold: ' + d.alert.threshold + ')', 'ok');
+      document.getElementById('addAlertForm').reset();
+      loadLowStockAlerts();
+    })
+    .catch(function () { showMsg(msgEl, 'Server error. Try again.', 'err'); });
+  });
+
+  function loadLowStockAlerts() {
+    fetch(API + '/api/low-stock-alerts?supplier_id=' + me.id, { credentials: 'include' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
+      .then(function (d) {
+        var list = document.getElementById('alertList');
+        var none = document.getElementById('noAlert');
+        var alerts = d.alerts || [];
+        if (!alerts.length) { none.classList.remove('hidden'); list.innerHTML = ''; return; }
+        none.classList.add('hidden');
+        list.innerHTML = alerts.map(function (a) {
+          return '<div class="border border-[#e2d6c2] rounded-xl p-3 flex items-start justify-between gap-2">' +
+            '<div class="font-semibold text-bark">' + a.product_title + '</div>' +
+            '<div class="text-xs text-ink/55">Threshold: ' + fmt(a.threshold) + ' units — <span class="alert-status' + (a.active ? '' : ' text-seal') + '">' + (a.active ? 'active' : 'inactive') + '</span></div>' +
+          '</div>';
+        }).join('');
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
+  }
+
+  /* ── Media upload ──────────────────────────────────────────────── */
+  function loadMedia() {
+    /* Populate the product selector in the upload form */
+    var prodSel = document.getElementById('mProduct');
+    if (prodSel) {
+      prodSel.innerHTML = '<option value="">— All products / general store —</option>';
+      fetch(API + '/api/suppliers/products?supplier_id=' + me.id, { credentials: 'include' })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
+        .then(function (d) {
+          (d.products || []).forEach(function (p) {
+            var opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.title;
+            prodSel.appendChild(opt);
+          });
+        })
+        .catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
+    }
+    fetch(API + '/api/media', { credentials: 'include' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
+      .then(function (d) {
+        var grid = document.getElementById('mediaGrid');
+        var none = document.getElementById('noMedia');
+        var items = d.media || [];
+        document.getElementById('statMedia').textContent = items.filter(function (m) { return m.media_type === 'image'; }).length;
+        if (!items.length) { none.classList.remove('hidden'); grid.innerHTML = ''; return; }
+        none.classList.add('hidden');
+        grid.innerHTML = items.map(function (m) {
+          var thumbHTML = BusolyaMedia.thumb(m);
+          return '<div class="rounded-xl border border-[#e2d6c2] bg-paper overflow-hidden">' +
+            thumbHTML +
+            '<div class="p-2">' +
+              '<p class="text-xs font-semibold text-bark truncate">' + esc(m.title || m.filename || '—') + '</p>' +
+              '<p class="text-[.65rem] text-ink/45 mt-0.5">' + esc(m.media_type) + '</p>' +
+              '<button data-mid="' + m.id + '" class="del-media mt-2 text-[.65rem] text-seal hover:underline">Remove</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+        grid.querySelectorAll('.del-media').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            if (!confirm('Remove this file?')) return;
+            fetch(API + '/api/media/' + btn.getAttribute('data-mid'), {
+              method: 'DELETE', credentials: 'include'
+            }).then(function () { loadMedia(); }).catch(function () { alert('Could not remove.'); });
+          });
+        });
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
+  }
+
+  document.getElementById('uploadForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var msgEl = document.getElementById('uploadMsg');
+    var btn   = document.getElementById('uploadBtn');
+    var prog  = document.getElementById('uploadProgress');
+    var bar   = document.getElementById('uploadBar');
+    var pct   = document.getElementById('uploadPct');
+    var file  = document.getElementById('mFile').files[0];
+    if (!file) { showMsg(msgEl, 'Please choose a file.', 'err'); return; }
+
+    var fd = new FormData();
+    fd.append('file', file);
+    var title = document.getElementById('mTitle').value.trim();
+    var desc  = document.getElementById('mDescription').value.trim();
+    var prod  = document.getElementById('mProduct').value;
+    if (title) fd.append('title', title);
+    if (desc)  fd.append('description', desc);
+    if (prod)  fd.append('product_id', prod);
+
+    btn.disabled = true; btn.textContent = 'Uploading…';
+    prog.classList.remove('hidden'); msgEl.classList.add('hidden');
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', API + '/api/media', true);
+    xhr.withCredentials = true;
+    xhr.upload.onprogress = function (ev) {
+      if (ev.lengthComputable) {
+        var p = Math.round(ev.loaded / ev.total * 100);
+        bar.style.width = p + '%'; pct.textContent = p + '%';
+      }
+    };
+    xhr.onload = function () {
+      btn.disabled = false; btn.textContent = 'Upload';
+      prog.classList.add('hidden'); bar.style.width = '0%';
+      try {
+        var res = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300 && res.ok) {
+          showMsg(msgEl, 'File uploaded successfully.', 'ok');
+          document.getElementById('uploadForm').reset();
+          loadMedia();
+        } else {
+          showMsg(msgEl, (res && res.error) || 'Upload failed.', 'err');
+        }
+      } catch (_) { showMsg(msgEl, 'Upload failed.', 'err'); }
+    };
+    xhr.onerror = function () {
+      btn.disabled = false; btn.textContent = 'Upload';
+      prog.classList.add('hidden');
+      showMsg(msgEl, 'Network error. Try again.', 'err');
+    };
+    xhr.send(fd);
+  });
+
+  /* ── Directory ───────────────────────────────────────────────── */
+  function loadDirectory() {
+    fetch(API + '/api/directory?q=' + encodeURIComponent(me.phone || ''))
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
+      .then(function (d) {
+        var el = document.getElementById('dirEntry');
+        var e  = (d.entries || [])[0];
+        if (!e) { el.innerHTML = '<p class="text-ink/50">No directory entry found. Adding a product creates one automatically.</p>'; return; }
+        function row(label, val) { return '<dt class="text-ink/50">' + label + '</dt><dd class="text-bark">' + esc(val || '—') + '</dd>'; }
+        el.innerHTML = '<dl class="grid grid-cols-[120px_1fr] gap-x-4 gap-y-2 text-sm">' +
+          row('Business', e.name) + row('Sector', e.sector) + row('District', e.district) +
+          row('Phone', e.phone) + row('Email', e.email) +
+          '<dt class="text-ink/50">Verified</dt><dd>' + (e.verified ? '✓ Verified' : 'Pending verification') + '</dd></dl>';
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
+  }
+
+  /* ── Visitor requests ────────────────────────────────────────── */
+  function loadVisitorRequests() {
+    fetch(API + '/api/visitor-requests/stock?supplier_id=' + me.id, { credentials: 'include' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
+      .then(function (d) {
+        var list = document.getElementById('visitorRequestList');
+        var none = document.getElementById('noVisitorRequests');
+        var stock = d.stock || [];
+        document.getElementById('statDemand').textContent = stock.length;
+        if (!stock.length) { none.classList.remove('hidden'); list.innerHTML = ''; return; }
+        none.classList.add('hidden');
+        list.innerHTML = stock.map(function (s) {
+          return '<div class="border border-[#e2d6c2] rounded-xl p-4 flex flex-wrap items-start justify-between gap-3">' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="font-semibold text-bark">' + esc(s.product_title || 'Product') + '</p>' +
+              '<p class="text-xs text-ink/55">' + esc(s.category || '') + ' · ' + esc(s.district || '—') + '</p>' +
+              '<p class="mt-1 text-sm text-ink/70"><strong>Visitor:</strong> ' + esc(s.demand_name || '—') + '</p>' +
+              '<p class="text-xs text-ink/55">Phone: ' + esc(s.demand_phone || '—') + ' · Ref: ' + esc(s.demand_ref || '—') + '</p>' +
+            '</div>' +
+            '<button onclick="linkVisitorRequest(' + s.product_id + ',' + (s.submission_id || 0) + ')" class="rounded border border-[#e2d6c2] px-3 py-1.5 text-xs font-semibold text-bark hover:bg-[#f4e8d6] transition">Link product</button>' +
+          '</div>';
+        }).join('');
+      }).catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
+  }
+  function linkVisitorRequest(productId, submissionId) {
+    if (!confirm('Link this product to the visitor request?')) return;
+    fetch(API + '/api/visitor-requests/stock', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ product_id: productId, submission_id: Number(submissionId) || null, quantity: 1 })
+    })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
+    .then(function (d) { if (d.ok) loadVisitorRequests(); else alert(d.error || 'Could not link.'); })
+    .catch(function () { alert('Server error.'); });
+  }
+
+  /* ── Change password tab removed: sign-in is phone-verification only ── */
+
+  /* ── Stats ───────────────────────────────────────────────────── */
+  function loadStats() {
+    fetch(API + '/api/stats')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText); return r.json(); })
+      .then(function (d) { if (d.stats) document.getElementById('statDir').textContent = d.stats.directory || 0; })
+      .catch(function (err) { console.error('FETCH ERROR in sites\baf\supplier-portal.html:', err); });
+  }
+
+  /* ── Share ───────────────────────────────────────────────────── */
+  function shareStore(platform) {
+    var name = (me && me.name) || 'Supplier';
+    var url  = location.origin + '/baf/index.html#store-' + me.id;
+    var text = name + '\nBusolya Agro Farmers · ' + url;
+    doShare(platform, text, url);
+  }
+  function shareProduct(pid, platform) {
+    var card = document.querySelector('[data-pid="' + pid + '"]');
+    var title = card ? (card.querySelector('.font-semibold') ? card.querySelector('.font-semibold').textContent : 'Product') : 'Product';
+    var url   = location.origin + '/baf/index.html#product-' + pid;
+    var text  = title + ' · ' + url;
+    doShare(platform, text, url);
+  }
+  function doShare(platform, text, url) {
+    if (platform === 'wa') window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    else if (platform === 'tg') window.open('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text), '_blank');
+    else if (platform === 'fb') window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url), '_blank');
+  }
+
+  /* ── Init ────────────────────────────────────────────────────── */
+  loadProducts();
+  loadStats();
+  loadDirectory();
+  loadVisitorRequests();
+window.shareStore = shareStore;
+window.shareProduct = shareProduct;
+window.linkVisitorRequest = linkVisitorRequest;
+
+  /* ── Moderation of visitor feedback ───────────────────────── */
+  var spFilter = 'all';
+  function spFmtDate(s) { return s ? new Date(s).toLocaleDateString('en-GB') : '—'; }
+  // emoji reaction data: comment_id -> {emoji_type: count}
+  var spCommentEmojis = {};
+  function spLoadModeration() {
+    var list = document.getElementById('spModList');
+    list.innerHTML = '<p class="text-sm text-ink/50">Loading…</p>';
+    authedFetch(API + '/api/supplier/comments?status=' + spFilter).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.ok) { list.innerHTML = '<p class="text-sm text-ink/50">Could not load feedback.</p>'; return; }
+      var items = d.comments || [];
+      if (!items.length) { list.innerHTML = '<p class="text-sm text-ink/50">No comments in this view.</p>'; return; }
+      // fetch emoji reactions for all comments at once
+      var commentIds = items.map(function (cm) { return cm.id; });
+      if (commentIds.length) {
+        fetch(API + '/api/comments/' + commentIds[0] + '/emojis')
+          .then(function(r) { return r.json(); })
+          .then(function(reactData) {
+            spCommentEmojis = reactData || {};
+            list.innerHTML = items.map(function (cm) {
+              var badge = cm.status === 'hidden'
+                ? '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#fbe9e7] text-seal">Hidden</span>'
+                : '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#e6efe0] text-leafdark">Visible</span>';
+              var emojiCounts = spCommentEmojis[cm.id] || {};
+              var emojiHtml = '';
+              emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="thumbs-up" title="thumbs-up">👍</button> <span class="text-xs text-ink/40">(' + (emojiCounts.thumbs-up || 0) + ')</span> ';
+              emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="heart" title="heart">❤️</button> <span class="text-xs text-ink/40">(' + (emojiCounts.heart || 0) + ')</span> ';
+              emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="laugh" title="laugh">😄</button> <span class="text-xs text-ink/40">(' + (emojiCounts.laugh || 0) + ')</span> ';
+              emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="fire" title="fire">🔥</button> <span class="text-xs text-ink/40">(' + (emojiCounts.fire || 0) + ')</span> ';
+              emojiHtml += '<button class="rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition" data-emoji="sparkles" title="sparkles">✨</button> <span class="text-xs text-ink/40">(' + (emojiCounts.sparkles || 0) + ')</span> ';
+
+              return '<div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">' +
+                '<div class="flex flex-wrap items-center gap-2">' + badge +
+                  '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
+                  '<span class="text-xs text-ink/40">' + esc(cm.verdict) + '</span>' +
+                  (cm.product_title ? '<span class="text-xs text-ink/40">item: ' + esc(cm.product_title) + '</span>' : '') +
+                '</div>' +
+                '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
+                '<div class="mt-2 flex items-center justify-between gap-3">' +
+                  '<span class="text-xs text-ink/40">' + spFmtDate(cm.created_at) + '</span>' +
+                  '<button data-cid="' + cm.id + '" data-now="' + (cm.status === 'hidden' ? 'visible' : 'hidden') + '" class="spModBtn rounded border border-[#e2d6c2] px-3 py-1 text-xs font-semibold text-bark hover:bg-[#f4e8d6]">' +
+                    (cm.status === 'hidden' ? 'Allow again' : 'Hide this comment') + '</button>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="mt-2 text-sm text-ink/50">Reactions: ' + emojiHtml + '</div>';
+            }).join('');
+            Array.prototype.forEach.call(list.querySelectorAll('.spModBtn'), function (b) {
+              b.addEventListener('click', function () {
+                b.disabled = true;
+                fetch(API + '/api/comments/' + b.getAttribute('data-cid'), {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({ status: b.getAttribute('data-now') })
+                }).then(function () { spLoadModeration(); }).catch(function () {});
+              });
+            });
+            // emoji button handlers - simple reload
+            Array.prototype.forEach.call(list.querySelectorAll('.emoji-btn'), function (btn) {
+              btn.addEventListener('click', function () {
+                loadModeration();
+              });
+            });
+          });
+      } else {
+        list.innerHTML = items.map(function (cm) {
+          var badge = cm.status === 'hidden'
+            ? '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#fbe9e7] text-seal">Hidden</span>'
+            : '<span class="rounded-full px-2 py-0.5 text-xs font-bold bg-[#e6efe0] text-leafdark">Visible</span>';
+          return '<div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">' +
+            '<div class="flex flex-wrap items-center gap-2">' + badge +
+              '<span class="font-semibold text-bark text-sm">' + esc(cm.author_name) + '</span>' +
+              '<span class="text-xs text-ink/40">' + esc(cm.verdict) + '</span>' +
+              (cm.product_title ? '<span class="text-xs text-ink/40">item: ' + esc(cm.product_title) + '</span>' : '') +
             '</div>' +
             '<p class="mt-2 text-sm text-ink/75 whitespace-pre-line">' + esc(cm.body) + '</p>' +
             '<div class="mt-2 flex items-center justify-between gap-3">' +

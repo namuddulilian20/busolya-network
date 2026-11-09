@@ -185,7 +185,7 @@ img, video {
       shown++;
       var stallUrl = BAE + '/stall.html?id=' + encodeURIComponent(e.id) + '&biz=' + encodeURIComponent(e.business || '') + '&ex=' + encodeURIComponent(e.contact || '');
       var badge = Number(e.listings) > 0
-        ? '<span class="inline-block rounded-full bg-leaf px-2 py-0.5 text-[.68rem] font-bold text-white">' + e.listings + ' listing' + (e.listings > 1 ? 's' : '') + '</span>'
+        ? '<span class="inline-block rounded-full bg-leaf px-2 py-0.5 text-[.68rem] font-bold text-white">' + e.listings + ' item' + (e.listings > 1 ? 's' : '') + '</span>'
         : '<span class="inline-block rounded-full bg-seal/20 px-2 py-0.5 text-[.68rem] font-bold text-seal">No listings</span>';
       html += '<tr>'
         + '<td class="px-4 py-3 font-semibold text-bark"><a href="' + esc(stallUrl) + '" class="underline hover:text-gold" target="_blank" rel="noopener">' + esc(e.business || 'Exhibitor') + '</a></td>'

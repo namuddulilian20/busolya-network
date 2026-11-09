@@ -112,7 +112,7 @@ img, video {
 
   <div class="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
     <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
-      <p class="text-xs uppercase tracking-[.14em] text-ink/45">Listings</p>
+      <p class="text-xs uppercase tracking-[.14em] text-ink/45">Items</p>
       <p class="mt-1 font-display text-2xl font-bold text-bark" id="statListings">—</p>
     </div>
     <div class="rounded-xl border border-[#e2d6c2] bg-paper p-4">
@@ -130,25 +130,25 @@ img, video {
   </div>
 
   <div class="mb-6 flex flex-wrap border-b border-[#e2d6c2]">
-    <button class="tab-on  px-4 py-3" data-tab="products">My listings</button>
-    <button class="tab-off px-4 py-3" data-tab="add">Add listing</button>
+    <button class="tab-on  px-4 py-3" data-tab="products">My items</button>
+    <button class="tab-off px-4 py-3" data-tab="add">Add item</button>
     <button class="tab-off px-4 py-3" data-tab="media">Photos &amp; media</button>
     <button class="tab-off px-4 py-3" data-tab="directory">Directory entry</button>
     <button class="tab-off px-4 py-3" data-tab="demand">Visitor requests</button>
     <button class="tab-off px-4 py-3 hidden" data-tab="password">Change password</button>
   </div>
 
-  <!-- Tab: My listings -->
+  <!-- Tab: My items -->
   <div id="tab-products" class="tab-panel">
     <div id="productList" class="space-y-3"></div>
-    <p id="noProducts" class="hidden text-sm text-ink/50 py-6">No listings yet. Use the "Add listing" tab to add your first product or service.</p>
+    <p id="noProducts" class="hidden text-sm text-ink/50 py-6">No items yet. Use the "Add item" tab to add your first product or service.</p>
   </div>
 
-  <!-- Tab: Add listing -->
+  <!-- Tab: Add item -->
   <div id="tab-add" class="tab-panel hidden">
     <div class="max-w-2xl rounded-xl border border-[#e2d6c2] bg-paper p-6">
       <h2 class="mb-1 font-display text-xl font-bold text-bark">Add a product or service</h2>
-      <p class="mb-4 text-sm text-ink/55">Every listing appears in the visitor request log and the directory.</p>
+      <p class="mb-4 text-sm text-ink/55">Every item appears in the visitor request log and the directory.</p>
       <form id="addProductForm" novalidate class="space-y-4">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div class="md:col-span-2">
@@ -184,7 +184,7 @@ img, video {
             <input id="pDistrict" type="text" class="w-full rounded-lg border border-[#e2d6c2] bg-paper px-4 py-2.5 text-bark focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf" placeholder="e.g. Wakiso">
           </div>
         </div>
-        <button type="submit" class="rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">Add listing</button>
+        <button type="submit" class="rounded-full bg-leaf px-6 py-2.5 text-sm font-bold text-white hover:bg-leafdark transition">Add item</button>
       </form>
       <div id="addMsg" class="mt-3 hidden rounded-lg px-4 py-3 text-sm"></div>
     </div>
@@ -319,7 +319,7 @@ function renderProducts(products){
   });
   list.querySelectorAll('.del-btn').forEach(function(btn){
     btn.addEventListener('click',function(){
-      if(!confirm('Remove this listing?'))return;
+      if(!confirm('Remove this item?'))return;
       fetch(API+'/api/suppliers/products/'+btn.getAttribute('data-id'),{method:'DELETE',credentials:'include'})
         .then(function(){loadProducts();}).catch(function(){alert('Could not remove.');});
     });
@@ -356,8 +356,8 @@ document.getElementById('addProductForm').addEventListener('submit',function(e){
   fetch(API+'/api/suppliers/products',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(body)})
     .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
     .then(function(r){
-      if(!r.ok){showMsg(msgEl,r.data.error||'Could not add listing.','err');return;}
-      showMsg(msgEl,'Listing added! Add a photo from the Photos tab.','ok');
+      if(!r.ok){showMsg(msgEl,r.data.error||'Could not add item.','err');return;}
+      showMsg(msgEl,'Item added! Add a photo from the Photos tab.','ok');
       document.getElementById('addProductForm').reset(); loadProducts();
       setTimeout(function(){activateTab('products');},1800);
     }).catch(function(){showMsg(msgEl,'Server error.','err');});
