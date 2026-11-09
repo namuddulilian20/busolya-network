@@ -401,10 +401,10 @@ img, video {
     return '<span class="rounded-full px-2 py-0.5 text-[.62rem] font-bold ' + m[1] + '">' + m[0] + '</span>';
   }
 
-  function emojiButton(emojiType, emojiChar, isActive) {
+  function emojiButton(emojiType, emojiChar, isActive, commentId) {
     var cls = isActive ? ' rounded-full px-2 py-0.5 text-[.62rem] font-bold bg-leaf text-white' : ' rounded-full px-2 py-0.5 text-[.62rem] font-bold text-ink/50 hover:bg-leaf hover:text-white transition';
     var disabled = '';
-    return '<button class="' + cls + '" ' + disabled + ' data-emoji="' + emojiType + '" title="' + emojiType + '">' + emojiChar + '</button>';
+    return '<button class="' + cls + ' emoji-btn" ' + disabled + ' data-emoji="' + emojiType + '" data-cid="' + commentId + '" title="' + emojiType + '">' + emojiChar + '</button>';
   }
 
   function loadStallComments() {
@@ -438,15 +438,15 @@ img, video {
                 var emojiCounts = stallCommentEmojis[cm.id] || {};
                 var emojiHtml = '';
                 // thumbs-up
-                emojiHtml += emojiButton('thumbs-up', '👍', emojiCounts['thumbs-up'] > 0) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['thumbs-up'] || 0) + ')</span> ';
+                emojiHtml += emojiButton('thumbs-up', '👍', emojiCounts['thumbs-up'] > 0, cm.id) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['thumbs-up'] || 0) + ')</span> ';
                 // heart
-                emojiHtml += emojiButton('heart', '❤️', emojiCounts['heart'] > 0) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['heart'] || 0) + ')</span> ';
+                emojiHtml += emojiButton('heart', '❤️', emojiCounts['heart'] > 0, cm.id) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['heart'] || 0) + ')</span> ';
                 // laugh
-                emojiHtml += emojiButton('laugh', '😄', emojiCounts['laugh'] > 0) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['laugh'] || 0) + ')</span> ';
+                emojiHtml += emojiButton('laugh', '😄', emojiCounts['laugh'] > 0, cm.id) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['laugh'] || 0) + ')</span> ';
                 // fire
-                emojiHtml += emojiButton('fire', '🔥', emojiCounts['fire'] > 0) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['fire'] || 0) + ')</span> ';
+                emojiHtml += emojiButton('fire', '🔥', emojiCounts['fire'] > 0, cm.id) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['fire'] || 0) + ')</span> ';
                 // sparkles
-                emojiHtml += emojiButton('sparkles', '✨', emojiCounts['sparkles'] > 0) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['sparkles'] || 0) + ')</span> ';
+                emojiHtml += emojiButton('sparkles', '✨', emojiCounts['sparkles'] > 0, cm.id) + ' <span class="text-xs text-ink/40">(' + (emojiCounts['sparkles'] || 0) + ')</span> ';
 
                 return '<article class="rounded-xl border border-[#e2d6c2] bg-white p-4 ' + (cm.status === 'hidden' ? 'opacity-60' : '') + '">' +
                   '<div class="flex flex-wrap items-center gap-2">' +
@@ -478,8 +478,9 @@ img, video {
                 btn.addEventListener('click', function () {
                   var emojiType = btn.getAttribute('data-emoji');
                   var emojiChar = btn.innerText;
+                  var commentId = btn.getAttribute('data-cid');
                   // toggle emoji for this comment
-                  fetch(API + '/api/comments/' + b.getAttribute('data-cid') + '/emojis', {
+                  fetch(API + '/api/comments/' + commentId + '/emojis', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',

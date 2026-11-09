@@ -441,7 +441,7 @@ function filterStalls() {
     if (!stallObj) {
       // API-only stall: look up from _stallData / productsByStall via _stallDir
       var dirRow = _stallDir && _stallDir.find(function (d) { return Number(d.id) === stallId; });
-      stallObj = { id: stallId, biz: dirRow ? dirRow.business : 'Exhibitor #' + stallId, ex: '', cat: dirRow ? dirRow.category : 'General' };
+      stallObj = { id: stallId, biz: dirRow ? dirRow.business : 'Exhibitor #' + stallId, ex: '', cat: 'General' };
     }
 
     var matchCat = !cat || stallObj.cat === cat;
@@ -487,7 +487,7 @@ function buildProductCard(p, stallId, biz) {
   // Media may be stored as a relative /media URL — resolve against the API origin.
   var absMedia = function (u) {
     if (!u) return '';
-    return /^https?:|^data:/.test(u) ? u : 'https://busolya-api.onrender.com' + (u.charAt(0) === '/' ? u : '/' + u);
+    return /^https?:|^data:/.test(u) ? u : (API || location.origin) + (u.charAt(0) === '/' ? u : '/' + u);
   };
   var hasImg  = absMedia(p.storage_url || p.image_url);
   var imgHtml = hasImg
@@ -612,7 +612,7 @@ function renderStalls(productsByStall) {
       id: id,
       biz: dirRow ? dirRow.business : 'Exhibitor #' + id,
       ex:  dirRow ? dirRow.contact : '',
-      cat: dirRow ? dirRow.category : 'General'
+      cat: 'General'
     });
   });
 
@@ -709,7 +709,9 @@ function applyStallNames() {
     if (!row) return;
     if (row.business) s.biz = row.business;
     if (row.contact)  s.ex  = row.contact;
-    if (row.category) s.cat = row.category;
+    // Don't overwrite the hardcoded category — the stall-directory API
+    // returns the business name as "category", not a real category.
+    // Keep the original category for the filter buttons to work.
   });
 }
 
@@ -746,9 +748,14 @@ function loadMarketplace() {
         return;
       }
       var pending = stallIds.length;
+      var doneTimer = setTimeout(function () {
+        console.warn('[loadMarketplace] media fetch timeout — rendering with available data');
+        if (pending > 0) { _loaded = true; _stallData = byStall; applyStallNames(byStall); renderStalls(byStall); }
+      }, 12000);
       function done() {
         pending -= 1;
         if (pending <= 0) {
+          clearTimeout(doneTimer);
           _loaded = true;
           _stallData = byStall;
           applyStallNames(byStall);
